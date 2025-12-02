@@ -177,156 +177,376 @@
                         <i class="fas fa-bars text-xl"></i>
                     </button>
 
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-800" id="page-title">Dashboard Overview</h2>
-                        <p class="text-sm text-gray-500" id="page-subtitle">Welcome back!</p>
-                    </div>
-                </div>
+                    <!DOCTYPE html>
+                    <html lang="en">
 
-                <button id="logout-btn-header" class="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center">
-                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
-                </button>
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>Call Manager Pro - Super Admin</title>
 
-            </div>
-        </header>
+                        <script src="https://cdn.tailwindcss.com"></script>
+                        <script>
+                            tailwind.config = {
+                                theme: {
+                                    extend: {
+                                        colors: {
+                                            primary: '#000000',
+                                            secondary: '#333333',
+                                            accent: '#666666',
+                                            background: '#ffffff',
+                                            surface: '#f5f5f5',
+                                            text: '#000000',
+                                            muted: '#888888',
+                                            border: '#dddddd',
+                                            blue: {
+                                                50: '#f9fafb',
+                                                100: '#f3f4f6',
+                                                200: '#e5e7eb',
+                                                300: '#d1d5db',
+                                                400: '#9ca3af',
+                                                500: '#6b7280',
+                                                600: '#4b5563',
+                                                700: '#374151',
+                                                800: '#1f2937',
+                                                900: '#111827',
+                                            },
+                                            red: {
+                                                50: '#f9fafb',
+                                                100: '#f3f4f6',
+                                                200: '#e5e7eb',
+                                                300: '#d1d5db',
+                                                400: '#9ca3af',
+                                                500: '#6b7280',
+                                                600: '#4b5563',
+                                                700: '#374151',
+                                                800: '#1f2937',
+                                                900: '#111827',
+                                            },
+                                            green: {
+                                                50: '#f9fafb',
+                                                100: '#f3f4f6',
+                                                200: '#e5e7eb',
+                                                300: '#d1d5db',
+                                                400: '#9ca3af',
+                                                500: '#6b7280',
+                                                600: '#4b5563',
+                                                700: '#374151',
+                                                800: '#1f2937',
+                                                900: '#111827',
+                                            },
+                                        }
+                                    }
+                                }
+                            }
+                        </script>
+                        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                        <link rel="stylesheet"
+                            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-        <!-- DASHBOARD SECTION -->
-        <div id="dashboard-section" class="p-4 lg:p-8">
+                        <style>
+                            .sidebar {
+                                transition: all 0.3s ease;
+                                transform: translateX(-100%);
+                                z-index: 50;
+                            }
 
-            <div id="stats-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <!-- Stats inserted here -->
-            </div>
+                            .sidebar.active {
+                                transform: translateX(0);
+                            }
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            .nav-item.active {
+                                background: #f3f4f6;
+                                border-right: 4px solid #000000;
+                            }
 
-                <!-- Create Admin -->
-                <div class="lg:col-span-2 bg-white rounded-xl shadow p-6 border">
+                            .overlay {
+                                display: none;
+                                position: fixed;
+                                inset: 0;
+                                background: rgba(0, 0, 0, 0.5);
+                                z-index: 40;
+                            }
 
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-lg font-semibold">Create New Admin</h3>
-                        <i class="fas fa-user-plus bg-blue-100 p-2 rounded text-blue-600"></i>
-                    </div>
+                            .overlay.active {
+                                display: block;
+                            }
 
-                    <form id="createAdminForm" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input id="adminName" type="text" placeholder="Full Name"
-                                class="w-full border px-4 py-2 rounded" required>
+                            @media (min-width: 1024px) {
+                                .sidebar {
+                                    transform: translateX(0) !important;
+                                }
 
-                            <input id="adminEmail" type="email" placeholder="Email"
-                                class="w-full border px-4 py-2 rounded" required>
+                                .overlay {
+                                    display: none !important;
+                                }
+                            }
+                        </style>
+                    </head>
+
+                    <body class="bg-gray-50 flex h-screen">
+
+                        <!-- Overlay -->
+                        <div class="overlay" id="mobile-overlay"></div>
+
+                        <!-- Sidebar -->
+                        <div class="sidebar bg-white shadow-lg w-64 fixed h-full">
+                            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-phone-alt text-white text-lg"></i>
+                                    </div>
+                                    <div>
+                                        <h1 class="text-xl font-bold text-gray-800">Call Manager Pro</h1>
+                                        <p class="text-xs text-gray-500">Super Admin Panel</p>
+                                    </div>
+                                </div>
+
+                                <button class="lg:hidden text-gray-500 hover:text-gray-700" id="close-sidebar">
+                                    <i class="fas fa-times text-xl"></i>
+                                </button>
+                            </div>
+
+                            <nav class="mt-8">
+                                <a href="#dashboard"
+                                    class="nav-item active flex items-center space-x-3 px-6 py-3 text-gray-700 hover:bg-blue-50 transition">
+                                    <i class="fas fa-chart-pie w-5"></i>
+                                    <span>Dashboard</span>
+                                </a>
+
+                                <a href="#admins"
+                                    class="nav-item flex items-center space-x-3 px-6 py-3 text-gray-700 hover:bg-blue-50 transition">
+                                    <i class="fas fa-users-cog w-5"></i>
+                                    <span>Manage Admins</span>
+                                </a>
+
+                                <a href="#activity"
+                                    class="nav-item flex items-center space-x-3 px-6 py-3 text-gray-700 hover:bg-blue-50 transition">
+                                    <i class="fas fa-history w-5"></i>
+                                    <span>Activity Logs</span>
+                                </a>
+                            </nav>
+
+                            <div class="absolute bottom-0 w-full p-4 border-t border-gray-200">
+                                <div class="flex items-center space-x-3 px-2">
+                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-user-shield text-blue-600"></i>
+                                    </div>
+
+                                    <div class="flex-1">
+                                        <p class="text-sm font-medium" id="current-superadmin-name">Loading...</p>
+                                        <p class="text-xs text-gray-500">Super Admin</p>
+                                    </div>
+
+                                    <button id="logout-btn" class="text-gray-500 hover:text-red-500 transition">
+                                        <i class="fas fa-sign-out-alt text-md"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input id="adminPassword" type="password" placeholder="Password"
-                                class="w-full border px-4 py-2 rounded" required>
+                        <!-- Main Content -->
+                        <div class="main-content lg:ml-64 flex-1 overflow-auto">
 
-                            <input id="userLimit" type="number" placeholder="User Limit"
-                                class="w-full border px-4 py-2 rounded">
+                            <!-- Header -->
+                            <header class="bg-white shadow-sm border-b border-gray-200">
+                                <div class="px-4 lg:px-8 py-4 flex justify-between items-center">
+
+                                    <div class="flex items-center space-x-4">
+                                        <button class="lg:hidden text-gray-500" id="hamburger-menu">
+                                            <i class="fas fa-bars text-xl"></i>
+                                        </button>
+
+                                        <div>
+                                            <h2 class="text-2xl font-bold text-gray-800" id="page-title">Dashboard
+                                                Overview</h2>
+                                            <p class="text-sm text-gray-500" id="page-subtitle">Welcome back!</p>
+                                        </div>
+                                    </div>
+
+                                    <button id="fix-db-btn"
+                                        class="bg-yellow-500 text-white px-4 py-2 rounded-lg flex items-center mr-2 hover:bg-yellow-600 transition">
+                                        <i class="fas fa-tools mr-2"></i> Fix Database
+                                    </button>
+
+                                    <button id="logout-btn-header"
+                                        class="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center">
+                                        <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                                    </button>
+
+                                </div>
+                            </header>
+
+                            <!-- DASHBOARD SECTION -->
+                            <div id="dashboard-section" class="p-4 lg:p-8">
+
+                                <div id="stats-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                                    <!-- Stats inserted here -->
+                                </div>
+
+                                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                                    <!-- Create Admin -->
+                                    <div class="lg:col-span-2 bg-white rounded-xl shadow p-6 border">
+
+                                        <div class="flex justify-between items-center mb-6">
+                                            <h3 class="text-lg font-semibold">Create New Admin</h3>
+                                            <i class="fas fa-user-plus bg-blue-100 p-2 rounded text-blue-600"></i>
+                                        </div>
+
+                                        <form id="createAdminForm" class="space-y-4">
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <input id="adminName" type="text" placeholder="Full Name"
+                                                    class="w-full border px-4 py-2 rounded" required>
+
+                                                <input id="adminEmail" type="email" placeholder="Email"
+                                                    class="w-full border px-4 py-2 rounded" required>
+                                            </div>
+
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <input id="adminPassword" type="password" placeholder="Password"
+                                                    class="w-full border px-4 py-2 rounded" required>
+
+                                                <input id="userLimit" type="number" placeholder="User Limit"
+                                                    class="w-full border px-4 py-2 rounded">
+                                            </div>
+
+                                            <input id="expiryDate" type="date" class="w-full border px-4 py-2 rounded"
+                                                required>
+
+                                            <button type="submit"
+                                                class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700">
+                                                Create Admin Account
+                                            </button>
+                                        </form>
+                                    </div>
+
+                                    <!-- Recent Activity -->
+                                    <div class="bg-white rounded-xl shadow p-6 border">
+                                        <div class="flex justify-between items-center mb-6">
+                                            <h3 class="text-lg font-semibold">Recent Activity</h3>
+                                            <i class="fas fa-history bg-green-100 p-2 rounded text-green-600"></i>
+                                        </div>
+
+                                        <div id="recent-activity" class="space-y-4 max-h-96 overflow-y-auto"></div>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <!-- MANAGE ADMINS SECTION -->
+                            <div id="admins-section" class="p-4 lg:p-8 hidden">
+                                <div class="bg-white rounded-xl shadow p-6 border">
+
+                                    <div class="flex justify-between mb-6">
+                                        <h3 class="text-lg font-semibold">Administrators Management</h3>
+                                        <button onclick="adminsManager.loadAdmins()"
+                                            class="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
+                                            <i class="fas fa-sync-alt mr-2"></i> Refresh
+                                        </button>
+                                    </div>
+
+                                    <table class="w-full min-w-max">
+                                        <thead>
+                                            <tr class="bg-gray-50 border-b">
+                                                <th class="px-4 py-3 text-left">Admin</th>
+                                                <th class="px-4 py-3 text-left">Users</th>
+                                                <th class="px-4 py-3 text-left">Expiry</th>
+                                                <th class="px-4 py-3 text-left">Status</th>
+                                                <th class="px-4 py-3 text-left">Actions</th>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody id="admins-table-body"></tbody>
+                                    </table>
+
+                                </div>
+                            </div>
+
+                            <!-- ACTIVITY LOGS SECTION -->
+                            <div id="activity-section" class="p-4 lg:p-8 hidden">
+                                <div class="bg-white rounded-xl shadow p-6 border">
+
+                                    <div class="flex justify-between mb-6">
+                                        <h3 class="text-lg font-semibold">Activity Logs</h3>
+                                        <button onclick="activityManager.loadActivity()"
+                                            class="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
+                                            <i class="fas fa-sync-alt mr-2"></i>Refresh
+                                        </button>
+                                    </div>
+
+                                    <!-- FIXED FILTER -->
+                                    <div class="mb-4">
+                                        <label class="text-sm font-medium text-gray-700">Filter by Role:</label>
+                                        <select id="activityFilter" class="border px-3 py-2 rounded ml-2">
+                                            <option value="">All</option>
+                                            <option value="super_admin">Super Admin</option>
+                                            <option value="admin">Admin</option>
+                                            <option value="user">User</option>
+                                        </select>
+                                    </div>
+
+                                    <table class="w-full min-w-max">
+                                        <thead>
+                                            <tr class="bg-gray-50 border-b">
+                                                <th class="px-4 py-3 text-left">Action</th>
+                                                <th class="px-4 py-3 text-left">Actor</th>
+                                                <th class="px-4 py-3 text-left">Target</th>
+                                                <th class="px-4 py-3 text-left">Timestamp</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="activity-table-body"></tbody>
+                                    </table>
+
+                                </div>
+                            </div>
+
                         </div>
 
-                        <input id="expiryDate" type="date" class="w-full border px-4 py-2 rounded" required>
+                        <!-- JS -->
+                        <script src="/super_admin/js/auth.js"></script>
+                        <script src="/super_admin/js/dashboard.js"></script>
+                        <script src="/super_admin/js/admins.js"></script>
+                        <script src="/super_admin/js/activity.js"></script>
 
-                        <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700">
-                            Create Admin Account
-                        </button>
-                    </form>
-                </div>
+                        <script>
+                            document.getElementById("logout-btn")?.addEventListener("click", () => auth.logout());
+                            document.getElementById("logout-btn-header")?.addEventListener("click", () => auth.logout());
 
-                <!-- Recent Activity -->
-                <div class="bg-white rounded-xl shadow p-6 border">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-lg font-semibold">Recent Activity</h3>
-                        <i class="fas fa-history bg-green-100 p-2 rounded text-green-600"></i>
-                    </div>
+                            // FIX DATABASE BUTTON HANDLER
+                            document.getElementById("fix-db-btn")?.addEventListener("click", async () => {
+                                if (!confirm("⚠️ This will attempt to fix missing database columns. Continue?")) return;
 
-                    <div id="recent-activity" class="space-y-4 max-h-96 overflow-y-auto"></div>
-                </div>
+                                const btn = document.getElementById("fix-db-btn");
+                                const originalText = btn.innerHTML;
+                                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Fixing...';
+                                btn.disabled = true;
 
-            </div>
+                                try {
+                                    const response = await auth.makeAuthenticatedRequest("/fix/all", {
+                                        method: "POST",
+                                        body: JSON.stringify({ super_admin_key: "MANNAN_DB_FIX_2025" })
+                                    });
 
-        </div>
+                                    const data = await response.json();
 
-        <!-- MANAGE ADMINS SECTION -->
-        <div id="admins-section" class="p-4 lg:p-8 hidden">
-            <div class="bg-white rounded-xl shadow p-6 border">
-
-                <div class="flex justify-between mb-6">
-                    <h3 class="text-lg font-semibold">Administrators Management</h3>
-                    <button onclick="adminsManager.loadAdmins()"
-                        class="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
-                        <i class="fas fa-sync-alt mr-2"></i> Refresh
-                    </button>
-                </div>
-
-                <table class="w-full min-w-max">
-                    <thead>
-                        <tr class="bg-gray-50 border-b">
-                            <th class="px-4 py-3 text-left">Admin</th>
-                            <th class="px-4 py-3 text-left">Users</th>
-                            <th class="px-4 py-3 text-left">Expiry</th>
-                            <th class="px-4 py-3 text-left">Status</th>
-                            <th class="px-4 py-3 text-left">Actions</th>
-                        </tr>
-                    </thead>
-
-                    <tbody id="admins-table-body"></tbody>
-                </table>
-
-            </div>
-        </div>
-
-        <!-- ACTIVITY LOGS SECTION -->
-        <div id="activity-section" class="p-4 lg:p-8 hidden">
-            <div class="bg-white rounded-xl shadow p-6 border">
-
-                <div class="flex justify-between mb-6">
-                    <h3 class="text-lg font-semibold">Activity Logs</h3>
-                    <button onclick="activityManager.loadActivity()"
-                        class="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
-                        <i class="fas fa-sync-alt mr-2"></i>Refresh
-                    </button>
-                </div>
-
-                <!-- FIXED FILTER -->
-                <div class="mb-4">
-                    <label class="text-sm font-medium text-gray-700">Filter by Role:</label>
-                    <select id="activityFilter" class="border px-3 py-2 rounded ml-2">
-                        <option value="">All</option>
-                        <option value="super_admin">Super Admin</option>
-                        <option value="admin">Admin</option>
-                        <option value="user">User</option>
-                    </select>
-                </div>
-
-                <table class="w-full min-w-max">
-                    <thead>
-                        <tr class="bg-gray-50 border-b">
-                            <th class="px-4 py-3 text-left">Action</th>
-                            <th class="px-4 py-3 text-left">Actor</th>
-                            <th class="px-4 py-3 text-left">Target</th>
-                            <th class="px-4 py-3 text-left">Timestamp</th>
-                        </tr>
-                    </thead>
-                    <tbody id="activity-table-body"></tbody>
-                </table>
-
-            </div>
-        </div>
-
-    </div>
-
-    <!-- JS -->
-    <script src="/super_admin/js/auth.js"></script>
-    <script src="/super_admin/js/dashboard.js"></script>
-    <script src="/super_admin/js/admins.js"></script>
-    <script src="/super_admin/js/activity.js"></script>
-
-    <script>
-        document.getElementById("logout-btn")?.addEventListener("click", () => auth.logout());
-        document.getElementById("logout-btn-header")?.addEventListener("click", () => auth.logout());
-    </script>
+                                    if (response.ok) {
+                                        alert("✅ Database fixed successfully!\n\nChanges:\n" + JSON.stringify(data.changes, null, 2));
+                                        location.reload();
+                                    } else {
+                                        alert("❌ Error: " + (data.error || "Unknown error"));
+                                    }
+                                } catch (e) {
+                                    alert("❌ Network or Server Error: " + e.message);
+                                } finally {
+                                    btn.innerHTML = originalText;
+                                    btn.disabled = false;
+                                }
+                            });
+                        </script>
 
 
-</body>
+                    </body>
 
-</html>
+                    </html>
