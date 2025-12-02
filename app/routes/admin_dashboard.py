@@ -37,12 +37,17 @@ def dashboard_stats():
     admin_id = int(get_jwt_identity())
     admin = Admin.query.get(admin_id)
 
+    if not admin:
+        return jsonify({"error": "Admin account not found"}), 404
+
     users = User.query.filter_by(admin_id=admin_id).all()
     total = len(users)
     active = sum(1 for u in users if u.is_active)
     synced = sum(1 for u in users if u.last_sync)
 
-    avg_perf = round(sum(u.performance_score for u in users) / total, 2) if total else 0
+    # Handle None values in performance_score safely
+    total_score = sum((u.performance_score or 0.0) for u in users)
+    avg_perf = round(total_score / total, 2) if total else 0
 
     return jsonify({
         "stats": {
