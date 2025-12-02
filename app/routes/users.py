@@ -119,7 +119,7 @@ def register():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": "Internal server error", "detail": str(e)}), 500
+        return jsonify({"error": "Internal server error", "detail": str(e)}), 400
 
 
 # ============================================================
@@ -181,7 +181,7 @@ def login():
         }), 200
 
     except Exception as e:
-        return jsonify({"error": "Internal server error", "detail": str(e)}), 500
+        return jsonify({"error": "Internal server error", "detail": str(e)}), 400
 
 
 # ============================================================
@@ -208,7 +208,7 @@ def get_me():
         }), 200
 
     except Exception as e:
-        return jsonify({"error": "Internal server error", "detail": str(e)}), 500
+        return jsonify({"error": "Internal server error", "detail": str(e)}), 400
 
 
 # ============================================================
@@ -244,7 +244,7 @@ def update_profile():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": "Internal server error", "detail": str(e)}), 500
+        return jsonify({"error": "Internal server error", "detail": str(e)}), 400
 
 
 # ============================================================
@@ -268,7 +268,7 @@ def sync_data():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": "Internal server error", "detail": str(e)}), 500
+        return jsonify({"error": "Internal server error", "detail": str(e)}), 400
 
 
 # ============================================================
@@ -293,4 +293,4 @@ def sync_status():
         }), 200
 
     except Exception as e:
-        return jsonify({"error": "Internal server error", "detail": str(e)}), 500
+        return jsonify({"error": "Internal server error", "detail": str(e)}), 400

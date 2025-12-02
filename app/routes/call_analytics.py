@@ -68,8 +68,7 @@ def sync_analytics():
 
     except Exception as e:
         current_app.logger.exception("SYNC ERROR")
-        return jsonify({"error": str(e)}), 500
-
+        return jsonify({"error": str(e)}), 400
 
 
 # ===============================================================
@@ -145,4 +144,4 @@ def get_analytics():
 
     except Exception as e:
         current_app.logger.exception("GET ANALYTICS ERROR")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 400

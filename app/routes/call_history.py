@@ -179,7 +179,7 @@ def sync_call_history():
 
     except Exception as e:
         current_app.logger.exception("CALL HISTORY SYNC ERROR")
-        return jsonify({"error": "Internal server error", "detail": str(e)}), 500
+        return jsonify({"error": "Internal server error", "detail": str(e)}), 400
 
 
 # -------------------------------------------------
@@ -202,7 +202,7 @@ def my_call_history():
 
     except Exception as e:
         current_app.logger.exception("MY CALL HISTORY ERROR")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 400
 
 
 # -------------------------------------------------
@@ -224,4 +224,4 @@ def admin_user_call_history(user_id):
 
     except Exception as e:
         current_app.logger.exception("ADMIN CALL HISTORY ERROR")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 400

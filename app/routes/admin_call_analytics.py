@@ -140,3 +140,6 @@ def admin_analytics_all_users():
         "daily_trend": daily_trend,
         "user_summary": user_summary
     }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400

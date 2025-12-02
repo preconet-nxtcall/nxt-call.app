@@ -20,37 +20,40 @@ def admin_required():
 @admin_user_bp.route("/user-data/<int:user_id>", methods=["GET"])
 @jwt_required()
 def admin_get_user_data(user_id):
-    if not admin_required():
-        return jsonify({"error": "Admin only"}), 403
+    try:
+        if not admin_required():
+            return jsonify({"error": "Admin only"}), 403
 
-    admin_id = int(get_jwt_identity())
+        admin_id = int(get_jwt_identity())
 
-    # Verify admin owns this user
-    user = User.query.get(user_id)
-    if not user or user.admin_id != admin_id:
-        return jsonify({"error": "Unauthorized user access"}), 403
+        # Verify admin owns this user
+        user = User.query.get(user_id)
+        if not user or user.admin_id != admin_id:
+            return jsonify({"error": "Unauthorized user access"}), 403
 
-    # Attendance count
-    attendance_count = Attendance.query.filter_by(user_id=user_id).count()
+        # Attendance count
+        attendance_count = Attendance.query.filter_by(user_id=user_id).count()
 
-    # Call history count
-    call_count = CallHistory.query.filter_by(user_id=user_id).count()
+        # Call history count
+        call_count = CallHistory.query.filter_by(user_id=user_id).count()
 
-    return jsonify({
-        "user": {
-            "id": user.id,
-            "name": user.name,
-            "email": user.email,
-            "phone": user.phone,
-            "is_active": user.is_active,
-            "performance_score": user.performance_score,
-            "created_at": user.created_at.isoformat(),
-            "last_login": user.last_login.isoformat() if user.last_login else None,
-            "last_sync": user.last_sync.isoformat() if user.last_sync else None,
-            "attendance_records": attendance_count,
-            "call_records": call_count
-        }
-    }), 200
+        return jsonify({
+            "user": {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "phone": user.phone,
+                "is_active": user.is_active,
+                "performance_score": user.performance_score,
+                "created_at": user.created_at.isoformat(),
+                "last_login": user.last_login.isoformat() if user.last_login else None,
+                "last_sync": user.last_sync.isoformat() if user.last_sync else None,
+                "attendance_records": attendance_count,
+                "call_records": call_count
+            }
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 # ----------------------------------------
@@ -88,4 +91,4 @@ def delete_user(user_id):
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 400
