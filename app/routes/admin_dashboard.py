@@ -70,32 +70,37 @@ def dashboard_stats():
 @admin_dashboard_bp.route("/recent-sync", methods=["GET"])
 @jwt_required()
 def recent_sync():
-    if not admin_required():
-        return jsonify({"error": "Admin only"}), 403
+    try:
+        if not admin_required():
+            return jsonify({"error": "Admin only"}), 403
 
-    admin_id = int(get_jwt_identity())
+        admin_id = int(get_jwt_identity())
 
-    users = (
-        User.query
-        .filter(User.admin_id == admin_id)
-        .order_by(User.last_sync.desc().nullslast())
-        .limit(10)
-        .all()
-    )
+        # Removed nullslast() to be safe across DB versions
+        users = (
+            User.query
+            .filter(User.admin_id == admin_id)
+            .order_by(User.last_sync.desc())
+            .limit(10)
+            .all()
+        )
 
-    return jsonify({
-        "recent_sync": [
-            {
-                "id": u.id,
-                "name": u.name,
-                "email": u.email or "-",
-                "phone": u.phone or "-",
-                "is_active": u.is_active,
-                "last_sync": iso(u.last_sync)
-            }
-            for u in users
-        ]
-    }), 200
+        return jsonify({
+            "recent_sync": [
+                {
+                    "id": u.id,
+                    "name": u.name,
+                    "email": u.email or "-",
+                    "phone": u.phone or "-",
+                    "is_active": u.is_active,
+                    "last_sync": iso(u.last_sync)
+                }
+                for u in users
+            ]
+        }), 200
+    except Exception as e:
+        print(f"Error in recent_sync: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 # =========================================================
@@ -104,30 +109,34 @@ def recent_sync():
 @admin_dashboard_bp.route("/user-logs", methods=["GET"])
 @jwt_required()
 def user_logs():
-    if not admin_required():
-        return jsonify({"error": "Admin only"}), 403
+    try:
+        if not admin_required():
+            return jsonify({"error": "Admin only"}), 403
 
-    admin_id = int(get_jwt_identity())
+        admin_id = int(get_jwt_identity())
 
-    logs = (
-        db.session.query(ActivityLog, User)
-        .join(User, User.id == ActivityLog.target_id)
-        .filter(User.admin_id == admin_id)
-        .order_by(ActivityLog.timestamp.desc())
-        .limit(20)
-        .all()
-    )
+        logs = (
+            db.session.query(ActivityLog, User)
+            .join(User, User.id == ActivityLog.target_id)
+            .filter(User.admin_id == admin_id)
+            .order_by(ActivityLog.timestamp.desc())
+            .limit(20)
+            .all()
+        )
 
-    return jsonify({
-        "logs": [
-            {
-                "user_name": u.name,
-                "action": log.action,
-                "timestamp": iso(log.timestamp)
-            }
-            for log, u in logs
-        ]
-    }), 200
+        return jsonify({
+            "logs": [
+                {
+                    "user_name": u.name,
+                    "action": log.action,
+                    "timestamp": iso(log.timestamp)
+                }
+                for log, u in logs
+            ]
+        }), 200
+    except Exception as e:
+        print(f"Error in user_logs: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 # =========================================================
