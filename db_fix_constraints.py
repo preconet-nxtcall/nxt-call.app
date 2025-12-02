@@ -67,4 +67,27 @@ with app.app_context():
         db.session.rollback()
         print(f"⚠️ Could not add constraint to attendances: {e}")
 
+    # 3. Add missing 'extra_data' column to activity_logs
+    try:
+        # Check if column exists
+        check_col_sql = text("""
+            SELECT count(*)
+            FROM information_schema.columns
+            WHERE table_name='activity_logs' AND column_name='extra_data'
+        """)
+        result = db.session.execute(check_col_sql).scalar()
+
+        if result == 0:
+            print("Adding missing column 'extra_data' to activity_logs...")
+            sql = text("ALTER TABLE activity_logs ADD COLUMN extra_data TEXT")
+            db.session.execute(sql)
+            db.session.commit()
+            print("✅ Column 'extra_data' added to activity_logs.")
+        else:
+            print("ℹ️ Column 'extra_data' already exists in activity_logs.")
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"⚠️ Could not add column to activity_logs: {e}")
+
     print("🏁 Database fixes completed.")
