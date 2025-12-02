@@ -12,21 +12,6 @@ def ts_to_datetime(value):
     """Convert milliseconds timestamp safely."""
     if not value:
         return None
-```
-# app/routes/attendance.py
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.models import db, Attendance
-from datetime import datetime
-import uuid
-
-bp = Blueprint("attendance", __name__, url_prefix="/api/attendance")
-
-
-def ts_to_datetime(value):
-    """Convert milliseconds timestamp safely."""
-    if not value:
-        return None
     try:
         return datetime.fromtimestamp(int(value) / 1000)
     except:
@@ -102,4 +87,3 @@ def sync_attendance():
         db.session.rollback()
         print(e)
         return jsonify({"error": "Internal server error", "detail": str(e)}), 500
-```
