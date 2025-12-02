@@ -92,12 +92,6 @@ def all_call_history():
                 "user_name": user.name,
                 "phone_number": rec.phone_number,
                 "formatted_number": rec.formatted_number,
-                "contact_name": rec.contact_name,
-                "call_type": rec.call_type,
-                "duration": rec.duration,
-                "timestamp": rec.timestamp.isoformat() if rec.timestamp else None,
-                "created_at": rec.created_at.isoformat() if rec.created_at else None,
-            })
 # app/routes/admin_all_call_history.py
 
 from flask import Blueprint, request, jsonify
@@ -198,7 +192,6 @@ def all_call_history():
                 "timestamp": rec.timestamp.isoformat() if rec.timestamp else None,
                 "created_at": rec.created_at.isoformat() if rec.created_at else None,
             })
-
         return jsonify({
             "call_history": data,
             "meta": {
