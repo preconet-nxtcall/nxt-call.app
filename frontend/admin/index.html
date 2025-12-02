@@ -644,7 +644,6 @@
 
     // Keep existing filter logic...
     function initializeFilters() {
-      // ... (Same as before, just ensuring IDs match)
       // Users
       const userSearch = document.getElementById('userSearchInput');
       const userStatus = document.getElementById('userStatusFilter');
@@ -681,7 +680,17 @@
     }
 
     function filterUsers() {
-    };
+      const search = document.getElementById('userSearchInput').value.toLowerCase();
+      const status = document.getElementById('userStatusFilter').value;
+      if (usersManager?.loadUsers) usersManager.loadUsers({ search, status });
+    }
+
+    function filterCalls() {
+      const search = document.getElementById('callSearchInput').value;
+      const type = document.getElementById('callTypeFilter').value;
+      if (callHistoryManager?.loadCalls) {
+        callHistoryManager.loadCalls(null, 1, 50, "", "", search, type === 'all' ? '' : type);
+      }
     }
 
     // Form Submit
