@@ -100,7 +100,7 @@ def recent_sync():
         }), 200
     except Exception as e:
         print(f"Error in recent_sync: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 400
 
 
 # =========================================================
@@ -136,7 +136,7 @@ def user_logs():
         }), 200
     except Exception as e:
         print(f"Error in user_logs: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 400
 
 
 # =========================================================
