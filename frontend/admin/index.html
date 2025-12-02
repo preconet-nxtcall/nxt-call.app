@@ -90,91 +90,464 @@
       display: block;
     }
 
-    <div id="overlay" aria-hidden="true"></div><div class="flex h-screen overflow-hidden">< !-- SIDEBAR --><aside id="sidebar" class="w-64 bg-gray-900 text-white flex flex-col shadow-2xl">< !-- Logo Area --><div class="h-16 flex items-center px-6 border-b border-gray-800 bg-gray-900"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/30"><i class="fas fa-phone-alt text-white text-sm"></i></div><div><h1 class="text-lg font-bold tracking-tight">CallManager<span class="text-blue-500">Pro</span></h1></div></div><button id="closeSidebar" class="lg:hidden ml-auto text-gray-400 hover:text-white"><i class="fas fa-times"></i></button></div>< !-- Navigation --><nav class="flex-1 px-3 py-6 space-y-1 overflow-y-auto"><p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Analytics</p><a id="menuDashboard"
-    class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg bg-blue-600 text-white shadow-md cursor-pointer"><i class="fas fa-chart-pie w-6 text-center text-blue-200 group-hover:text-white transition-colors"></i><span class="ml-2">Dashboard</span></a><a id="menuCallAnalytics"
-    class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer"><i class="fas fa-chart-bar w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i><span class="ml-2">Call Analytics</span></a><a id="menuPerformance"
-    class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer"><i class="fas fa-chart-line w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i><span class="ml-2">Performance</span></a><p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2">Management</p><a id="menuUsers"
-    class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer"><i class="fas fa-users w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i><span class="ml-2">Users</span></a><a id="menuCreateUser"
-    class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer"><i class="fas fa-user-plus w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i><span class="ml-2">Create User</span></a><a id="menuAttendance"
-    class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer"><i class="fas fa-calendar-check w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i><span class="ml-2">Attendance</span></a><a id="menuCallHistory"
-    class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer"><i class="fas fa-history w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i><span class="ml-2">Call History</span></a></nav>< !-- User Profile / Logout --><div class="p-4 border-t border-gray-800 bg-gray-900"><div class="flex items-center gap-3 mb-3"><div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-md">AD </div><div class="flex-1 min-w-0"><p class="text-sm font-medium text-white truncate">Admin User</p><p class="text-xs text-gray-500 truncate">admin@example.com</p></div></div><button id="logoutBtn"
-    class="w-full flex items-center justify-center px-4 py-2 border border-gray-700 rounded-lg shadow-sm text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700 hover:text-white transition-colors"><i class="fas fa-sign-out-alt mr-2"></i>Sign out </button></div></aside>< !-- MAIN CONTENT --><main id="mainContent" class="flex-1 overflow-y-auto bg-gray-50 relative">< !-- Header --><header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30"><div class="px-6 py-4 flex items-center justify-between"><div class="flex items-center gap-4"><button id="openSidebar" class="lg:hidden text-gray-500 hover:text-gray-700 p-1"><i class="fas fa-bars text-xl"></i></button><div><h2 id="pageTitle" class="text-xl font-bold text-gray-900">Dashboard</h2><p id="pageSubtitle" class="text-xs text-gray-500 mt-0.5">Real-time overview & insights</p></div></div><div class="flex items-center gap-4"><button class="p-2 text-gray-400 hover:text-gray-600 transition-colors relative"><i class="fas fa-bell"></i><span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span></button><div class="h-8 w-px bg-gray-200 mx-1"></div><div class="text-right hidden sm:block"><p class="text-xs font-medium text-gray-900" id="currentDate">Loading...</p></div></div></div></header><div class="p-6 lg:p-8 max-w-7xl mx-auto">< !-- DASHBOARD SECTION --><section id="sectionDashboard" class="space-y-6">< !-- Stats Grid --><div id="stats-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">< !-- Content injected by JS --></div>< !-- Main Charts Row --><div class="grid grid-cols-1 lg:grid-cols-3 gap-6">< !-- Performance Chart --><div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover-card"><div class="flex items-center justify-between mb-6"><div><h3 class="text-lg font-bold text-gray-900">Call Volume Trend</h3><p class="text-sm text-gray-500">Calls over the last 7 days</p></div><select class="text-sm border-gray-200 rounded-lg text-gray-500 focus:ring-blue-500 focus:border-blue-500 p-1.5 bg-gray-50 border"><option>Last 7 Days</option><option>Last 30 Days</option></select></div><div class="h-72 w-full"><canvas id="performanceChart"></canvas></div></div>< !-- Recent Activity --><div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover-card flex flex-col"><h3 class="text-lg font-bold text-gray-900 mb-4">Recent Activity</h3><div id="user-logs-container" class="flex-1 overflow-y-auto space-y-4 pr-2 max-h-[300px]">< !-- Content injected by JS --></div></div></div>< !-- Secondary Row --><div class="grid grid-cols-1 lg:grid-cols-2 gap-6">< !-- Sync Status --><div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover-card"><h3 class="text-lg font-bold text-gray-900 mb-4">Sync Status</h3><div id="recent-sync-list" class="space-y-3">< !-- Content injected by JS --></div></div></div></section>< !-- USERS SECTION --><section id="sectionUsers" class="hidden-section space-y-6"><div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"><div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4"><h3 class="text-lg font-bold text-gray-900">User Management</h3><div class="flex gap-3"><div class="relative"><i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i><input id="userSearchInput" type="text" placeholder="Search users..."
-    class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:w-64"></div><select id="userStatusFilter"
-    class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="all">All Status</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div></div><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold"><tr><th class="px-6 py-4">User</th><th class="px-6 py-4">Contact</th><th class="px-6 py-4">Performance</th><th class="px-6 py-4">Status</th><th class="px-6 py-4 text-right">Actions</th></tr></thead><tbody id="usersTableBody" class="divide-y divide-gray-100 bg-white">< !-- Content injected by JS --></tbody></table></div></div></section>< !-- CREATE USER SECTION --><section id="sectionCreateUser" class="hidden-section max-w-2xl mx-auto"><div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8"><div class="mb-8 text-center"><div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600"><i class="fas fa-user-plus text-xl"></i></div><h3 class="text-2xl font-bold text-gray-900">Create New User</h3><p class="text-gray-500">Add a new team member to the system</p></div><form id="createUserForm" class="space-y-6"><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label><input id="userName" type="text"
-    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-    required placeholder="John Doe"></div><div><label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label><input id="userEmail" type="email"
-    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-    required placeholder="john@example.com"></div></div><div><label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label><input id="userPhone" type="tel"
-    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-    placeholder="+1 (555) 000-0000"></div><div><label class="block text-sm font-medium text-gray-700 mb-2">Password</label><input id="userPassword" type="password"
-    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-    required placeholder="••••••••"></div><div class="pt-4"><button type="submit"
-    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow-md hover:shadow-lg transition-all transform active:scale-[0.98]">Create Account </button></div></form></div></section>< !-- ATTENDANCE SECTION --><section id="sectionAttendance" class="hidden-section space-y-6"><div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"><div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4"><h3 class="text-lg font-bold text-gray-900">Attendance Records</h3><div class="flex gap-2 bg-gray-100 p-1 rounded-lg"><button id="attendanceToday"
-    class="px-4 py-1.5 rounded-md text-sm font-medium bg-white text-gray-900 shadow-sm transition-all">Today</button><button id="attendanceWeek"
-    class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-gray-900 transition-all">Week</button><button id="attendanceMonth"
-    class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-gray-900 transition-all">Month</button></div></div><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold"><tr><th class="px-6 py-4">User</th><th class="px-6 py-4">Check In</th><th class="px-6 py-4">Check Out</th><th class="px-6 py-4">Status</th></tr></thead><tbody id="attendance-table-body" class="divide-y divide-gray-100 bg-white">< !-- Content injected by JS --></tbody></table></div></div></section>< !-- CALL HISTORY SECTION --><section id="sectionCallHistory" class="hidden-section space-y-6"><div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6"><h3 class="text-lg font-bold text-gray-900">Call Logs</h3><div class="flex gap-3"><div class="relative"><i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i><input id="callSearchInput" type="text" placeholder="Search logs..."
-    class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"></div><select id="callTypeFilter"
-    class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="all">All Types</option><option value="incoming">Incoming</option><option value="outgoing">Outgoing</option><option value="missed">Missed</option></select></div></div><div id="call-history-container" class="space-y-2">< !-- Content injected by JS --></div></div></section>< !-- CALL ANALYTICS SECTION --><section id="sectionCallAnalytics" class="hidden-section space-y-6"><div id="call-analytics-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">< !-- Content injected by JS --></div><div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><h3 class="text-lg font-bold text-gray-900 mb-6">Call Trends Analysis</h3><div class="h-80"><canvas id="call-trend-canvas"></canvas></div></div><div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><h3 class="text-lg font-bold text-gray-900 mb-6">User Performance Summary</h3><div id="call-analytics-table-container">< !-- Content injected by JS --></div></div></section>< !-- PERFORMANCE SECTION --><section id="sectionPerformance" class="hidden-section space-y-6"><div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex justify-between items-center"><h3 class="text-lg font-bold text-gray-900">Team Performance Ranking</h3><select id="performanceSort"
-    class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="desc">Highest Score First</option><option value="asc">Lowest Score First</option></select></div><div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><div class="h-80"><canvas id="performanceBarCanvas"></canvas></div></div><div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"><table class="w-full text-left text-sm"><thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold"><tr><th class="px-6 py-4">Rank</th><th class="px-6 py-4">Team Member</th><th class="px-6 py-4">Efficiency Score</th><th class="px-6 py-4">Details</th></tr></thead><tbody id="performanceTableBody" class="divide-y divide-gray-100 bg-white">< !-- Content injected by JS --></tbody></table></div></section></div></main></div><div id="notificationArea" class="fixed top-4 right-4 z-50 space-y-2"></div>< !-- Scripts --><script src="https://cdn.jsdelivr.net/npm/chart.js"></script><script src="/admin/js/auth.js"></script><script src="/admin/js/dashboard.js"></script><script src="/admin/js/users.js"></script><script src="/admin/js/create_user.js"></script><script src="/admin/js/attendance.js"></script><script src="/admin/js/call_history.js"></script><script src="/admin/js/call_analytics.js"></script><script src="/admin/js/performance.js"></script><script src="/admin/js/admin.js"></script><script> // Set current date
-
-    const dateOptions= {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    /* Card Hover Effects */
+    .hover-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
-    ;
-    document.getElementById('currentDate').textContent=new Date().toLocaleDateString('en-US', dateOptions);
+    .hover-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Utility for hiding sections */
+    .hidden-section {
+      display: none !important;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800 antialiased">
+
+  <div id="overlay" aria-hidden="true"></div>
+
+  <div class="flex h-screen overflow-hidden">
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="w-64 bg-gray-900 text-white flex flex-col shadow-2xl">
+      <!-- Logo Area -->
+      <div class="h-16 flex items-center px-6 border-b border-gray-800 bg-gray-900">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/30">
+            <i class="fas fa-phone-alt text-white text-sm"></i>
+          </div>
+          <div>
+            <h1 class="text-lg font-bold tracking-tight">CallManager<span class="text-blue-500">Pro</span></h1>
+          </div>
+        </div>
+        <button id="closeSidebar" class="lg:hidden ml-auto text-gray-400 hover:text-white">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+        <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Analytics</p>
+
+        <a id="menuDashboard"
+          class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg bg-blue-600 text-white shadow-md cursor-pointer">
+          <i class="fas fa-chart-pie w-6 text-center text-blue-200 group-hover:text-white transition-colors"></i>
+          <span class="ml-2">Dashboard</span>
+        </a>
+
+        <a id="menuCallAnalytics"
+          class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer">
+          <i class="fas fa-chart-bar w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i>
+          <span class="ml-2">Call Analytics</span>
+        </a>
+
+        <a id="menuPerformance"
+          class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer">
+          <i class="fas fa-chart-line w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i>
+          <span class="ml-2">Performance</span>
+        </a>
+
+        <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2">Management</p>
+
+        <a id="menuUsers"
+          class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer">
+          <i class="fas fa-users w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i>
+          <span class="ml-2">Users</span>
+        </a>
+
+        <a id="menuCreateUser"
+          class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer">
+          <i class="fas fa-user-plus w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i>
+          <span class="ml-2">Create User</span>
+        </a>
+
+        <a id="menuAttendance"
+          class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer">
+          <i class="fas fa-calendar-check w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i>
+          <span class="ml-2">Attendance</span>
+        </a>
+
+        <a id="menuCallHistory"
+          class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer">
+          <i class="fas fa-history w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i>
+          <span class="ml-2">Call History</span>
+        </a>
+      </nav>
+
+      <!-- User Profile / Logout -->
+      <div class="p-4 border-t border-gray-800 bg-gray-900">
+        <div class="flex items-center gap-3 mb-3">
+          <div
+            class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-md">
+            AD
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-white truncate">Admin User</p>
+            <p class="text-xs text-gray-500 truncate">admin@example.com</p>
+          </div>
+        </div>
+        <button id="logoutBtn"
+          class="w-full flex items-center justify-center px-4 py-2 border border-gray-700 rounded-lg shadow-sm text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700 hover:text-white transition-colors">
+          <i class="fas fa-sign-out-alt mr-2"></i> Sign out
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main id="mainContent" class="flex-1 overflow-y-auto bg-gray-50 relative">
+
+      <!-- Header -->
+      <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+        <div class="px-6 py-4 flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <button id="openSidebar" class="lg:hidden text-gray-500 hover:text-gray-700 p-1">
+              <i class="fas fa-bars text-xl"></i>
+            </button>
+            <div>
+              <h2 id="pageTitle" class="text-xl font-bold text-gray-900">Dashboard</h2>
+              <p id="pageSubtitle" class="text-xs text-gray-500 mt-0.5">Real-time overview & insights</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <button class="p-2 text-gray-400 hover:text-gray-600 transition-colors relative">
+              <i class="fas fa-bell"></i>
+              <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+            </button>
+            <div class="h-8 w-px bg-gray-200 mx-1"></div>
+            <div class="text-right hidden sm:block">
+              <p class="text-xs font-medium text-gray-900" id="currentDate">Loading...</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="p-6 lg:p-8 max-w-7xl mx-auto">
+
+        <!-- DASHBOARD SECTION -->
+        <section id="sectionDashboard" class="space-y-6">
+
+          <!-- Stats Grid -->
+          <div id="stats-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Content injected by JS -->
+          </div>
+
+          <!-- Main Charts Row -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Performance Chart -->
+            <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover-card">
+              <div class="flex items-center justify-between mb-6">
+                <div>
+                  <h3 class="text-lg font-bold text-gray-900">Call Volume Trend</h3>
+                  <p class="text-sm text-gray-500">Calls over the last 7 days</p>
+                </div>
+                <select
+                  class="text-sm border-gray-200 rounded-lg text-gray-500 focus:ring-blue-500 focus:border-blue-500 p-1.5 bg-gray-50 border">
+                  <option>Last 7 Days</option>
+                  <option>Last 30 Days</option>
+                </select>
+              </div>
+              <div class="h-72 w-full">
+                <canvas id="performanceChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover-card flex flex-col">
+              <h3 class="text-lg font-bold text-gray-900 mb-4">Recent Activity</h3>
+              <div id="user-logs-container" class="flex-1 overflow-y-auto space-y-4 pr-2 max-h-[300px]">
+                <!-- Content injected by JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Secondary Row -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Sync Status -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover-card">
+              <h3 class="text-lg font-bold text-gray-900 mb-4">Sync Status</h3>
+              <div id="recent-sync-list" class="space-y-3">
+                <!-- Content injected by JS -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- USERS SECTION -->
+        <section id="sectionUsers" class="hidden-section space-y-6">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h3 class="text-lg font-bold text-gray-900">User Management</h3>
+              <div class="flex gap-3">
+                <div class="relative">
+                  <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                  <input id="userSearchInput" type="text" placeholder="Search users..."
+                    class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:w-64">
+                </div>
+                <select id="userStatusFilter"
+                  class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold">
+                  <tr>
+                    <th class="px-6 py-4">User</th>
+                    <th class="px-6 py-4">Contact</th>
+                    <th class="px-6 py-4">Performance</th>
+                    <th class="px-6 py-4">Status</th>
+                    <th class="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody" class="divide-y divide-gray-100 bg-white">
+                  <!-- Content injected by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- CREATE USER SECTION -->
+        <section id="sectionCreateUser" class="hidden-section max-w-2xl mx-auto">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+            <div class="mb-8 text-center">
+              <div
+                class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
+                <i class="fas fa-user-plus text-xl"></i>
+              </div>
+              <h3 class="text-2xl font-bold text-gray-900">Create New User</h3>
+              <p class="text-gray-500">Add a new team member to the system</p>
+            </div>
+
+            <form id="createUserForm" class="space-y-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                  <input id="userName" type="text"
+                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    required placeholder="John Doe">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                  <input id="userEmail" type="email"
+                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    required placeholder="john@example.com">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                <input id="userPhone" type="tel"
+                  class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  placeholder="+1 (555) 000-0000">
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <input id="userPassword" type="password"
+                  class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  required placeholder="••••••••">
+              </div>
+
+              <div class="pt-4">
+                <button type="submit"
+                  class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow-md hover:shadow-lg transition-all transform active:scale-[0.98]">
+                  Create Account
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- ATTENDANCE SECTION -->
+        <section id="sectionAttendance" class="hidden-section space-y-6">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h3 class="text-lg font-bold text-gray-900">Attendance Records</h3>
+              <div class="flex gap-2 bg-gray-100 p-1 rounded-lg">
+                <button id="attendanceToday"
+                  class="px-4 py-1.5 rounded-md text-sm font-medium bg-white text-gray-900 shadow-sm transition-all">Today</button>
+                <button id="attendanceWeek"
+                  class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-gray-900 transition-all">Week</button>
+                <button id="attendanceMonth"
+                  class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-gray-900 transition-all">Month</button>
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold">
+                  <tr>
+                    <th class="px-6 py-4">User</th>
+                    <th class="px-6 py-4">Check In</th>
+                    <th class="px-6 py-4">Check Out</th>
+                    <th class="px-6 py-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="attendance-table-body" class="divide-y divide-gray-100 bg-white">
+                  <!-- Content injected by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- CALL HISTORY SECTION -->
+        <section id="sectionCallHistory" class="hidden-section space-y-6">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <h3 class="text-lg font-bold text-gray-900">Call Logs</h3>
+              <div class="flex gap-3">
+                <div class="relative">
+                  <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                  <input id="callSearchInput" type="text" placeholder="Search logs..."
+                    class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64">
+                </div>
+                <select id="callTypeFilter"
+                  class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="all">All Types</option>
+                  <option value="incoming">Incoming</option>
+                  <option value="outgoing">Outgoing</option>
+                  <option value="missed">Missed</option>
+                </select>
+              </div>
+            </div>
+            <div id="call-history-container" class="space-y-2">
+              <!-- Content injected by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- CALL ANALYTICS SECTION -->
+        <section id="sectionCallAnalytics" class="hidden-section space-y-6">
+          <div id="call-analytics-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Content injected by JS -->
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-6">Call Trends Analysis</h3>
+            <div class="h-80">
+              <canvas id="call-trend-canvas"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-6">User Performance Summary</h3>
+            <div id="call-analytics-table-container">
+              <!-- Content injected by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- PERFORMANCE SECTION -->
+        <section id="sectionPerformance" class="hidden-section space-y-6">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-gray-900">Team Performance Ranking</h3>
+            <select id="performanceSort"
+              class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="desc">Highest Score First</option>
+              <option value="asc">Lowest Score First</option>
+            </select>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div class="h-80">
+              <canvas id="performanceBarCanvas"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold">
+                <tr>
+                  <th class="px-6 py-4">Rank</th>
+                  <th class="px-6 py-4">Team Member</th>
+                  <th class="px-6 py-4">Efficiency Score</th>
+                  <th class="px-6 py-4">Details</th>
+                </tr>
+              </thead>
+              <tbody id="performanceTableBody" class="divide-y divide-gray-100 bg-white">
+                <!-- Content injected by JS -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <div id="notificationArea" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/admin/js/auth.js"></script>
+  <script src="/admin/js/dashboard.js"></script>
+  <script src="/admin/js/users.js"></script>
+  <script src="/admin/js/create_user.js"></script>
+  <script src="/admin/js/attendance.js"></script>
+  <script src="/admin/js/call_history.js"></script>
+  <script src="/admin/js/call_analytics.js"></script>
+  <script src="/admin/js/performance.js"></script>
+  <script src="/admin/js/admin.js"></script>
+
+  <script>
+    // Set current date
+    const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', dateOptions);
 
     // Initialize Managers
-    window.dashboard=window.dashboard || new DashboardManager();
-    window.usersManager=window.usersManager || new UsersManager();
-    window.attendanceManager=window.attendanceManager || new AttendanceManager();
-    window.callHistoryManager=window.callHistoryManager || new CallHistoryManager();
-    window.callAnalyticsManager=window.callAnalyticsManager || new CallAnalyticsManager();
-    window.performanceManager=window.performanceManager || new PerformanceManager();
+    window.dashboard = window.dashboard || new DashboardManager();
+    window.usersManager = window.usersManager || new UsersManager();
+    window.attendanceManager = window.attendanceManager || new AttendanceManager();
+    window.callHistoryManager = window.callHistoryManager || new CallHistoryManager();
+    window.callAnalyticsManager = window.callAnalyticsManager || new CallAnalyticsManager();
+    window.performanceManager = window.performanceManager || new PerformanceManager();
 
     // DOM Elements
-    const menuItems= {
+    const menuItems = {
       dashboard: document.getElementById('menuDashboard'),
-        users: document.getElementById('menuUsers'),
-        createUser: document.getElementById('menuCreateUser'),
-        attendance: document.getElementById('menuAttendance'),
-        callHistory: document.getElementById('menuCallHistory'),
-        callAnalytics: document.getElementById('menuCallAnalytics'),
-        performance: document.getElementById('menuPerformance'),
-    }
+      users: document.getElementById('menuUsers'),
+      createUser: document.getElementById('menuCreateUser'),
+      attendance: document.getElementById('menuAttendance'),
+      callHistory: document.getElementById('menuCallHistory'),
+      callAnalytics: document.getElementById('menuCallAnalytics'),
+      performance: document.getElementById('menuPerformance'),
+    };
 
-    ;
-
-    const sections= {
+    const sections = {
       dashboard: document.getElementById('sectionDashboard'),
-        users: document.getElementById('sectionUsers'),
-        createUser: document.getElementById('sectionCreateUser'),
-        attendance: document.getElementById('sectionAttendance'),
-        callHistory: document.getElementById('sectionCallHistory'),
-        callAnalytics: document.getElementById('sectionCallAnalytics'),
-        performance: document.getElementById('sectionPerformance'),
-    }
+      users: document.getElementById('sectionUsers'),
+      createUser: document.getElementById('sectionCreateUser'),
+      attendance: document.getElementById('sectionAttendance'),
+      callHistory: document.getElementById('sectionCallHistory'),
+      callAnalytics: document.getElementById('sectionCallAnalytics'),
+      performance: document.getElementById('sectionPerformance'),
+    };
 
-    ;
-
-    const pageTitle=document.getElementById('pageTitle');
-    const pageSubtitle=document.getElementById('pageSubtitle');
+    const pageTitle = document.getElementById('pageTitle');
+    const pageSubtitle = document.getElementById('pageSubtitle');
 
     // Helper to hide all sections
     function hideAll() {
-      Object.values(sections).forEach(el=> el?.classList.add('hidden-section'));
-
-      Object.values(menuItems).forEach(el=> {
-          el?.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
-          el?.classList.add('text-gray-300', 'hover:bg-gray-800', 'hover:text-white');
-          // Reset icon colors
-          const icon=el?.querySelector('i');
-
-          if (icon) {
-            icon.classList.remove('text-blue-200');
-            icon.classList.add('text-gray-400');
-          }
-        });
+      Object.values(sections).forEach(el => el?.classList.add('hidden-section'));
+      Object.values(menuItems).forEach(el => {
+        el?.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+        el?.classList.add('text-gray-300', 'hover:bg-gray-800', 'hover:text-white');
+        // Reset icon colors
+        const icon = el?.querySelector('i');
+        if (icon) {
+          icon.classList.remove('text-blue-200');
+          icon.classList.add('text-gray-400');
+        }
+      });
     }
 
     // Helper to activate menu item
@@ -182,22 +555,20 @@
       hideAll();
       sections[key]?.classList.remove('hidden-section');
 
-      const btn=menuItems[key];
-
+      const btn = menuItems[key];
       if (btn) {
         btn.classList.remove('text-gray-300', 'hover:bg-gray-800', 'hover:text-white');
         btn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
 
-        const icon=btn.querySelector('i');
-
+        const icon = btn.querySelector('i');
         if (icon) {
           icon.classList.remove('text-gray-400');
           icon.classList.add('text-blue-200');
         }
       }
 
-      if (pageTitle) pageTitle.textContent=title;
-      if (pageSubtitle) pageSubtitle.textContent=subtitle;
+      if (pageTitle) pageTitle.textContent = title;
+      if (pageSubtitle) pageSubtitle.textContent = subtitle;
 
       // Close sidebar on mobile
       if (window.innerWidth < 1024) {
@@ -207,135 +578,101 @@
     }
 
     // Event Listeners
-    menuItems.dashboard.onclick=()=> {
+    menuItems.dashboard.onclick = () => {
       activateMenu('dashboard', 'Dashboard', 'Real-time overview & insights');
       if (dashboard?.loadStats) dashboard.loadStats();
-    }
+    };
 
-    ;
-
-    menuItems.users.onclick=()=> {
+    menuItems.users.onclick = () => {
       activateMenu('users', 'User Management', 'Manage team members & accounts');
       if (usersManager?.loadUsers) usersManager.loadUsers();
-    }
+    };
 
-    ;
-
-    menuItems.createUser.onclick=()=> {
+    menuItems.createUser.onclick = () => {
       activateMenu('createUser', 'Create User', 'Add a new member to the team');
-    }
+    };
 
-    ;
-
-    menuItems.attendance.onclick=()=> {
+    menuItems.attendance.onclick = () => {
       activateMenu('attendance', 'Attendance', 'Track team check-ins & check-outs');
       if (attendanceManager?.loadAttendance) attendanceManager.loadAttendance();
-    }
+    };
 
-    ;
-
-    menuItems.callHistory.onclick=()=> {
+    menuItems.callHistory.onclick = () => {
       activateMenu('callHistory', 'Call History', 'Detailed logs of all calls');
       if (callHistoryManager?.loadCalls) callHistoryManager.loadCalls();
-    }
+    };
 
-    ;
-
-    menuItems.callAnalytics.onclick=()=> {
+    menuItems.callAnalytics.onclick = () => {
       activateMenu('callAnalytics', 'Call Analytics', 'Deep dive into call metrics');
       if (callAnalyticsManager?.loadAnalytics) callAnalyticsManager.loadAnalytics();
-    }
+    };
 
-    ;
-
-    menuItems.performance.onclick=()=> {
+    menuItems.performance.onclick = () => {
       activateMenu('performance', 'Performance', 'Team efficiency rankings');
       if (performanceManager?.loadPerformance) performanceManager.loadPerformance();
-    }
-
-    ;
+    };
 
     // Sidebar Toggles
-    document.getElementById('openSidebar')?.addEventListener('click', ()=> {
-        document.getElementById('sidebar')?.classList.add('active');
-        document.getElementById('overlay')?.classList.add('active');
-      });
-
-    document.getElementById('closeSidebar')?.addEventListener('click', ()=> {
-        document.getElementById('sidebar')?.classList.remove('active');
-        document.getElementById('overlay')?.classList.remove('active');
-      });
-
-    document.getElementById('overlay')?.addEventListener('click', ()=> {
-        document.getElementById('sidebar')?.classList.remove('active');
-        document.getElementById('overlay')?.classList.remove('active');
-      });
+    document.getElementById('openSidebar')?.addEventListener('click', () => {
+      document.getElementById('sidebar')?.classList.add('active');
+      document.getElementById('overlay')?.classList.add('active');
+    });
+    document.getElementById('closeSidebar')?.addEventListener('click', () => {
+      document.getElementById('sidebar')?.classList.remove('active');
+      document.getElementById('overlay')?.classList.remove('active');
+    });
+    document.getElementById('overlay')?.addEventListener('click', () => {
+      document.getElementById('sidebar')?.classList.remove('active');
+      document.getElementById('overlay')?.classList.remove('active');
+    });
 
     // Logout
-    document.getElementById('logoutBtn')?.addEventListener('click', ()=> auth.logout());
+    document.getElementById('logoutBtn')?.addEventListener('click', () => auth.logout());
 
     // Init
-    document.addEventListener('DOMContentLoaded', ()=> {
-        if ( !auth.getToken()) {
-          window.location.href="/admin/login.html";
-          return;
-        }
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!auth.getToken()) {
+        window.location.href = "/admin/login.html";
+        return;
+      }
+      // Trigger default load
+      menuItems.dashboard.click();
 
-        // Trigger default load
-        menuItems.dashboard.click();
-
-        // Initialize filters (keep existing logic)
-        initializeFilters();
-      });
+      // Initialize filters (keep existing logic)
+      initializeFilters();
+    });
 
     // Keep existing filter logic...
     function initializeFilters() {
       // ... (Same as before, just ensuring IDs match)
       // Users
-      const userSearch=document.getElementById('userSearchInput');
-      const userStatus=document.getElementById('userStatusFilter');
-      if (userSearch) userSearch.addEventListener('input', debounce(()=> filterUsers(), 300));
+      const userSearch = document.getElementById('userSearchInput');
+      const userStatus = document.getElementById('userStatusFilter');
+      if (userSearch) userSearch.addEventListener('input', debounce(() => filterUsers(), 300));
       if (userStatus) userStatus.addEventListener('change', filterUsers);
 
       // Calls
-      const callSearch=document.getElementById('callSearchInput');
-      const callType=document.getElementById('callTypeFilter');
-      if (callSearch) callSearch.addEventListener('input', debounce(()=> filterCalls(), 300));
+      const callSearch = document.getElementById('callSearchInput');
+      const callType = document.getElementById('callTypeFilter');
+      if (callSearch) callSearch.addEventListener('input', debounce(() => filterCalls(), 300));
       if (callType) callType.addEventListener('change', filterCalls);
 
       // Attendance Buttons
-      const attToday=document.getElementById('attendanceToday');
-      const attWeek=document.getElementById('attendanceWeek');
-      const attMonth=document.getElementById('attendanceMonth');
+      const attToday = document.getElementById('attendanceToday');
+      const attWeek = document.getElementById('attendanceWeek');
+      const attMonth = document.getElementById('attendanceMonth');
 
-      if (attToday) attToday.onclick=function () {
-        setAttFilter(this, 'today');
-      }
-
-      ;
-
-      if (attWeek) attWeek.onclick=function () {
-        setAttFilter(this, 'week');
-      }
-
-      ;
-
-      if (attMonth) attMonth.onclick=function () {
-        setAttFilter(this, 'month');
-      }
-
-      ;
+      if (attToday) attToday.onclick = function () { setAttFilter(this, 'today'); };
+      if (attWeek) attWeek.onclick = function () { setAttFilter(this, 'week'); };
+      if (attMonth) attMonth.onclick = function () { setAttFilter(this, 'month'); };
     }
 
     function setAttFilter(btn, range) {
-
       // Reset all
-      [document.getElementById('attendanceToday'),
-      document.getElementById('attendanceWeek'),
-      document.getElementById('attendanceMonth')].forEach(b=> {
-          b.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
-          b.classList.add('text-gray-500', 'hover:text-gray-900');
-        });
+      [document.getElementById('attendanceToday'), document.getElementById('attendanceWeek'), document.getElementById('attendanceMonth')].forEach(b => {
+        b.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
+        b.classList.add('text-gray-500', 'hover:text-gray-900');
+      });
       // Set active
       btn.classList.remove('text-gray-500', 'hover:text-gray-900');
       btn.classList.add('bg-white', 'text-gray-900', 'shadow-sm');
@@ -344,38 +681,32 @@
     }
 
     function filterUsers() {
-      const search=document.getElementById('userSearchInput').value.toLowerCase();
-      const status=document.getElementById('userStatusFilter').value;
-
-      if (usersManager?.loadUsers) usersManager.loadUsers({
-        search, status
-      });
+      const search = document.getElementById('userSearchInput').value.toLowerCase();
+      const status = document.getElementById('userStatusFilter').value;
+      if (usersManager?.loadUsers) usersManager.loadUsers({ search, status });
     }
 
     function filterCalls() {
-      const search=document.getElementById('callSearchInput').value.toLowerCase();
-      const type=document.getElementById('callTypeFilter').value;
-
-      if (callHistoryManager?.loadCalls) callHistoryManager.loadCalls({
-        search, type
-      });
+      const search = document.getElementById('callSearchInput').value.toLowerCase();
+      const type = document.getElementById('callTypeFilter').value;
+      if (callHistoryManager?.loadCalls) callHistoryManager.loadCalls({ search, type });
     }
 
     function debounce(func, wait) {
       let timeout;
-
       return function (...args) {
         clearTimeout(timeout);
-        timeout=setTimeout(()=> func.apply(this, args), wait);
-      }
-
-      ;
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
     }
 
     // Form Submit
-    document.getElementById('createUserForm')?.addEventListener('submit', (e)=> {
-        e.preventDefault();
-        if (usersManager?.createUser) usersManager.createUser();
-      });
+    document.getElementById('createUserForm')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (usersManager?.createUser) usersManager.createUser();
+    });
 
-    </script></body></html>
+  </script>
+</body>
+
+</html>
