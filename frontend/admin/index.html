@@ -681,23 +681,7 @@
     }
 
     function filterUsers() {
-      const search = document.getElementById('userSearchInput').value.toLowerCase();
-      const status = document.getElementById('userStatusFilter').value;
-      if (usersManager?.loadUsers) usersManager.loadUsers({ search, status });
-    }
-
-    function filterCalls() {
-      const search = document.getElementById('callSearchInput').value.toLowerCase();
-      const type = document.getElementById('callTypeFilter').value;
-      if (callHistoryManager?.loadCalls) callHistoryManager.loadCalls({ search, type });
-    }
-
-    function debounce(func, wait) {
-      let timeout;
-      return function (...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-      };
+    };
     }
 
     // Form Submit
