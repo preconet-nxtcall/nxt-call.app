@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func
 from app.models import db
 
-from ..models import User, Admin, Attendance, CallHistory, ActivityLog
+from app.models import User, Admin, Attendance, CallHistory, ActivityLog
 
 admin_dashboard_bp = Blueprint("admin_dashboard", __name__, url_prefix="/api/admin")
 

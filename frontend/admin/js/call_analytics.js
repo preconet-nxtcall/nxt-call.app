@@ -7,7 +7,6 @@ class CallAnalyticsManager {
 
   async loadAnalytics() {
     try {
-      // ✅ CORRECTED: Fixed URL (removed "/summary")
       const resp = await auth.makeAuthenticatedRequest(
         "/api/admin/call-analytics"
       );
@@ -58,62 +57,59 @@ class CallAnalyticsManager {
   renderCards() {
     const container = document.getElementById("call-analytics-cards");
     if (!container) return;
-    
+
     const d = this.data || {};
 
-    // ✅ CORRECTED: Fixed data access (removed .call_types)
     const cards = [
-      { 
-        label: "Total Calls", 
-        value: d.total_calls || 0, 
-        icon: "phone", 
-        color: "blue" 
+      {
+        label: "Total Calls",
+        value: d.total_calls || 0,
+        icon: "phone",
+        color: "blue"
       },
-      { 
-        label: "Incoming", 
-        value: d.incoming || 0,  // Was: d.call_types?.incoming
-        icon: "phone-volume", 
-        color: "green" 
+      {
+        label: "Incoming",
+        value: d.incoming || 0,
+        icon: "phone-volume",
+        color: "green"
       },
-      { 
-        label: "Outgoing", 
-        value: d.outgoing || 0,  // Was: d.call_types?.outgoing
-        icon: "phone", 
-        color: "purple" 
+      {
+        label: "Outgoing",
+        value: d.outgoing || 0,
+        icon: "phone",
+        color: "purple"
       },
-      { 
-        label: "Missed", 
-        value: d.missed || 0,  // Was: d.call_types?.missed
-        icon: "phone-slash", 
-        color: "red" 
+      {
+        label: "Missed",
+        value: d.missed || 0,
+        icon: "phone-slash",
+        color: "red"
       },
-      { 
-        label: "Rejected", 
-        value: d.rejected || 0, 
-        icon: "phone-xmark", 
-        color: "orange" 
+      {
+        label: "Rejected",
+        value: d.rejected || 0,
+        icon: "phone-xmark",
+        color: "orange"
       }
     ];
 
     const colorMap = {
-      blue: "bg-blue-100 text-blue-600",
-      green: "bg-green-100 text-green-600",
-      purple: "bg-purple-100 text-purple-600",
-      red: "bg-red-100 text-red-600",
-      orange: "bg-orange-100 text-orange-600"
+      blue: "bg-blue-50 text-blue-600",
+      green: "bg-green-50 text-green-600",
+      purple: "bg-purple-50 text-purple-600",
+      red: "bg-red-50 text-red-600",
+      orange: "bg-orange-50 text-orange-600"
     };
 
     container.innerHTML = cards
       .map(card => `
-        <div class="bg-white p-4 rounded-lg shadow card-hover">
-          <div class="flex justify-between items-center">
-            <div>
-              <div class="text-xs text-gray-500">${card.label}</div>
-              <div class="text-xl font-bold">${card.value.toLocaleString()}</div>
-            </div>
-            <div class="w-12 h-12 rounded-full flex items-center justify-center ${colorMap[card.color]}">
-              <i class="fas fa-${card.icon} text-lg"></i>
-            </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover-card flex items-center gap-4 transition-all duration-200">
+          <div class="w-14 h-14 rounded-full flex items-center justify-center ${colorMap[card.color]} shadow-sm">
+            <i class="fas fa-${card.icon} text-xl"></i>
+          </div>
+          <div>
+            <div class="text-3xl font-bold text-gray-900 tracking-tight">${card.value.toLocaleString()}</div>
+            <div class="text-sm font-medium text-gray-500">${card.label}</div>
           </div>
         </div>
       `)
@@ -121,20 +117,57 @@ class CallAnalyticsManager {
   }
 
   renderTrend() {
-    const container = document.getElementById("call-trend-chart");
-    if (!container || !this.data || !this.data.daily_trend) return;
-    
+    const container = document.getElementById("call-trend-canvas");
+    if (!container) return;
+
+    // If we have a canvas, use Chart.js
+    // If it's a div (from previous code), use HTML bars
+
+    // Check if it's a canvas
+    if (container.tagName === 'CANVAS') {
+      if (this.chart) this.chart.destroy();
+
+      const trendData = this.data.daily_trend || [];
+      const labels = trendData.map(d => d.date.split('-').slice(1).join('/'));
+      const values = trendData.map(d => d.count);
+
+      this.chart = new Chart(container, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Calls',
+            data: values,
+            borderColor: '#3B82F6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: { beginAtZero: true, grid: { display: false } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+      return;
+    }
+
+    // Fallback to HTML bars if not canvas (legacy support)
     const trendData = this.data.daily_trend || [];
-    
     if (trendData.length === 0) {
       container.innerHTML = `<div class="text-gray-500 text-center p-8">No trend data available</div>`;
       return;
     }
-    
-    // If you want to implement a chart, you can use Chart.js here
-    // For now, let's create a simple HTML trend display
+
     const maxCount = Math.max(...trendData.map(d => d.count));
-    
+
     container.innerHTML = `
       <div class="bg-white p-4 rounded-lg shadow">
         <h3 class="text-lg font-semibold mb-4">Last 7 Days Trend</h3>
@@ -157,7 +190,7 @@ class CallAnalyticsManager {
   renderTable() {
     const container = document.getElementById("call-analytics-table-container");
     if (!container) return;
-    
+
     const rows = this.data?.user_summary || [];
 
     container.innerHTML = `
@@ -176,9 +209,8 @@ class CallAnalyticsManager {
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
-              ${
-                rows.length
-                  ? rows.map(row => `
+              ${rows.length
+        ? rows.map(row => `
                     <tr class="hover:bg-gray-50 transition-colors">
                       <td class="p-3 text-sm">${row.name || row.user_name || "-"}</td>
                       <td class="p-3 text-sm text-center">
@@ -209,7 +241,7 @@ class CallAnalyticsManager {
                       </td>
                     </tr>
                   `).join("")
-                  : `
+        : `
                     <tr>
                       <td colspan="7" class="p-6 text-center text-gray-500">
                         <i class="fas fa-users-slash text-3xl mb-2 text-gray-300"></i>
@@ -217,7 +249,7 @@ class CallAnalyticsManager {
                       </td>
                     </tr>
                   `
-              }
+      }
             </tbody>
           </table>
         </div>
@@ -227,16 +259,16 @@ class CallAnalyticsManager {
 
   formatDuration(seconds) {
     if (!seconds || seconds === 0) return "0s";
-    
+
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    
+
     const parts = [];
     if (hours > 0) parts.push(`${hours}h`);
     if (minutes > 0) parts.push(`${minutes}m`);
     if (secs > 0 || parts.length === 0) parts.push(`${secs}s`);
-    
+
     return parts.join(" ");
   }
 
@@ -258,9 +290,9 @@ class CallAnalyticsManager {
 const callAnalyticsManager = new CallAnalyticsManager();
 
 // Auto-start when page loads
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   callAnalyticsManager.init();
-  
+
   // Optional: Add refresh button if you have one
   const refreshBtn = document.getElementById('refresh-analytics-btn');
   if (refreshBtn) {
