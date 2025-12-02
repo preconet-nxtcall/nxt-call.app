@@ -43,15 +43,13 @@ class DashboardManager {
     ];
 
     container.innerHTML = cards.map(c => `
-      <div class="bg-white p-4 rounded shadow">
-        <div class="flex justify-between items-center">
-          <div>
-            <p class="text-sm text-gray-500">${c.title}</p>
-            <p class="text-2xl font-bold">${c.value}</p>
-          </div>
-          <div class="w-12 h-12 rounded flex items-center justify-center bg-${c.color}-100 text-${c.color}-600">
-            <i class="fas fa-${c.icon}"></i>
-          </div>
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover-card flex items-center gap-4 transition-all duration-200">
+        <div class="w-14 h-14 rounded-full flex items-center justify-center bg-${c.color}-50 text-${c.color}-600 shadow-sm">
+          <i class="fas fa-${c.icon} text-xl"></i>
+        </div>
+        <div>
+          <p class="text-3xl font-bold text-gray-900 tracking-tight">${c.value}</p>
+          <p class="text-sm font-medium text-gray-500">${c.title}</p>
         </div>
       </div>
     `).join('');
@@ -148,10 +146,10 @@ class DashboardManager {
     this.performanceChart = new Chart(canvas, {
       type: 'line',
       data: {
-        labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
         datasets: [{
           label: 'Avg Performance',
-          data: this.stats.performance_trend || [0,0,0,0,0,0,0],
+          data: this.stats.performance_trend || [0, 0, 0, 0, 0, 0, 0],
           borderColor: '#2563EB',
           tension: 0.3
         }]
