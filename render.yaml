@@ -3,7 +3,7 @@ services:
     name: call-manager-pro
     env: python
     buildCommand: ./build.sh
-    startCommand: gunicorn wsgi:app
+    startCommand: gunicorn wsgi:app --bind 0.0.0.0:10000
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
