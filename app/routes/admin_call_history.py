@@ -98,13 +98,6 @@ def all_call_history():
                 "timestamp": rec.timestamp.isoformat() if rec.timestamp else None,
                 "created_at": rec.created_at.isoformat() if rec.created_at else None,
             })
-
-        return jsonify({
-            "call_history": data,
-            "meta": {
-                "page": paginated.page,
-                "per_page": paginated.per_page,
-                "total": paginated.total,
 # app/routes/admin_all_call_history.py
 
 from flask import Blueprint, request, jsonify
