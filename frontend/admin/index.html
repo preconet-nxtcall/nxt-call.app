@@ -182,13 +182,13 @@
       <!-- User Profile / Logout -->
       <div class="p-4 border-t border-gray-800 bg-gray-900">
         <div class="flex items-center gap-3 mb-3">
-          <div
+          <div id="sidebarUserInitials"
             class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-md">
             AD
           </div>
           <div class="flex-1 min-w-0">
-            <p id="sidebar-admin-name" class="text-sm font-medium text-white truncate">Admin User</p>
-            <p id="sidebar-admin-email" class="text-xs text-gray-500 truncate">admin@example.com</p>
+            <p id="sidebarUserName" class="text-sm font-medium text-white truncate">Admin User</p>
+            <p id="sidebarUserEmail" class="text-xs text-gray-500 truncate">admin@example.com</p>
           </div>
         </div>
         <button id="logoutBtn"
@@ -298,7 +298,7 @@
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-left text-sm">
-                <thead class="bg-gray-50 text-black uppercase tracking-wider font-bold">
+                <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold">
                   <tr>
                     <th class="px-6 py-4">User</th>
                     <th class="px-6 py-4">Contact</th>
@@ -372,14 +372,18 @@
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h3 class="text-lg font-bold text-gray-900">Attendance Records</h3>
-              <div class="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
-                <input type="date" id="attendanceDateFilter"
-                  class="bg-white border-none text-sm rounded-md px-3 py-1.5 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-700">
+              <div class="flex gap-2 bg-gray-100 p-1 rounded-lg">
+                <button id="attendanceToday"
+                  class="px-4 py-1.5 rounded-md text-sm font-medium bg-white text-gray-900 shadow-sm transition-all">Today</button>
+                <button id="attendanceWeek"
+                  class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-gray-900 transition-all">Week</button>
+                <button id="attendanceMonth"
+                  class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-gray-900 transition-all">Month</button>
               </div>
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-left text-sm">
-                <thead class="bg-gray-50 text-black uppercase tracking-wider font-bold">
+                <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold">
                   <tr>
                     <th class="px-6 py-4">User</th>
                     <th class="px-6 py-4">Check In</th>
@@ -402,16 +406,6 @@
               <h3 class="text-lg font-bold text-gray-900">Call Logs</h3>
               <div class="flex gap-3">
                 <div class="relative">
-                  <select id="callUserFilter"
-                    class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2">
-                    <option value="all">All Users</option>
-                  </select>
-                </div>
-                <div class="relative">
-                  <input type="date" id="callDateFilter"
-                    class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2">
-                </div>
-                <div class="relative">
                   <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                   <input id="callSearchInput" type="text" placeholder="Search logs..."
                     class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64">
@@ -422,56 +416,146 @@
                   <option value="incoming">Incoming</option>
                   <option value="outgoing">Outgoing</option>
                   <option value="missed">Missed</option>
-                  <option value="rejected">Rejected</option>
                 </select>
               </div>
             </div>
             <div id="call-history-container" class="space-y-2">
-              <h3 class="text-lg font-bold text-gray-900">Team Performance Ranking</h3>
-              <div class="flex gap-3">
-                <div class="relative">
-                  <select id="performanceSort"
-                    class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="desc">Highest Score First</option>
-                    <option value="asc">Lowest Score First</option>
-                  </select>
+              <!-- Content injected by JS -->
+            </div>
+            <div id="call-history-pagination"></div>
+          </div>
+        </section>
+
+        <!-- CALL ANALYTICS SECTION -->
+        <section id="sectionCallAnalytics" class="hidden-section space-y-6">
+          <!-- KPI Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-medium text-gray-500">Total Calls</h3>
+                <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
+                  <i class="fas fa-phone text-lg"></i>
                 </div>
-                <div class="relative">
-                  <select id="performanceDateFilter"
-                    class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="today">Today</option>
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
-                    <option value="all">All Time</option>
-                  </select>
-                </div>
+              </div>
+              <div class="flex items-baseline">
+                <h2 id="analytics-total-calls" class="text-2xl font-bold text-gray-900">0</h2>
               </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-medium text-gray-500">Total Duration</h3>
+                <div class="p-2 bg-purple-50 rounded-lg text-purple-600">
+                  <i class="fas fa-clock text-lg"></i>
+                </div>
+              </div>
+              <div class="flex items-baseline">
+                <h2 id="analytics-total-duration" class="text-2xl font-bold text-gray-900">0s</h2>
+              </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-medium text-gray-500">Answered</h3>
+                <div class="p-2 bg-green-50 rounded-lg text-green-600">
+                  <i class="fas fa-check-circle text-lg"></i>
+                </div>
+              </div>
+              <div class="flex items-baseline">
+                <h2 id="analytics-total-answered" class="text-2xl font-bold text-gray-900">0</h2>
+              </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-medium text-gray-500">Last Sync</h3>
+                <div class="p-2 bg-orange-50 rounded-lg text-orange-600">
+                  <i class="fas fa-sync text-lg"></i>
+                </div>
+              </div>
+              <div class="flex items-baseline">
+                <h2 id="analytics-last-sync" class="text-lg font-bold text-gray-900">Never</h2>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 class="text-lg font-bold text-gray-900 mb-6">Call Activity (Last 7 Days)</h3>
               <div class="h-80">
-                <canvas id="performanceBarCanvas"></canvas>
+                <canvas id="analyticsActivityChart"></canvas>
               </div>
             </div>
-
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              <table class="w-full text-left text-sm">
-                <thead class="bg-gray-50 text-black uppercase tracking-wider font-bold">
-                  <tr>
-                    <th class="px-6 py-4">Rank</th>
-                    <th class="px-6 py-4">Team Member</th>
-                    <th class="px-6 py-4 text-center">Incoming</th>
-                    <th class="px-6 py-4 text-center">Outgoing</th>
-                    <th class="px-6 py-4 text-center">Total Calls</th>
-                    <th class="px-6 py-4 text-center">Score</th>
-                    <th class="px-6 py-4">Details</th>
-                  </tr>
-                </thead>
-                <tbody id="performanceTableBody" class="divide-y divide-gray-100 bg-white">
-                  <!-- Content injected by JS -->
-                </tbody>
-              </table>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 class="text-lg font-bold text-gray-900 mb-6">Duration by Day</h3>
+              <div class="h-80">
+                <canvas id="analyticsDurationChart"></canvas>
+              </div>
             </div>
+          </div>
+
+          <!-- Secondary Stats -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-center">
+              <p class="text-sm text-gray-500 mb-1">Outbound Calls</p>
+              <p id="analytics-outbound" class="text-xl font-bold text-gray-900">0</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-center">
+              <p class="text-sm text-gray-500 mb-1">Inbound Calls</p>
+              <p id="analytics-inbound" class="text-xl font-bold text-gray-900">0</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-center">
+              <p class="text-sm text-gray-500 mb-1">Avg Outbound Duration</p>
+              <p id="analytics-avg-outbound" class="text-xl font-bold text-gray-900">0s</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-center">
+              <p class="text-sm text-gray-500 mb-1">Avg Inbound Duration</p>
+              <p id="analytics-avg-inbound" class="text-xl font-bold text-gray-900">0s</p>
+            </div>
+          </div>
+
+          <!-- User Table -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-6">User Performance Summary</h3>
+            <div id="call-analytics-table-container">
+              <!-- Content injected by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- PERFORMANCE SECTION -->
+        <section id="sectionPerformance" class="hidden-section space-y-6">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-gray-900">Team Performance Ranking</h3>
+            <select id="performanceSort"
+              class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="desc">Highest Score First</option>
+              <option value="asc">Lowest Score First</option>
+            </select>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div class="h-80">
+              <canvas id="performanceBarCanvas"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold">
+                <tr>
+                  <th class="px-6 py-4">Rank</th>
+                  <th class="px-6 py-4">Team Member</th>
+                  <th class="px-6 py-4">Efficiency Score</th>
+                  <th class="px-6 py-4">Details</th>
+                </tr>
+              </thead>
+              <tbody id="performanceTableBody" class="divide-y divide-gray-100 bg-white">
+                <!-- Content injected by JS -->
+              </tbody>
+            </table>
+          </div>
         </section>
 
       </div>
@@ -493,13 +577,33 @@
   <script src="/admin/js/admin.js"></script>
 
   <script>
-    // Utility: Debounce
+    // Debounce Utility
     function debounce(func, wait) {
       let timeout;
       return function (...args) {
+        const context = this;
         clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
+        timeout = setTimeout(() => func.apply(context, args), wait);
       };
+    }
+
+    // Populate Sidebar Profile
+    function updateSidebarProfile() {
+      const user = auth.getCurrentUser();
+      if (user) {
+        const nameEl = document.getElementById('sidebarUserName');
+        const emailEl = document.getElementById('sidebarUserEmail');
+        const initialsEl = document.getElementById('sidebarUserInitials');
+
+        if (nameEl) nameEl.textContent = user.name || 'Admin User';
+        if (emailEl) emailEl.textContent = user.email || auth.getRememberedEmail() || 'admin@example.com';
+
+        if (initialsEl) {
+          const name = user.name || 'Admin';
+          const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+          initialsEl.textContent = initials;
+        }
+      }
     }
 
     // Set current date
@@ -643,6 +747,7 @@
 
       // Initialize filters (keep existing logic)
       initializeFilters();
+      updateSidebarProfile();
     });
 
     // Keep existing filter logic...
@@ -656,20 +761,30 @@
       // Calls
       const callSearch = document.getElementById('callSearchInput');
       const callType = document.getElementById('callTypeFilter');
-      const callUser = document.getElementById('callUserFilter');
       if (callSearch) callSearch.addEventListener('input', debounce(() => filterCalls(), 300));
       if (callType) callType.addEventListener('change', filterCalls);
-      if (callUser) callUser.addEventListener('change', filterCalls);
 
-      // Attendance Date Filter
-      const attDate = document.getElementById('attendanceDateFilter');
-      if (attDate) {
-        // Set default to today
-        attDate.valueAsDate = new Date();
-        attDate.addEventListener('change', function () {
-          if (attendanceManager?.loadAttendance) attendanceManager.loadAttendance(this.value);
-        });
-      }
+      // Attendance Buttons
+      const attToday = document.getElementById('attendanceToday');
+      const attWeek = document.getElementById('attendanceWeek');
+      const attMonth = document.getElementById('attendanceMonth');
+
+      if (attToday) attToday.onclick = function () { setAttFilter(this, 'today'); };
+      if (attWeek) attWeek.onclick = function () { setAttFilter(this, 'week'); };
+      if (attMonth) attMonth.onclick = function () { setAttFilter(this, 'month'); };
+    }
+
+    function setAttFilter(btn, range) {
+      // Reset all
+      [document.getElementById('attendanceToday'), document.getElementById('attendanceWeek'), document.getElementById('attendanceMonth')].forEach(b => {
+        b.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
+        b.classList.add('text-gray-500', 'hover:text-gray-900');
+      });
+      // Set active
+      btn.classList.remove('text-gray-500', 'hover:text-gray-900');
+      btn.classList.add('bg-white', 'text-gray-900', 'shadow-sm');
+
+      if (attendanceManager?.loadAttendance) attendanceManager.loadAttendance(range);
     }
 
     function filterUsers() {
@@ -681,10 +796,8 @@
     function filterCalls() {
       const search = document.getElementById('callSearchInput').value;
       const type = document.getElementById('callTypeFilter').value;
-      const user = document.getElementById('callUserFilter') ? document.getElementById('callUserFilter').value : '';
       if (callHistoryManager?.loadCalls) {
-        let userId = user === 'all' ? null : user;
-        callHistoryManager.loadCalls(userId, 1, 50, "", "", search, type === 'all' ? '' : type);
+        callHistoryManager.loadCalls(null, 1, 50, "", "", search, type === 'all' ? '' : type);
       }
     }
 
@@ -695,225 +808,6 @@
     });
 
   </script>
-  <!-- USER DETAILS MODAL -->
-  <div id="userDetailsModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
-    aria-modal="true">
-    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm"></div>
-
-    <div class="fixed inset-0 z-10 overflow-y-auto">
-      <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-        <div
-          class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-
-          <!-- Header -->
-          <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-            <div class="sm:flex sm:items-start">
-              <div
-                class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-                <i class="fas fa-user text-blue-600"></i>
-              </div>
-              <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
-                <h3 class="text-base font-semibold leading-6 text-gray-900" id="modal-user-name">User Details</h3>
-                <div class="mt-2">
-                  <p class="text-sm text-gray-500">Today's Call Analytics</p>
-
-                  <!-- Stats Grid -->
-                  <div class="mt-4 grid grid-cols-2 gap-4">
-                    <div class="bg-gray-50 p-3 rounded-lg text-center">
-                      <div class="text-xs text-gray-500 uppercase font-semibold">Total Calls</div>
-                      <div class="text-xl font-bold text-gray-900" id="modal-total">0</div>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-lg text-center">
-                      <div class="text-xs text-gray-500 uppercase font-semibold">Duration</div>
-                      <div class="text-xl font-bold text-gray-900" id="modal-duration">0s</div>
-                    </div>
-                  </div>
-
-                  <div class="mt-4 grid grid-cols-2 gap-4">
-                    <div class="flex justify-between items-center p-2 bg-green-50 rounded border border-green-100">
-                      <span class="text-sm text-green-700">Incoming</span>
-                      <span class="font-bold text-green-800" id="modal-incoming">0</span>
-                    </div>
-                    <div class="flex justify-between items-center p-2 bg-purple-50 rounded border border-purple-100">
-                      <span class="text-sm text-purple-700">Outgoing</span>
-                      <span class="font-bold text-purple-800" id="modal-outgoing">0</span>
-                    </div>
-                    <div class="flex justify-between items-center p-2 bg-red-50 rounded border border-red-100">
-                      <span class="text-sm text-red-700">Missed</span>
-                      <span class="font-bold text-red-800" id="modal-missed">0</span>
-                    </div>
-                    <div class="flex justify-between items-center p-2 bg-orange-50 rounded border border-orange-100">
-                      <span class="text-sm text-orange-700">Rejected</span>
-                      <span class="font-bold text-orange-800" id="modal-rejected">0</span>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Footer -->
-          <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-            <button type="button" id="closeModalBtn"
-              class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">Close</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // Modal Logic
-    const modal = document.getElementById('userDetailsModal');
-    const closeBtn = document.getElementById('closeModalBtn');
-
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => {
-        modal.classList.add('hidden');
-      });
-    }
-
-    // Close on click outside
-    if (modal) {
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal.querySelector('.bg-opacity-75')) {
-          modal.classList.add('hidden');
-        }
-      });
-    }
-  </script>
-  <!-- USER MANAGEMENT DETAILS MODAL -->
-  <div id="userManagementModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
-    aria-modal="true">
-    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm"></div>
-
-    <div class="fixed inset-0 z-10 overflow-y-auto">
-      <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-        <div
-          class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-
-          <!-- Header -->
-          <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-            <div class="sm:flex sm:items-start">
-              <div
-                class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-                <i class="fas fa-info-circle text-blue-600"></i>
-              </div>
-              <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
-                <h3 class="text-base font-semibold leading-6 text-gray-900" id="um-modal-title">User Information</h3>
-                <div class="mt-4 space-y-3">
-
-                  <div class="flex justify-between border-b border-gray-100 pb-2">
-                    <span class="text-sm text-gray-500">Name</span>
-                    <span class="text-sm font-medium text-gray-900" id="um-modal-name">-</span>
-                  </div>
-                  <div class="flex justify-between border-b border-gray-100 pb-2">
-                    <span class="text-sm text-gray-500">Email</span>
-                    <span class="text-sm font-medium text-gray-900" id="um-modal-email">-</span>
-                  </div>
-                  <div class="flex justify-between border-b border-gray-100 pb-2">
-                    <span class="text-sm text-gray-500">Phone</span>
-                    <span class="text-sm font-medium text-gray-900" id="um-modal-phone">-</span>
-                  </div>
-                  <div class="flex justify-between border-b border-gray-100 pb-2">
-                    <span class="text-sm text-gray-500">Status</span>
-                    <span class="text-sm font-medium" id="um-modal-status">-</span>
-                  </div>
-                  <div class="flex justify-between border-b border-gray-100 pb-2">
-                    <span class="text-sm text-gray-500">Last Sync</span>
-                    <span class="text-sm font-medium text-blue-600" id="um-modal-last-sync">-</span>
-                  </div>
-                  <div class="flex justify-between border-b border-gray-100 pb-2">
-                    <span class="text-sm text-gray-500">Last Login</span>
-                    <span class="text-sm font-medium text-gray-900" id="um-modal-last-login">-</span>
-                  </div>
-                  <div class="flex justify-between border-b border-gray-100 pb-2">
-                    <span class="text-sm text-gray-500">Created At</span>
-                    <span class="text-sm font-medium text-gray-900" id="um-modal-created">-</span>
-                  </div>
-
-                  <div class="grid grid-cols-2 gap-4 mt-4">
-                    <div class="bg-gray-50 p-3 rounded text-center">
-                      <div class="text-xs text-gray-500">Attendance Records</div>
-                      <div class="text-lg font-bold text-gray-900" id="um-modal-attendance">0</div>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded text-center">
-                      <div class="text-xs text-gray-500">Call Records</div>
-                      <div class="text-lg font-bold text-gray-900" id="um-modal-calls">0</div>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Footer -->
-          <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-            <button type="button" id="closeUmModalBtn"
-              class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">Close</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // User Management Modal Logic
-    const umModal = document.getElementById('userManagementModal');
-    const closeUmBtn = document.getElementById('closeUmModalBtn');
-
-    if (closeUmBtn) {
-      closeUmBtn.addEventListener('click', () => {
-        umModal.classList.add('hidden');
-      });
-    }
-
-    if (umModal) {
-      umModal.addEventListener('click', (e) => {
-        if (e.target === umModal.querySelector('.bg-opacity-75')) {
-          umModal.classList.add('hidden');
-        }
-      });
-    }
-  </script>
-</body>
-
-<!-- IMAGE PREVIEW MODAL -->
-<div id="imagePreviewModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
-  aria-modal="true">
-  <div
-    class="fixed inset-0 bg-black bg-opacity-90 transition-opacity backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="relative max-w-4xl w-full max-h-full overflow-hidden flex flex-col items-center">
-      <button id="closeImgModalBtn" class="absolute top-0 right-0 m-4 text-white hover:text-gray-300 z-10">
-        <i class="fas fa-times text-2xl"></i>
-      </button>
-      <img id="previewImage" src="" alt="Attendance Image"
-        class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl">
-    </div>
-  </div>
-</div>
-
-<script>
-  // Image Preview Modal Logic
-  const imgModal = document.getElementById('imagePreviewModal');
-  const closeImgBtn = document.getElementById('closeImgModalBtn');
-
-  if (closeImgBtn) {
-    closeImgBtn.addEventListener('click', () => {
-      imgModal.classList.add('hidden');
-    });
-  }
-
-  if (imgModal) {
-    imgModal.addEventListener('click', (e) => {
-      if (e.target.classList.contains('bg-opacity-90')) {
-        imgModal.classList.add('hidden');
-      }
-    });
-  }
-</script>
 </body>
 
 </html>
