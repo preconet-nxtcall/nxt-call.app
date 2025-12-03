@@ -4,6 +4,35 @@ class CallHistoryManager {
 
   constructor() {
     this.loadUsersForFilter();
+    this.initEventListeners();
+  }
+
+  initEventListeners() {
+    const userFilter = document.getElementById('callUserFilter');
+    const dateFilter = document.getElementById('callDateFilter');
+    const searchInput = document.getElementById('callSearchInput');
+    const typeFilter = document.getElementById('callTypeFilter');
+
+    const refresh = () => {
+      this.loadCalls(
+        userFilter?.value === 'all' ? null : userFilter?.value,
+        1,
+        50,
+        "",
+        dateFilter?.value,
+        searchInput?.value,
+        typeFilter?.value
+      );
+    };
+
+    if (userFilter) userFilter.addEventListener('change', refresh);
+    if (dateFilter) dateFilter.addEventListener('change', refresh);
+    if (typeFilter) typeFilter.addEventListener('change', refresh);
+    if (searchInput && window.debounce) {
+      searchInput.addEventListener('input', window.debounce(refresh, 500));
+    } else if (searchInput) {
+      searchInput.addEventListener('change', refresh);
+    }
   }
 
   async loadUsersForFilter() {

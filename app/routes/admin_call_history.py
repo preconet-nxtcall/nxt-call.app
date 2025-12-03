@@ -42,11 +42,6 @@ def all_call_history():
             start_time = now - timedelta(days=7)
         elif filter_type == "month":
             start_time = now - timedelta(days=30)
-        elif custom_date:
-            try:
-                start_time = datetime.strptime(custom_date, "%Y-%m-%d")
-            except:
-                return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
 
         # ============================
         # 2️⃣ PHONE SEARCH FILTER
@@ -78,7 +73,14 @@ def all_call_history():
         )
 
         # Apply date filter
-        if start_time:
+        if custom_date:
+            try:
+                start_of_day = datetime.strptime(custom_date, "%Y-%m-%d")
+                end_of_day = start_of_day + timedelta(days=1)
+                query = query.filter(CallHistory.timestamp >= start_of_day, CallHistory.timestamp < end_of_day)
+            except:
+                return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+        elif start_time:
             query = query.filter(CallHistory.timestamp >= start_time)
 
         # Apply phone number search
