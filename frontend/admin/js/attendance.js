@@ -102,7 +102,15 @@ class AttendanceManager {
   /* OPEN IMAGE PREVIEW */
   showImage(path) {
     const fullPath = `${window.location.origin}/${path}`;
-    window.open(fullPath, "_blank");
+    const modal = document.getElementById('imagePreviewModal');
+    const img = document.getElementById('previewImage');
+
+    if (modal && img) {
+      img.src = fullPath;
+      modal.classList.remove('hidden');
+    } else {
+      window.open(fullPath, "_blank");
+    }
   }
 }
 

@@ -30,6 +30,7 @@ def get_admin_attendance():
 
     # Date Filter (YYYY-MM-DD)
     date_str = request.args.get("date")
+    print(f"DEBUG: Received date_str: {date_str}")
     
     start_time = None
     end_time = None
@@ -40,7 +41,9 @@ def get_admin_attendance():
             start_time = dt
             end_time = dt + timedelta(days=1)
         except ValueError:
-            pass  # Invalid date format, ignore or handle error
+            print(f"DEBUG: Invalid date format: {date_str}")
+            # If date is invalid, return empty list instead of all records
+            return jsonify({"attendance": [], "meta": {"total": 0}}), 200
     else:
         # Default to today if no date provided
         now = datetime.utcnow()
