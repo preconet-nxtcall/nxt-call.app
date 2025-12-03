@@ -45,10 +45,9 @@ def get_admin_attendance():
             # If date is invalid, return empty list instead of all records
             return jsonify({"attendance": [], "meta": {"total": 0}}), 200
     else:
-        # Default to today if no date provided
-        now = datetime.utcnow()
-        start_time = datetime(now.year, now.month, now.day)
-        end_time = start_time + timedelta(days=1)
+        # No date provided -> Show ALL records
+        start_time = None
+        end_time = None
 
     # Pagination
     page = int(request.args.get("page", 1))

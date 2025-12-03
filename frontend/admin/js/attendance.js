@@ -7,13 +7,8 @@ class AttendanceManager {
       let url = `/api/admin/attendance?page=${page}&per_page=${per_page}`;
       if (date) {
         url += `&date=${date}`;
-      } else {
-        // Default to today (Local Time)
-        // en-CA gives YYYY-MM-DD
-        const today = new Date().toLocaleDateString('en-CA');
-        url += `&date=${today}`;
-        console.log("Using default local date:", today);
       }
+      // Removed default date logic to show all records by default
 
       const resp = await auth.makeAuthenticatedRequest(url);
 
