@@ -23,7 +23,7 @@ class CallAnalyticsManager {
       await this.loadUserSummary();
 
       this.renderCards();
-      this.renderTrend();
+
       this.renderTable();
 
     } catch (e) {
@@ -114,77 +114,6 @@ class CallAnalyticsManager {
         </div>
       `)
       .join("");
-  }
-
-  renderTrend() {
-    const container = document.getElementById("call-trend-canvas");
-    if (!container) return;
-
-    // If we have a canvas, use Chart.js
-    // If it's a div (from previous code), use HTML bars
-
-    // Check if it's a canvas
-    if (container.tagName === 'CANVAS') {
-      if (this.chart) this.chart.destroy();
-
-      const trendData = this.data.daily_trend || [];
-      const labels = trendData.map(d => d.date.split('-').slice(1).join('/'));
-      const values = trendData.map(d => d.count);
-
-      this.chart = new Chart(container, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Calls',
-            data: values,
-            borderColor: '#3B82F6',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            fill: true,
-            tension: 0.4
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            y: { beginAtZero: true, grid: { display: false } },
-            x: { grid: { display: false } }
-          }
-        }
-      });
-      return;
-    }
-
-    // Fallback to HTML bars if not canvas (legacy support)
-    const trendData = this.data.daily_trend || [];
-    if (trendData.length === 0) {
-      container.innerHTML = `<div class="text-gray-500 text-center p-8">No trend data available</div>`;
-      return;
-    }
-
-    const maxCount = Math.max(...trendData.map(d => d.count));
-
-    container.innerHTML = `
-      <div class="bg-white p-4 rounded-lg shadow">
-        <h3 class="text-lg font-semibold mb-4">Last 7 Days Trend</h3>
-        <div class="flex items-end h-40 space-x-2">
-          ${trendData.map(day => `
-            <div class="flex-1 flex flex-col items-center">
-              <div 
-                class="w-full bg-blue-200 rounded-t transition-all hover:bg-blue-300"
-                style="height: ${maxCount > 0 ? (day.count / maxCount * 100) : 0}%"
-                title="${day.date}: ${day.count} calls"
-              ></div>
-              <div class="text-xs mt-2 text-gray-600">${day.date.split('-')[2]}/${day.date.split('-')[1]}</div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
   }
 
   renderTable() {
