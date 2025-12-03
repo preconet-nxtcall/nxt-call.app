@@ -19,6 +19,18 @@ class DashboardManager {
 
             if (response.ok) {
                 this.stats = data.stats;
+
+                // Update Sidebar Super Admin Profile
+                const saNameEl = document.getElementById('sidebar-super-admin-name');
+                const saEmailEl = document.getElementById('sidebar-super-admin-email');
+
+                if (saNameEl && this.stats.super_admin_name) {
+                    saNameEl.textContent = this.stats.super_admin_name;
+                }
+                if (saEmailEl && this.stats.super_admin_email) {
+                    saEmailEl.textContent = this.stats.super_admin_email;
+                }
+
                 this.renderStats();
                 // Also load recent activity when loading dashboard
                 this.loadRecentActivity();

@@ -158,11 +158,16 @@ def get_admins():
 @jwt_required()
 def dashboard_stats():
     try:
+        super_admin_id = get_jwt_identity()
+        super_admin = SuperAdmin.query.get(super_admin_id)
+
         stats = {
             "total_admins": Admin.query.count(),
             "active_admins": Admin.query.filter_by(is_active=True).count(),
             "expired_admins": Admin.query.filter(Admin.expiry_date < datetime.utcnow()).count(),
             "total_users": User.query.count(),
+            "super_admin_name": super_admin.name if super_admin else "Super Admin",
+            "super_admin_email": super_admin.email if super_admin else "superadmin@example.com",
         }
 
         return jsonify({"stats": stats}), 200

@@ -85,7 +85,7 @@ def dashboard_stats():
             "sync_rate": round((synced / total) * 100, 2) if total else 0,
             "avg_performance": avg_perf,
             "performance_trend": daily_counts,
-            "admin_name": admin.username,
+            "admin_name": admin.name,
             "admin_email": admin.email
         }
     }), 200
