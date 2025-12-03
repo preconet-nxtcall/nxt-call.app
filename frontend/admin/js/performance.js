@@ -148,5 +148,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Initial load
   performanceManager.loadPerformance("desc");
 });
