@@ -53,10 +53,10 @@ def performance():
         start_dt, end_dt = get_date_range(filter_type)
 
         # CASE expressions
-        incoming_case = case((CallHistory.call_type == "incoming", 1), else_=0)
-        outgoing_case = case((CallHistory.call_type == "outgoing", 1), else_=0)
-        missed_case = case((CallHistory.call_type == "missed", 1), else_=0)
-        rejected_case = case((CallHistory.call_type == "rejected", 1), else_=0)
+        incoming_case = case((func.lower(CallHistory.call_type) == "incoming", 1), else_=0)
+        outgoing_case = case((func.lower(CallHistory.call_type) == "outgoing", 1), else_=0)
+        missed_case = case((func.lower(CallHistory.call_type) == "missed", 1), else_=0)
+        rejected_case = case((func.lower(CallHistory.call_type) == "rejected", 1), else_=0)
 
         # USER PERFORMANCE
         user_data = (
