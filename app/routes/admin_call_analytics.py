@@ -170,6 +170,15 @@ def admin_analytics_single_user(user_id):
         if period == "today":
             start_dt = datetime(now.year, now.month, now.day)
             end_dt = start_dt + timedelta(days=1)
+        elif period == "week":
+            start_dt = datetime(now.year, now.month, now.day) - timedelta(days=7)
+            end_dt = datetime(now.year, now.month, now.day) + timedelta(days=1)
+        elif period == "month":
+            start_dt = datetime(now.year, now.month, now.day) - timedelta(days=30)
+            end_dt = datetime(now.year, now.month, now.day) + timedelta(days=1)
+        elif period == "all":
+            start_dt = datetime.min
+            end_dt = datetime.max
         else:
             # Fallback to today if unknown
             start_dt = datetime(now.year, now.month, now.day)

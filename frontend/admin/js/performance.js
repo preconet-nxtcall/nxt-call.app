@@ -161,7 +161,11 @@ class PerformanceManager {
       const modal = document.getElementById('userDetailsModal');
       if (modal) modal.classList.remove('hidden');
 
-      const resp = await auth.makeAuthenticatedRequest(`/api/admin/call-analytics/${user_id}?period=today`);
+      // Get current filter
+      const dateFilter = document.getElementById("performanceDateFilter");
+      const filterVal = dateFilter ? dateFilter.value : "today";
+
+      const resp = await auth.makeAuthenticatedRequest(`/api/admin/call-analytics/${user_id}?period=${filterVal}`);
       if (!resp.ok) {
         auth.showNotification("Failed to load user details", "error");
         if (modal) modal.classList.add('hidden');
@@ -171,6 +175,14 @@ class PerformanceManager {
       const data = await resp.json();
 
       document.getElementById('modal-user-name').textContent = data.user_name || "User Details";
+
+      // Update modal title to reflect period
+      const periodText = filterVal === 'today' ? "Today's" :
+        filterVal === 'week' ? "This Week's" :
+          filterVal === 'month' ? "This Month's" : "All Time";
+      const subtitle = document.querySelector('#userDetailsModal p.text-sm.text-gray-500');
+      if (subtitle) subtitle.textContent = `${periodText} Call Analytics`;
+
       document.getElementById('modal-total').textContent = data.total_calls || 0;
       document.getElementById('modal-duration').textContent = this.formatDuration(data.total_duration_seconds || 0);
       document.getElementById('modal-incoming').textContent = data.incoming || 0;
