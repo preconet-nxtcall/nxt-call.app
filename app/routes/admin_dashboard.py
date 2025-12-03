@@ -140,24 +140,39 @@ def user_logs():
 
         admin_id = int(get_jwt_identity())
 
-        logs = (
-            db.session.query(ActivityLog, User)
-            .join(User, User.id == ActivityLog.target_id)
-            .filter(User.admin_id == admin_id)
-            .order_by(ActivityLog.timestamp.desc())
-            .limit(20)
-            .all()
-        )
+        # Get all users for this admin
+        users = User.query.filter_by(admin_id=admin_id).all()
+        
+        logs = []
+        for user in users:
+            # Get latest attendance
+            last_attendance = (
+                Attendance.query.filter_by(user_id=user.id)
+                .order_by(Attendance.check_in.desc())
+                .first()
+            )
+            
+            check_in_time = iso(last_attendance.check_in) if last_attendance else "Never"
+            status = "Active" if user.is_active else "Inactive"
+            
+            logs.append({
+                "user_name": user.name,
+                "action": f"Status: {status}",
+                "timestamp": check_in_time,
+                "is_active": user.is_active
+            })
+
+        # Sort by latest check-in (optional, but good for 'recent' activity)
+        # We can sort by timestamp, handling "Never"
+        def sort_key(x):
+            if x["timestamp"] == "Never":
+                return ""
+            return x["timestamp"]
+            
+        logs.sort(key=sort_key, reverse=True)
 
         return jsonify({
-            "logs": [
-                {
-                    "user_name": u.name,
-                    "action": log.action,
-                    "timestamp": iso(log.timestamp)
-                }
-                for log, u in logs
-            ]
+            "logs": logs
         }), 200
     except Exception as e:
         print(f"Error in user_logs: {e}")
