@@ -97,16 +97,25 @@ def performance():
                 "rejected": int(u.rejected or 0),
             })
 
-        summary = {
-            "total_calls": sum(u["total_calls"] for u in users_list),
-            "total_duration_sec": sum(u["total_duration_sec"] for u in users_list),
-            "total_users": len(users_list),
-            "filter": filter_type
-        }
+        # Calculate Score (Simple: Incoming + Outgoing)
+        # You can make this more complex (e.g. weighted)
+        for u in users_list:
+            u["score"] = u["incoming"] + u["outgoing"]
+
+        # Sort
+        sort_order = request.args.get("sort", "desc")
+        reverse = (sort_order == "desc")
+        users_list.sort(key=lambda x: x["score"], reverse=reverse)
+
+        # Prepare response for Chart.js and Table
+        labels = [u["user_name"] for u in users_list]
+        values = [u["score"] for u in users_list]
+        user_ids = [u["user_id"] for u in users_list]
 
         return jsonify({
-            "summary": summary,
-            "users": users_list
+            "labels": labels,
+            "values": values,
+            "user_ids": user_ids
         }), 200
 
     except Exception as e:
