@@ -250,7 +250,24 @@ def get_users():
         return resp
 
     try:
-        query = User.query.filter_by(admin_id=admin.id).order_by(User.created_at.desc())
+        query = User.query.filter_by(admin_id=admin.id)
+
+        # Search filter
+        search = request.args.get("search", "").strip()
+        if search:
+            term = f"%{search}%"
+            query = query.filter(
+                (User.name.ilike(term)) | (User.email.ilike(term))
+            )
+
+        # Status filter
+        status = request.args.get("status", "all")
+        if status == "active":
+            query = query.filter(User.is_active == True)
+        elif status == "inactive":
+            query = query.filter(User.is_active == False)
+
+        query = query.order_by(User.created_at.desc())
 
         def serialize(u):
             return {

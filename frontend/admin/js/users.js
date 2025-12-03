@@ -9,14 +9,40 @@ class UsersManager {
     // Bind form submit
     const form = document.getElementById('createUserForm');
     if (form) form.addEventListener('submit', (e) => { e.preventDefault(); this.createUser(); });
+
+    // Bind Search & Filter
+    const searchInput = document.getElementById('userSearchInput');
+    const statusFilter = document.getElementById('userStatusFilter');
+
+    if (searchInput) {
+      searchInput.addEventListener('input', this.debounce(() => this.loadUsers(), 500));
+    }
+    if (statusFilter) {
+      statusFilter.addEventListener('change', () => this.loadUsers());
+    }
+  }
+
+  debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
   }
 
   // MAIN LOADER ---------------------------------
-  async loadUsers(filters = {}) {
+  async loadUsers() {
     try {
-      // Extract filters
-      const search = filters.search || "";
-      const status = filters.status || "all";
+      // Extract filters from DOM
+      const searchInput = document.getElementById('userSearchInput');
+      const statusFilter = document.getElementById('userStatusFilter');
+
+      const search = searchInput ? searchInput.value : "";
+      const status = statusFilter ? statusFilter.value : "all";
 
       // Build URL
       let url = `/api/admin/users?page=${this.page}&per_page=${this.per_page}`;
@@ -54,43 +80,45 @@ class UsersManager {
     }
 
     body.innerHTML = this.users.map(u => `
-      <tr class="hover:bg-gray-50">
+      <tr class="hover:bg-gray-50 transition-colors">
         <td class="p-3">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center">
+            <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold shadow-sm">
               ${(u.name || 'U')[0].toUpperCase()}
             </div>
             <div>
-              <div class="font-medium">${u.name}</div>
+              <div class="font-medium text-gray-900">${u.name}</div>
               <div class="text-xs text-gray-500">${u.email}</div>
             </div>
           </div>
         </td>
 
-        <td class="p-3">${u.phone || 'N/A'}</td>
+        <td class="p-3 text-sm text-gray-600">${u.phone || 'N/A'}</td>
 
-        <td class="p-3 font-semibold ${u.performance_score >= 70 ? 'text-green-600' : u.performance_score >= 40 ? 'text-yellow-600' : 'text-red-600'}">
+        <td class="p-3 font-semibold text-sm ${u.performance_score >= 70 ? 'text-green-600' : u.performance_score >= 40 ? 'text-yellow-600' : 'text-red-600'}">
           ${u.performance_score ?? 0}%
         </td>
 
         <td class="p-3">
-          <span class="${u.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} px-2 py-1 rounded text-xs">
+          <span class="${u.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} px-2 py-1 rounded-full text-xs font-medium">
             ${u.is_active ? 'Active' : 'Inactive'}
           </span>
         </td>
 
         <td class="p-3 text-right">
-          <button onclick="usersManager.view(${u.id})" class="text-blue-600 mr-2" title="View User">
-            <i class="fas fa-eye"></i>
-          </button>
-          <button onclick="usersManager.toggleStatus(${u.id}, ${u.is_active})" 
-            class="mr-2 ${u.is_active ? 'text-orange-500' : 'text-green-500'}"
-            title="${u.is_active ? 'Block User' : 'Unblock User'}">
-            <i class="fas ${u.is_active ? 'fa-ban' : 'fa-check-circle'}"></i>
-          </button>
-          <button onclick="usersManager.delete(${u.id})" class="text-red-600" title="Delete User">
-            <i class="fas fa-trash"></i>
-          </button>
+          <div class="flex items-center justify-end gap-2">
+            <button onclick="usersManager.view(${u.id})" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors" title="View User">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button onclick="usersManager.toggleStatus(${u.id}, ${u.is_active})" 
+              class="p-1.5 ${u.is_active ? 'text-orange-500 hover:bg-orange-50' : 'text-green-500 hover:bg-green-50'} rounded transition-colors"
+              title="${u.is_active ? 'Block User' : 'Unblock User'}">
+              <i class="fas ${u.is_active ? 'fa-ban' : 'fa-check-circle'}"></i>
+            </button>
+            <button onclick="usersManager.delete(${u.id})" class="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors" title="Delete User">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
         </td>
       </tr>
     `).join('');
@@ -108,8 +136,26 @@ class UsersManager {
         return;
       }
 
-      // Instead of alert → you can convert to a modal later
-      alert(JSON.stringify(data, null, 2));
+      const user = data.user;
+
+      // Populate Modal
+      document.getElementById('um-modal-name').textContent = user.name || '-';
+      document.getElementById('um-modal-email').textContent = user.email || '-';
+      document.getElementById('um-modal-phone').textContent = user.phone || '-';
+
+      const statusEl = document.getElementById('um-modal-status');
+      statusEl.textContent = user.is_active ? 'Active' : 'Inactive';
+      statusEl.className = `text-sm font-medium ${user.is_active ? 'text-green-600' : 'text-red-600'}`;
+
+      document.getElementById('um-modal-last-sync').textContent = user.last_sync ? new Date(user.last_sync).toLocaleString() : 'Never';
+      document.getElementById('um-modal-last-login').textContent = user.last_login ? new Date(user.last_login).toLocaleString() : 'Never';
+      document.getElementById('um-modal-created').textContent = user.created_at ? new Date(user.created_at).toLocaleDateString() : '-';
+
+      document.getElementById('um-modal-attendance').textContent = user.attendance_records || 0;
+      document.getElementById('um-modal-calls').textContent = user.call_records || 0;
+
+      // Show Modal
+      document.getElementById('userManagementModal').classList.remove('hidden');
 
     } catch (e) {
       console.error(e);

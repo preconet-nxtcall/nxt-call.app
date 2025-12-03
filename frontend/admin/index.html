@@ -788,6 +788,101 @@
       });
     }
   </script>
+  <!-- USER MANAGEMENT DETAILS MODAL -->
+  <div id="userManagementModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm"></div>
+
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+      <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+        <div
+          class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+
+          <!-- Header -->
+          <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+            <div class="sm:flex sm:items-start">
+              <div
+                class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                <i class="fas fa-info-circle text-blue-600"></i>
+              </div>
+              <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+                <h3 class="text-base font-semibold leading-6 text-gray-900" id="um-modal-title">User Information</h3>
+                <div class="mt-4 space-y-3">
+
+                  <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="text-sm text-gray-500">Name</span>
+                    <span class="text-sm font-medium text-gray-900" id="um-modal-name">-</span>
+                  </div>
+                  <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="text-sm text-gray-500">Email</span>
+                    <span class="text-sm font-medium text-gray-900" id="um-modal-email">-</span>
+                  </div>
+                  <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="text-sm text-gray-500">Phone</span>
+                    <span class="text-sm font-medium text-gray-900" id="um-modal-phone">-</span>
+                  </div>
+                  <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="text-sm text-gray-500">Status</span>
+                    <span class="text-sm font-medium" id="um-modal-status">-</span>
+                  </div>
+                  <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="text-sm text-gray-500">Last Sync</span>
+                    <span class="text-sm font-medium text-blue-600" id="um-modal-last-sync">-</span>
+                  </div>
+                  <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="text-sm text-gray-500">Last Login</span>
+                    <span class="text-sm font-medium text-gray-900" id="um-modal-last-login">-</span>
+                  </div>
+                  <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="text-sm text-gray-500">Created At</span>
+                    <span class="text-sm font-medium text-gray-900" id="um-modal-created">-</span>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div class="bg-gray-50 p-3 rounded text-center">
+                      <div class="text-xs text-gray-500">Attendance Records</div>
+                      <div class="text-lg font-bold text-gray-900" id="um-modal-attendance">0</div>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded text-center">
+                      <div class="text-xs text-gray-500">Call Records</div>
+                      <div class="text-lg font-bold text-gray-900" id="um-modal-calls">0</div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+            <button type="button" id="closeUmModalBtn"
+              class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // User Management Modal Logic
+    const umModal = document.getElementById('userManagementModal');
+    const closeUmBtn = document.getElementById('closeUmModalBtn');
+
+    if (closeUmBtn) {
+      closeUmBtn.addEventListener('click', () => {
+        umModal.classList.add('hidden');
+      });
+    }
+
+    if (umModal) {
+      umModal.addEventListener('click', (e) => {
+        if (e.target === umModal.querySelector('.bg-opacity-75')) {
+          umModal.classList.add('hidden');
+        }
+      });
+    }
+  </script>
 </body>
 
 </html>
