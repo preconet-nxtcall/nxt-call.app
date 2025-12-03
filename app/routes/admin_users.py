@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
 from app.models import db
-from ..models import User, Admin, Attendance, CallHistory, ActivityLog
+from ..models import User, Admin, Attendance, CallHistory, ActivityLog, UserRole
 
 admin_user_bp = Blueprint("admin_user", __name__, url_prefix="/api/admin")
 
@@ -75,7 +75,7 @@ def delete_user(user_id):
     try:
         # LOGGING
         log = ActivityLog(
-            actor_role="admin",
+            actor_role=UserRole.ADMIN,
             actor_id=admin_id,
             action=f"Deleted user {user.email}",
             target_type="user",
@@ -119,7 +119,7 @@ def toggle_user_status(user_id):
 
         # LOGGING
         log = ActivityLog(
-            actor_role="admin",
+            actor_role=UserRole.ADMIN,
             actor_id=admin_id,
             action=f"{action} user {user.email}",
             target_type="user",
