@@ -143,20 +143,44 @@ class DashboardManager {
       this.performanceChart.destroy();
     }
 
+    // Generate last 7 days labels
+    const labels = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      labels.push(d.toLocaleDateString('en-US', { weekday: 'short' }));
+    }
+
     this.performanceChart = new Chart(canvas, {
       type: 'line',
       data: {
-        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        labels: labels,
         datasets: [{
-          label: 'Avg Performance',
+          label: 'Total Calls',
           data: this.stats.performance_trend || [0, 0, 0, 0, 0, 0, 0],
           borderColor: '#2563EB',
+          backgroundColor: 'rgba(37, 99, 235, 0.1)',
+          borderWidth: 2,
+          fill: true,
           tension: 0.3
         }]
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0
+            }
+          }
+        }
       }
     });
   }

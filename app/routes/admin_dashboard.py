@@ -59,7 +59,42 @@ def dashboard_stats():
             "users_with_sync": synced,
             "sync_rate": round((synced / total) * 100, 2) if total else 0,
             "avg_performance": avg_perf,
-            "performance_trend": [50, 60, 70, 65, 82, 78, 90]
+    # Calculate daily call trend (last 7 days)
+    week_ago = datetime.utcnow() - timedelta(days=7)
+    user_ids = [u.id for u in users]
+    
+    daily_counts = []
+    if user_ids:
+        trend_rows = (
+            db.session.query(
+                func.date(CallHistory.timestamp).label("date"),
+                func.count(CallHistory.id).label("count")
+            )
+            .filter(CallHistory.user_id.in_(user_ids), CallHistory.timestamp >= week_ago)
+            .group_by(func.date(CallHistory.timestamp))
+            .order_by(func.date(CallHistory.timestamp))
+            .all()
+        )
+        trend_map = {str(r.date): int(r.count) for r in trend_rows}
+        
+        for i in range(6, -1, -1):
+            d = (datetime.utcnow() - timedelta(days=i)).date()
+            d_str = str(d)
+            daily_counts.append(trend_map.get(d_str, 0))
+    else:
+        daily_counts = [0] * 7
+
+    return jsonify({
+        "stats": {
+            "total_users": total,
+            "active_users": active,
+            "expired_users": 0,
+            "user_limit": admin.user_limit,
+            "remaining_slots": admin.user_limit - total,
+            "users_with_sync": synced,
+            "sync_rate": round((synced / total) * 100, 2) if total else 0,
+            "avg_performance": avg_perf,
+            "performance_trend": daily_counts
         }
     }), 200
 
