@@ -73,7 +73,7 @@ def sync_analytics():
 
 # ===============================================================
 # 2️⃣  GET ANALYTICS (GET)
-#     Returns full analytics with last 10 calls
+#     Returns full analytics with trends and KPIs
 # ===============================================================
 @bp.route("", methods=["GET"])
 @jwt_required()
@@ -88,57 +88,73 @@ def get_analytics():
         if not user.is_active:
             return jsonify({"error": "User inactive"}), 403
 
-        # ---- Total Calls ----
-        total_calls = CallHistory.query.filter_by(user_id=user_id).count()
+        # Base query
+        base_query = CallHistory.query.filter_by(user_id=user_id)
 
-        # ---- Each Call Type ----
-        incoming = CallHistory.query.filter(CallHistory.user_id == user_id, func.lower(CallHistory.call_type) == "incoming").count()
-        outgoing = CallHistory.query.filter(CallHistory.user_id == user_id, func.lower(CallHistory.call_type) == "outgoing").count()
-        missed = CallHistory.query.filter(CallHistory.user_id == user_id, func.lower(CallHistory.call_type) == "missed").count()
-        rejected = CallHistory.query.filter(CallHistory.user_id == user_id, func.lower(CallHistory.call_type) == "rejected").count()
+        # ---- KPIs ----
+        total_calls = base_query.count()
+        
+        # Answered calls (duration > 0)
+        total_answered = base_query.filter(CallHistory.duration > 0).count()
 
-        # ---- Total Duration ----
-        total_duration = (
-            db.session.query(func.coalesce(func.sum(CallHistory.duration), 0))
-            .filter(CallHistory.user_id == user_id)
-            .scalar()
-            or 0
-        )
+        # Call Types
+        incoming = base_query.filter(func.lower(CallHistory.call_type) == "incoming").count()
+        outgoing = base_query.filter(func.lower(CallHistory.call_type) == "outgoing").count()
+        missed = base_query.filter(func.lower(CallHistory.call_type) == "missed").count()
+        rejected = base_query.filter(func.lower(CallHistory.call_type) == "rejected").count()
 
-        # ---- Recent 10 Calls (last 7 days) ----
-        week_ago = datetime.utcnow() - timedelta(days=7)
+        # Durations
+        total_duration = db.session.query(func.coalesce(func.sum(CallHistory.duration), 0)).filter(CallHistory.user_id == user_id).scalar() or 0
+        
+        # Avg Durations
+        avg_outbound_duration = 0
+        if outgoing > 0:
+            outbound_duration_sum = db.session.query(func.coalesce(func.sum(CallHistory.duration), 0)).filter(CallHistory.user_id == user_id, func.lower(CallHistory.call_type) == "outgoing").scalar() or 0
+            avg_outbound_duration = int(outbound_duration_sum / outgoing)
 
-        recent_calls = (
-            CallHistory.query.filter(
-                CallHistory.user_id == user_id,
-                CallHistory.timestamp >= week_ago
-            )
-            .order_by(CallHistory.timestamp.desc())
-            .limit(10)
-            .all()
-        )
+        avg_inbound_duration = 0
+        if incoming > 0:
+            inbound_duration_sum = db.session.query(func.coalesce(func.sum(CallHistory.duration), 0)).filter(CallHistory.user_id == user_id, func.lower(CallHistory.call_type) == "incoming").scalar() or 0
+            avg_inbound_duration = int(inbound_duration_sum / incoming)
 
-        recent_calls_data = [
-            {
-                "id": c.id,
-                "phone_number": c.phone_number,
-                "call_type": c.call_type,
-                "duration": c.duration,
-                "timestamp": c.timestamp.isoformat() if c.timestamp else None
-            }
-            for c in recent_calls
-        ]
+        # ---- Trends (Last 7 Days) ----
+        today = datetime.utcnow().date()
+        dates = [today - timedelta(days=i) for i in range(6, -1, -1)]
+        
+        activity_trend = []
+        duration_trend = []
+
+        for d in dates:
+            # Start and end of day
+            start_dt = datetime.combine(d, datetime.min.time())
+            end_dt = datetime.combine(d, datetime.max.time())
+            
+            # Daily Count
+            count = base_query.filter(CallHistory.timestamp >= start_dt, CallHistory.timestamp <= end_dt).count()
+            activity_trend.append({"date": d.isoformat(), "count": count})
+
+            # Daily Duration
+            dur = db.session.query(func.coalesce(func.sum(CallHistory.duration), 0)).filter(CallHistory.user_id == user_id, CallHistory.timestamp >= start_dt, CallHistory.timestamp <= end_dt).scalar() or 0
+            duration_trend.append({"date": d.isoformat(), "duration": dur})
 
         # ---- Final Response ----
         return jsonify({
             "user_id": user_id,
-            "total_calls": total_calls,
-            "incoming": incoming,
-            "outgoing": outgoing,
-            "missed": missed,
-            "rejected": rejected,
-            "total_duration_seconds": total_duration,
-            "recent_calls": recent_calls_data,
+            "kpis": {
+                "total_calls": total_calls,
+                "total_duration": total_duration,
+                "total_answered": total_answered,
+                "incoming": incoming,
+                "outgoing": outgoing,
+                "missed": missed,
+                "rejected": rejected,
+                "avg_outbound_duration": avg_outbound_duration,
+                "avg_inbound_duration": avg_inbound_duration
+            },
+            "trends": {
+                "activity": activity_trend,
+                "duration": duration_trend
+            },
             "last_sync": user.last_sync.isoformat() if user.last_sync else None
         }), 200
 

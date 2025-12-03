@@ -57,16 +57,34 @@ def admin_analytics_all_users():
             rejected = db.session.query(func.count(CallHistory.id))\
                 .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "rejected").scalar() or 0
 
+            # New Metrics
+            total_answered = incoming + outgoing
+
+            unique_numbers = db.session.query(func.count(func.distinct(CallHistory.phone_number)))\
+                .filter(CallHistory.user_id.in_(user_ids)).scalar() or 0
+
+            avg_inbound_duration = db.session.query(func.avg(CallHistory.duration))\
+                .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "incoming").scalar() or 0
+
+            avg_outbound_duration = db.session.query(func.avg(CallHistory.duration))\
+                .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "outgoing").scalar() or 0
+            
+            total_duration = db.session.query(func.sum(CallHistory.duration))\
+                .filter(CallHistory.user_id.in_(user_ids)).scalar() or 0
+
         except Exception:
             total_calls = incoming = outgoing = missed = rejected = 0
+            total_answered = unique_numbers = avg_inbound_duration = avg_outbound_duration = total_duration = 0
 
         # ---------- Daily trend (last 7 days) ----------
         week_ago = datetime.utcnow() - timedelta(days=7)
 
+        # Activity Trend (Count)
         trend_rows = (
             db.session.query(
                 func.date(CallHistory.timestamp).label("date"),
-                func.count(CallHistory.id).label("count")
+                func.count(CallHistory.id).label("count"),
+                func.sum(CallHistory.duration).label("duration")
             )
             .filter(CallHistory.user_id.in_(user_ids), CallHistory.timestamp >= week_ago)
             .group_by(func.date(CallHistory.timestamp))
@@ -74,15 +92,23 @@ def admin_analytics_all_users():
             .all()
         )
 
-        trend_map = {str(r.date): int(r.count) for r in trend_rows}
+        trend_map = {str(r.date): {"count": int(r.count), "duration": int(r.duration or 0)} for r in trend_rows}
 
         daily_trend = []
+        duration_trend = []
+        
         for i in range(7, 0, -1):
             d = (datetime.utcnow() - timedelta(days=i - 1)).date()
             d_str = str(d)
+            data = trend_map.get(d_str, {"count": 0, "duration": 0})
+            
             daily_trend.append({
                 "date": d_str,
-                "count": trend_map.get(d_str, 0)
+                "count": data["count"]
+            })
+            duration_trend.append({
+                "date": d_str,
+                "duration": data["duration"]
             })
 
         # ---------- User summary ----------
@@ -134,11 +160,17 @@ def admin_analytics_all_users():
         # ---------- Final response ----------
         return jsonify({
             "total_calls": int(total_calls),
+            "total_duration": int(total_duration),
             "incoming": int(incoming),
             "outgoing": int(outgoing),
             "missed": int(missed),
             "rejected": int(rejected),
+            "total_answered": int(total_answered),
+            "unique_numbers": int(unique_numbers),
+            "avg_inbound_duration": int(avg_inbound_duration),
+            "avg_outbound_duration": int(avg_outbound_duration),
             "daily_trend": daily_trend,
+            "duration_trend": duration_trend,
             "user_summary": user_summary
         }), 200
 

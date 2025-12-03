@@ -1,7 +1,8 @@
 class CallAnalyticsManager {
 
   constructor() {
-    this.chart = null;
+    this.activityChart = null;
+    this.durationChart = null;
     this.data = null;
   }
 
@@ -19,17 +20,228 @@ class CallAnalyticsManager {
       const data = await resp.json();
       this.data = data;
 
-      // Load user details list
+      this.updateKPICards();
+      this.renderCharts();
+
+      // Also load the user summary table if needed
       await this.loadUserSummary();
-
-      this.renderCards();
-
       this.renderTable();
 
     } catch (e) {
       console.error(e);
       auth.showNotification("Analytics error", "error");
     }
+  }
+
+  updateKPICards() {
+    if (!this.data || !this.data.kpis) return;
+
+    const kpis = this.data.kpis;
+    const lastSync = this.data.last_sync;
+
+    // Helper to safely set text content
+    const setText = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    };
+
+    setText("analytics-total-calls", kpis.total_calls.toLocaleString());
+    setText("analytics-total-duration", this.formatDuration(kpis.total_duration));
+    setText("analytics-total-answered", kpis.total_answered.toLocaleString());
+
+    if (lastSync) {
+      setText("analytics-last-sync", new Date(lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    } else {
+      setText("analytics-last-sync", "Never");
+    }
+
+    setText("analytics-outbound", kpis.outgoing.toLocaleString());
+    setText("analytics-inbound", kpis.incoming.toLocaleString());
+    setText("analytics-avg-outbound", this.formatDuration(kpis.avg_outbound_duration));
+    setText("analytics-avg-inbound", this.formatDuration(kpis.avg_inbound_duration));
+  }
+
+  renderCharts() {
+    if (!this.data || !this.data.trends) return;
+
+    const trends = this.data.trends;
+
+    // Activity Chart
+    this.renderActivityChart(trends.activity);
+
+    // Duration Chart
+    this.renderDurationChart(trends.duration);
+  }
+
+  renderActivityChart(data) {
+    const ctx = document.getElementById('analyticsActivityChart');
+    if (!ctx) return;
+
+    if (this.activityChart) {
+      this.activityChart.destroy();
+    }
+
+    const labels = data.map(d => new Date(d.date).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' }));
+    const counts = data.map(d => d.count);
+
+    this.activityChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Calls',
+          data: counts,
+          borderColor: '#3B82F6', // Blue-500
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderWidth: 3,
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: '#FFFFFF',
+          pointBorderColor: '#3B82F6',
+          pointBorderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: 'rgba(17, 24, 39, 0.9)',
+            titleColor: '#F3F4F6',
+            bodyColor: '#F3F4F6',
+            borderColor: '#374151',
+            borderWidth: 1,
+            padding: 10,
+            displayColors: false,
+            callbacks: {
+              label: function (context) {
+                return context.parsed.y + ' Calls';
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: '#F3F4F6',
+              drawBorder: false
+            },
+            ticks: {
+              font: {
+                family: "'Inter', sans-serif",
+                size: 11
+              },
+              color: '#6B7280',
+              padding: 10,
+              precision: 0
+            }
+          },
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              font: {
+                family: "'Inter', sans-serif",
+                size: 11
+              },
+              color: '#6B7280'
+            }
+          }
+        },
+        interaction: {
+          intersect: false,
+          mode: 'index',
+        },
+      }
+    });
+  }
+
+  renderDurationChart(data) {
+    const ctx = document.getElementById('analyticsDurationChart');
+    if (!ctx) return;
+
+    if (this.durationChart) {
+      this.durationChart.destroy();
+    }
+
+    const labels = data.map(d => new Date(d.date).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' }));
+    const durations = data.map(d => Math.round(d.duration / 60)); // Convert to minutes
+
+    this.durationChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Duration (mins)',
+          data: durations,
+          backgroundColor: '#8B5CF6', // Purple-500
+          borderRadius: 6,
+          barThickness: 24,
+          hoverBackgroundColor: '#7C3AED'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: 'rgba(17, 24, 39, 0.9)',
+            titleColor: '#F3F4F6',
+            bodyColor: '#F3F4F6',
+            borderColor: '#374151',
+            borderWidth: 1,
+            padding: 10,
+            displayColors: false,
+            callbacks: {
+              label: function (context) {
+                return context.parsed.y + ' Mins';
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: '#F3F4F6',
+              drawBorder: false
+            },
+            ticks: {
+              font: {
+                family: "'Inter', sans-serif",
+                size: 11
+              },
+              color: '#6B7280',
+              padding: 10
+            }
+          },
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              font: {
+                family: "'Inter', sans-serif",
+                size: 11
+              },
+              color: '#6B7280'
+            }
+          }
+        }
+      }
+    });
   }
 
   async loadUserSummary() {
@@ -52,68 +264,6 @@ class CallAnalyticsManager {
       console.warn("Failed to load user summary:", e);
       // Continue with existing data if available
     }
-  }
-
-  renderCards() {
-    const container = document.getElementById("call-analytics-cards");
-    if (!container) return;
-
-    const d = this.data || {};
-
-    const cards = [
-      {
-        label: "Total Calls",
-        value: d.total_calls || 0,
-        icon: "phone",
-        color: "blue"
-      },
-      {
-        label: "Incoming",
-        value: d.incoming || 0,
-        icon: "phone-volume",
-        color: "green"
-      },
-      {
-        label: "Outgoing",
-        value: d.outgoing || 0,
-        icon: "phone",
-        color: "purple"
-      },
-      {
-        label: "Missed",
-        value: d.missed || 0,
-        icon: "phone-slash",
-        color: "red"
-      },
-      {
-        label: "Rejected",
-        value: d.rejected || 0,
-        icon: "phone-xmark",
-        color: "orange"
-      }
-    ];
-
-    const colorMap = {
-      blue: "bg-blue-50 text-blue-600",
-      green: "bg-green-50 text-green-600",
-      purple: "bg-purple-50 text-purple-600",
-      red: "bg-red-50 text-red-600",
-      orange: "bg-orange-50 text-orange-600"
-    };
-
-    container.innerHTML = cards
-      .map(card => `
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover-card flex items-center gap-4 transition-all duration-200">
-          <div class="w-14 h-14 rounded-full flex items-center justify-center ${colorMap[card.color]} shadow-sm">
-            <i class="fas fa-${card.icon} text-xl"></i>
-          </div>
-          <div>
-            <div class="text-3xl font-bold text-gray-900 tracking-tight">${card.value.toLocaleString()}</div>
-            <div class="text-sm font-medium text-gray-500">${card.label}</div>
-          </div>
-        </div>
-      `)
-      .join("");
   }
 
   renderTable() {
@@ -141,28 +291,28 @@ class CallAnalyticsManager {
               ${rows.length
         ? rows.map(row => `
                     <tr class="hover:bg-gray-50 transition-colors">
-                      <td class="p-3 text-sm">${row.name || row.user_name || "-"}</td>
+                      <td class="p-3 text-sm font-medium text-gray-900">${row.name || row.user_name || "-"}</td>
                       <td class="p-3 text-sm text-center">
-                        <span class="inline-block px-2 py-1 rounded bg-green-100 text-green-800">
+                        <span class="inline-block px-2 py-1 rounded bg-green-100 text-green-800 font-medium">
                           ${row.incoming || 0}
                         </span>
                       </td>
                       <td class="p-3 text-sm text-center">
-                        <span class="inline-block px-2 py-1 rounded bg-purple-100 text-purple-800">
+                        <span class="inline-block px-2 py-1 rounded bg-purple-100 text-purple-800 font-medium">
                           ${row.outgoing || 0}
                         </span>
                       </td>
                       <td class="p-3 text-sm text-center">
-                        <span class="inline-block px-2 py-1 rounded bg-red-100 text-red-800">
+                        <span class="inline-block px-2 py-1 rounded bg-red-100 text-red-800 font-medium">
                           ${row.missed || 0}
                         </span>
                       </td>
                       <td class="p-3 text-sm text-center">
-                        <span class="inline-block px-2 py-1 rounded bg-orange-100 text-orange-800">
+                        <span class="inline-block px-2 py-1 rounded bg-orange-100 text-orange-800 font-medium">
                           ${row.rejected || 0}
                         </span>
                       </td>
-                      <td class="p-3 text-sm">
+                      <td class="p-3 text-sm text-gray-600">
                         ${this.formatDuration(row.total_duration_seconds || 0)}
                       </td>
                       <td class="p-3 text-sm text-gray-500">
@@ -210,8 +360,8 @@ class CallAnalyticsManager {
   // Optional: Initialize with auto-refresh
   init() {
     this.loadAnalytics();
-    // Auto-refresh every 30 seconds if needed
-    // setInterval(() => this.loadAnalytics(), 30000);
+    // Auto-refresh every 60 seconds
+    setInterval(() => this.loadAnalytics(), 60000);
   }
 }
 
@@ -221,13 +371,7 @@ const callAnalyticsManager = new CallAnalyticsManager();
 // Auto-start when page loads
 document.addEventListener('DOMContentLoaded', function () {
   callAnalyticsManager.init();
-
-  // Optional: Add refresh button if you have one
-  const refreshBtn = document.getElementById('refresh-analytics-btn');
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', () => callAnalyticsManager.refresh());
-  }
 });
 
-// Make it globally available if needed
+// Make it globally available
 window.callAnalyticsManager = callAnalyticsManager;
