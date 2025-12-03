@@ -58,6 +58,16 @@ def all_call_history():
         call_type = request.args.get("call_type")  # incoming/outgoing/missed
 
         # ============================
+        # 4️⃣ USER FILTER
+        # ============================
+        user_id = request.args.get("user_id")
+        if user_id and user_id != "all":
+            try:
+                user_id = int(user_id)
+            except ValueError:
+                user_id = None
+
+        # ============================
         # BASE QUERY (JOIN + ADMIN FILTER)
         # ============================
         query = (
@@ -77,6 +87,10 @@ def all_call_history():
         # Apply call type filter
         if call_type:
             query = query.filter(CallHistory.call_type == call_type)
+
+        # Apply user filter
+        if user_id:
+            query = query.filter(CallHistory.user_id == user_id)
 
         # Sorting
         query = query.order_by(CallHistory.timestamp.desc())

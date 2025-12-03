@@ -402,6 +402,12 @@
               <h3 class="text-lg font-bold text-gray-900">Call Logs</h3>
               <div class="flex gap-3">
                 <div class="relative">
+                  <select id="callUserFilter"
+                    class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2">
+                    <option value="all">All Users</option>
+                  </select>
+                </div>
+                <div class="relative">
                   <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                   <input id="callSearchInput" type="text" placeholder="Search logs..."
                     class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64">
@@ -642,8 +648,10 @@
       // Calls
       const callSearch = document.getElementById('callSearchInput');
       const callType = document.getElementById('callTypeFilter');
+      const callUser = document.getElementById('callUserFilter');
       if (callSearch) callSearch.addEventListener('input', debounce(() => filterCalls(), 300));
       if (callType) callType.addEventListener('change', filterCalls);
+      if (callUser) callUser.addEventListener('change', filterCalls);
 
       // Attendance Date Filter
       const attDate = document.getElementById('attendanceDateFilter');
@@ -665,8 +673,10 @@
     function filterCalls() {
       const search = document.getElementById('callSearchInput').value;
       const type = document.getElementById('callTypeFilter').value;
+      const user = document.getElementById('callUserFilter') ? document.getElementById('callUserFilter').value : '';
       if (callHistoryManager?.loadCalls) {
-        callHistoryManager.loadCalls(null, 1, 50, "", "", search, type === 'all' ? '' : type);
+        let userId = user === 'all' ? null : user;
+        callHistoryManager.loadCalls(userId, 1, 50, "", "", search, type === 'all' ? '' : type);
       }
     }
 
