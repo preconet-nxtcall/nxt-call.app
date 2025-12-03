@@ -380,7 +380,7 @@ def recent_sync():
 # -------------------------
 # USER ATTENDANCE (admin-wide listing, paginated)
 # -------------------------
-@bp.route("/attendance", methods=["GET"])
+# @bp.route("/attendance", methods=["GET"])
 @jwt_required()
 def admin_attendance():
     if not admin_required():
