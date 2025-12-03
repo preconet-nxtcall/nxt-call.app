@@ -43,6 +43,14 @@ class CallHistoryManager {
       // ================================
       // Build base URL (admin or user)
       // ================================
+      const container = document.getElementById("call-history-container");
+      if (container) {
+        container.innerHTML = '<div class="p-4 text-center text-gray-500">Loading...</div>';
+      }
+
+      // ================================
+      // Build base URL (admin or user)
+      // ================================
       let url = `/api/admin/all-call-history?page=${page}&per_page=${per_page}`;
 
       // ================================
@@ -68,12 +76,30 @@ class CallHistoryManager {
       // Main list
       const list = data.call_history || [];
 
-      const container = document.getElementById("call-history-container");
       if (!container) return;
 
       // ================================
       // Render Table
       // ================================
+      // ================================
+      // Render Table
+      // ================================
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="flex flex-col items-center justify-center py-12 bg-white rounded shadow">
+            <div class="text-gray-400 mb-3">
+              <i class="fas fa-search text-4xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900">No records found</h3>
+            <p class="text-gray-500 text-sm mt-1">Try adjusting your search or filters</p>
+          </div>
+        `;
+        // Clear pagination
+        const pagination = document.getElementById("call-history-pagination");
+        if (pagination) pagination.innerHTML = "";
+        return;
+      }
+
       container.innerHTML = `
         <table class="w-full bg-white rounded shadow overflow-hidden">
           <thead class="bg-gray-200">
@@ -87,24 +113,22 @@ class CallHistoryManager {
             </tr>
           </thead>
           <tbody>
-            ${list.length
-          ? list
-            .map(
-              (r) => `
-                  <tr class="border-t hover:bg-gray-50">
-                    <td class="p-3">${r.user_name || r.user_id || '-'}</td>
-                    <td class="p-3">${r.phone_number || '-'}</td>
-                    <td class="p-3">${r.contact_name || '-'}</td>
-                    <td class="p-3">${r.call_type || '-'}</td>
-                    <td class="p-3">${r.duration ? r.duration + "s" : "-"}</td>
-                    <td class="p-3 text-sm text-gray-600">
-                      ${r.timestamp ? new Date(r.timestamp).toLocaleString() : '-'}
-                    </td>
-                  </tr>
-                `
-            )
-            .join("")
-          : `<tr><td colspan="6" class="p-4 text-center text-gray-500">No call records found</td></tr>`
+            ${list
+          .map(
+            (r) => `
+              <tr class="border-t hover:bg-gray-50">
+                <td class="p-3">${r.user_name || r.user_id || '-'}</td>
+                <td class="p-3">${r.phone_number || '-'}</td>
+                <td class="p-3">${r.contact_name || '-'}</td>
+                <td class="p-3">${r.call_type || '-'}</td>
+                <td class="p-3">${r.duration ? r.duration + "s" : "-"}</td>
+                <td class="p-3 text-sm text-gray-600">
+                  ${r.timestamp ? new Date(r.timestamp).toLocaleString() : '-'}
+                </td>
+              </tr>
+            `
+          )
+          .join("")
         }
           </tbody>
         </table>
