@@ -4,6 +4,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime, timedelta
 from app.models import db, User, CallHistory
+from sqlalchemy import or_
 
 bp = Blueprint("admin_all_call_history", __name__, url_prefix="/api/admin")
 
@@ -82,7 +83,14 @@ def all_call_history():
 
         # Apply phone number search
         if search:
-            query = query.filter(CallHistory.phone_number.like(f"%{search}%"))
+            search_term = f"%{search}%"
+            query = query.filter(
+                or_(
+                    CallHistory.phone_number.like(search_term),
+                    CallHistory.formatted_number.like(search_term),
+                    CallHistory.contact_name.like(search_term)
+                )
+            )
 
         # Apply call type filter
         if call_type:
