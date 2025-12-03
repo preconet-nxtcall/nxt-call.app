@@ -128,13 +128,13 @@ class CallAnalyticsManager {
           <table class="w-full">
             <thead class="bg-gray-50">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">User</th>
-                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Incoming</th>
-                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Outgoing</th>
-                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Missed</th>
-                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Rejected</th>
-                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Total Duration</th>
-                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Last Sync</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">User</th>
+                <th class="px-6 py-3 text-center text-xs font-bold text-black uppercase tracking-wider">Incoming</th>
+                <th class="px-6 py-3 text-center text-xs font-bold text-black uppercase tracking-wider">Outgoing</th>
+                <th class="px-6 py-3 text-center text-xs font-bold text-black uppercase tracking-wider">Missed</th>
+                <th class="px-6 py-3 text-center text-xs font-bold text-black uppercase tracking-wider">Rejected</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">Total Duration</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">Last Sync</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">

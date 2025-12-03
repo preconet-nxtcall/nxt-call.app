@@ -111,11 +111,19 @@ def performance():
         labels = [u["user_name"] for u in users_list]
         values = [u["score"] for u in users_list]
         user_ids = [u["user_id"] for u in users_list]
+        
+        # Detailed data arrays for table
+        incoming_counts = [u["incoming"] for u in users_list]
+        outgoing_counts = [u["outgoing"] for u in users_list]
+        total_counts = [u["total_calls"] for u in users_list]
 
         return jsonify({
             "labels": labels,
             "values": values,
-            "user_ids": user_ids
+            "user_ids": user_ids,
+            "incoming": incoming_counts,
+            "outgoing": outgoing_counts,
+            "total_calls": total_counts
         }), 200
 
     except Exception as e:

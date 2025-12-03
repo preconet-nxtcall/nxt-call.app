@@ -298,7 +298,7 @@
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-left text-sm">
-                <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold">
+                <thead class="bg-gray-50 text-black uppercase tracking-wider font-bold">
                   <tr>
                     <th class="px-6 py-4">User</th>
                     <th class="px-6 py-4">Contact</th>
@@ -379,7 +379,7 @@
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-left text-sm">
-                <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold">
+                <thead class="bg-gray-50 text-black uppercase tracking-wider font-bold">
                   <tr>
                     <th class="px-6 py-4">User</th>
                     <th class="px-6 py-4">Check In</th>
@@ -446,11 +446,24 @@
         <section id="sectionPerformance" class="hidden-section space-y-6">
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex justify-between items-center">
             <h3 class="text-lg font-bold text-gray-900">Team Performance Ranking</h3>
-            <select id="performanceSort"
-              class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="desc">Highest Score First</option>
-              <option value="asc">Lowest Score First</option>
-            </select>
+            <div class="flex gap-3">
+              <div class="relative">
+                <select id="performanceSort"
+                  class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="desc">Highest Score First</option>
+                  <option value="asc">Lowest Score First</option>
+                </select>
+              </div>
+              <div class="relative">
+                <select id="performanceDateFilter"
+                  class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="today">Today</option>
+                  <option value="week">This Week</option>
+                  <option value="month">This Month</option>
+                  <option value="all">All Time</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -461,11 +474,14 @@
 
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <table class="w-full text-left text-sm">
-              <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold">
+              <thead class="bg-gray-50 text-black uppercase tracking-wider font-bold">
                 <tr>
                   <th class="px-6 py-4">Rank</th>
                   <th class="px-6 py-4">Team Member</th>
-                  <th class="px-6 py-4">Efficiency Score</th>
+                  <th class="px-6 py-4 text-center">Incoming</th>
+                  <th class="px-6 py-4 text-center">Outgoing</th>
+                  <th class="px-6 py-4 text-center">Total Calls</th>
+                  <th class="px-6 py-4 text-center">Score</th>
                   <th class="px-6 py-4">Details</th>
                 </tr>
               </thead>
