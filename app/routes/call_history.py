@@ -7,6 +7,7 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 
 from app.models import db, User, CallHistory
+from sqlalchemy import func
 
 bp = Blueprint("call_history", __name__, url_prefix="/api/call-history")
 
@@ -171,10 +172,54 @@ def sync_call_history():
             db.session.rollback()
             return jsonify({"error": "DB commit failed", "detail": str(e)}), 500
 
+        # =========================================================
+        # 📊 AUTO-CALCULATE ANALYTICS
+        # =========================================================
+        try:
+            # ---- Total Calls ----
+            total_calls = CallHistory.query.filter_by(user_id=user_id).count()
+
+            # ---- Call Type Summary ----
+            call_types = (
+                db.session.query(
+                    CallHistory.call_type,
+                    func.count(CallHistory.id)
+                )
+                .filter(CallHistory.user_id == user_id)
+                .group_by(CallHistory.call_type)
+                .all()
+            )
+            # Normalize keys to lowercase for consistency
+            call_type_summary = {ctype.lower(): count for ctype, count in call_types}
+
+            # ---- Total Call Duration ----
+            total_duration = (
+                db.session.query(func.coalesce(func.sum(CallHistory.duration), 0))
+                .filter(CallHistory.user_id == user_id)
+                .scalar()
+                or 0
+            )
+
+            # ---- Recent Calls (Optional context) ----
+            # We can return the last few calls if needed, or just the summary
+            
+        except Exception as analytics_error:
+            # If analytics fail, we still return success for the sync but log the error
+            current_app.logger.error(f"Analytics calc failed: {analytics_error}")
+            total_calls = 0
+            call_type_summary = {}
+            total_duration = 0
+
         return jsonify({
             "message": "Call history synced successfully",
             "records_saved": saved,
-            "errors": errors
+            "errors": errors,
+            "analytics": {
+                "total_calls": total_calls,
+                "call_types": call_type_summary,
+                "total_duration_seconds": int(total_duration),
+                "last_sync": user.last_sync.isoformat()
+            }
         }), 200
 
     except Exception as e:
