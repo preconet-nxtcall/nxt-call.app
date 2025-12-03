@@ -49,16 +49,6 @@ def dashboard_stats():
     total_score = sum((u.performance_score or 0.0) for u in users)
     avg_perf = round(total_score / total, 2) if total else 0
 
-    return jsonify({
-        "stats": {
-            "total_users": total,
-            "active_users": active,
-            "expired_users": 0,
-            "user_limit": admin.user_limit,
-            "remaining_slots": admin.user_limit - total,
-            "users_with_sync": synced,
-            "sync_rate": round((synced / total) * 100, 2) if total else 0,
-            "avg_performance": avg_perf,
     # Calculate daily call trend (last 7 days)
     week_ago = datetime.utcnow() - timedelta(days=7)
     user_ids = [u.id for u in users]
