@@ -54,7 +54,7 @@ def sync_attendance():
                     existing.longitude = rec.get("longitude")
                     existing.address = rec.get("location")
                     existing.image_path = rec.get("imagePath")
-                    existing.status = rec.get("status", "present")
+                    existing.status = rec.get("status", "present").lower()
                     existing.synced = True
                     existing.sync_timestamp = datetime.utcnow()
 
@@ -70,7 +70,7 @@ def sync_attendance():
                         longitude = rec.get("longitude"),
                         address = rec.get("location"),
                         image_path = rec.get("imagePath"),
-                        status = rec.get("status", "present"),
+                        status = rec.get("status", "present").lower(),
                         synced = True,
                         sync_timestamp = datetime.utcnow()
                     )

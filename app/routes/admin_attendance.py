@@ -37,10 +37,10 @@ def get_admin_attendance():
 
     if date_str:
         try:
-            dt = datetime.strptime(date_str, "%Y-%m-%d")
-            start_time = dt
-            end_time = dt + timedelta(days=1)
-        except ValueError:
+            # Use explicit string range for maximum compatibility
+            start_time = f"{date_str} 00:00:00"
+            end_time = f"{date_str} 23:59:59"
+        except Exception:
             print(f"DEBUG: Invalid date format: {date_str}")
             # If date is invalid, return empty list instead of all records
             return jsonify({"attendance": [], "meta": {"total": 0}}), 200
@@ -57,7 +57,7 @@ def get_admin_attendance():
     base_query = db.session.query(Attendance).join(User).filter(User.admin_id == admin_id)
 
     if start_time and end_time:
-        base_query = base_query.filter(Attendance.check_in >= start_time, Attendance.check_in < end_time)
+        base_query = base_query.filter(Attendance.check_in >= start_time, Attendance.check_in <= end_time)
 
     paginated = base_query.order_by(Attendance.check_in.desc()).paginate(page=page, per_page=per_page, error_out=False)
 
