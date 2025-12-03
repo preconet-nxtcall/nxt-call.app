@@ -31,7 +31,7 @@ def all_call_history():
         # 1️⃣ DATE FILTER
         # ============================
         filter_type = request.args.get("filter")  # today / week / month
-        custom_date = request.args.get("date")  # YYYY-MM-DD format
+        custom_date = request.args.get("date", "").strip()  # YYYY-MM-DD format
         
         now = datetime.utcnow()
         start_time = None
@@ -78,7 +78,7 @@ def all_call_history():
                 start_of_day = datetime.strptime(custom_date, "%Y-%m-%d")
                 end_of_day = start_of_day + timedelta(days=1)
                 query = query.filter(CallHistory.timestamp >= start_of_day, CallHistory.timestamp < end_of_day)
-            except:
+            except ValueError:
                 return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
         elif start_time:
             query = query.filter(CallHistory.timestamp >= start_time)
