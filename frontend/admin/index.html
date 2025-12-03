@@ -427,7 +427,7 @@
 
         <!-- CALL ANALYTICS SECTION -->
         <section id="sectionCallAnalytics" class="hidden-section space-y-6">
-          <div id="call-analytics-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div id="call-analytics-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             <!-- Content injected by JS -->
           </div>
 
@@ -435,53 +435,53 @@
 
 
 
+
+
+
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-6">User Performance Summary</h3>
+            <div id="call-analytics-table-container">
+              <!-- Content injected by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- PERFORMANCE SECTION -->
+        <section id="sectionPerformance" class="hidden-section space-y-6">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-gray-900">Team Performance Ranking</h3>
+            <select id="performanceSort"
+              class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="desc">Highest Score First</option>
+              <option value="asc">Lowest Score First</option>
+            </select>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div class="h-80">
+              <canvas id="performanceBarCanvas"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold">
+                <tr>
+                  <th class="px-6 py-4">Rank</th>
+                  <th class="px-6 py-4">Team Member</th>
+                  <th class="px-6 py-4">Efficiency Score</th>
+                  <th class="px-6 py-4">Details</th>
+                </tr>
+              </thead>
+              <tbody id="performanceTableBody" class="divide-y divide-gray-100 bg-white">
+                <!-- Content injected by JS -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
       </div>
-  </div>
-
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <h3 class="text-lg font-bold text-gray-900 mb-6">User Performance Summary</h3>
-    <div id="call-analytics-table-container">
-      <!-- Content injected by JS -->
-    </div>
-  </div>
-  </section>
-
-  <!-- PERFORMANCE SECTION -->
-  <section id="sectionPerformance" class="hidden-section space-y-6">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex justify-between items-center">
-      <h3 class="text-lg font-bold text-gray-900">Team Performance Ranking</h3>
-      <select id="performanceSort"
-        class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <option value="desc">Highest Score First</option>
-        <option value="asc">Lowest Score First</option>
-      </select>
-    </div>
-
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <div class="h-80">
-        <canvas id="performanceBarCanvas"></canvas>
-      </div>
-    </div>
-
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <table class="w-full text-left text-sm">
-        <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold">
-          <tr>
-            <th class="px-6 py-4">Rank</th>
-            <th class="px-6 py-4">Team Member</th>
-            <th class="px-6 py-4">Efficiency Score</th>
-            <th class="px-6 py-4">Details</th>
-          </tr>
-        </thead>
-        <tbody id="performanceTableBody" class="divide-y divide-gray-100 bg-white">
-          <!-- Content injected by JS -->
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  </div>
-  </main>
+    </main>
   </div>
 
   <div id="notificationArea" class="fixed top-4 right-4 z-50 space-y-2"></div>
