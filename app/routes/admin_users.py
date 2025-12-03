@@ -92,3 +92,47 @@ def delete_user(user_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 400
+
+
+# ----------------------------------------
+# TOGGLE USER STATUS (BLOCK/UNBLOCK)
+# ----------------------------------------
+@admin_user_bp.route("/user/<int:user_id>/status", methods=["PUT"])
+@jwt_required()
+def toggle_user_status(user_id):
+    if not admin_required():
+        return jsonify({"error": "Admin only"}), 403
+
+    admin_id = int(get_jwt_identity())
+
+    # Check if user exists and belongs to this admin
+    user = User.query.get(user_id)
+    if not user or user.admin_id != admin_id:
+        return jsonify({"error": "Unauthorized or user not found"}), 404
+
+    try:
+        # Toggle status
+        user.is_active = not user.is_active
+        db.session.commit()
+
+        action = "Unblocked" if user.is_active else "Blocked"
+
+        # LOGGING
+        log = ActivityLog(
+            actor_role="admin",
+            actor_id=admin_id,
+            action=f"{action} user {user.email}",
+            target_type="user",
+            target_id=user.id
+        )
+        db.session.add(log)
+        db.session.commit()
+
+        return jsonify({
+            "message": f"User {action.lower()} successfully",
+            "is_active": user.is_active
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 400

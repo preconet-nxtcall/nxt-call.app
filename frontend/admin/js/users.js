@@ -8,7 +8,7 @@ class UsersManager {
 
     // Bind form submit
     const form = document.getElementById('createUserForm');
-    if (form) form.addEventListener('submit', (e)=>{ e.preventDefault(); this.createUser(); });
+    if (form) form.addEventListener('submit', (e) => { e.preventDefault(); this.createUser(); });
   }
 
   // MAIN LOADER ---------------------------------
@@ -80,10 +80,15 @@ class UsersManager {
         </td>
 
         <td class="p-3 text-right">
-          <button onclick="usersManager.view(${u.id})" class="text-blue-600 mr-2">
+          <button onclick="usersManager.view(${u.id})" class="text-blue-600 mr-2" title="View User">
             <i class="fas fa-eye"></i>
           </button>
-          <button onclick="usersManager.delete(${u.id})" class="text-red-600">
+          <button onclick="usersManager.toggleStatus(${u.id}, ${u.is_active})" 
+            class="mr-2 ${u.is_active ? 'text-orange-500' : 'text-green-500'}"
+            title="${u.is_active ? 'Block User' : 'Unblock User'}">
+            <i class="fas ${u.is_active ? 'fa-ban' : 'fa-check-circle'}"></i>
+          </button>
+          <button onclick="usersManager.delete(${u.id})" class="text-red-600" title="Delete User">
             <i class="fas fa-trash"></i>
           </button>
         </td>
@@ -108,7 +113,32 @@ class UsersManager {
 
     } catch (e) {
       console.error(e);
-      auth.showNotification('User data error','error');
+      auth.showNotification('User data error', 'error');
+    }
+  }
+
+  // TOGGLE STATUS -------------------------------
+  async toggleStatus(id, currentStatus) {
+    if (!confirm(`Are you sure you want to ${currentStatus ? 'block' : 'unblock'} this user?`)) return;
+
+    try {
+      const resp = await auth.makeAuthenticatedRequest(`/api/admin/user/${id}/status`, {
+        method: 'PUT'
+      });
+
+      if (!resp) return;
+      const data = await resp.json();
+
+      if (resp.ok) {
+        auth.showNotification(data.message, 'success');
+        this.loadUsers();
+      } else {
+        auth.showNotification(data.error || 'Update failed', 'error');
+      }
+
+    } catch (e) {
+      console.error(e);
+      auth.showNotification('Update error', 'error');
     }
   }
 
@@ -128,12 +158,12 @@ class UsersManager {
         auth.showNotification('User deleted', 'success');
         this.loadUsers();
       } else {
-        auth.showNotification(data.error || 'Delete failed','error');
+        auth.showNotification(data.error || 'Delete failed', 'error');
       }
 
     } catch (e) {
       console.error(e);
-      auth.showNotification('Delete error','error');
+      auth.showNotification('Delete error', 'error');
     }
   }
 
