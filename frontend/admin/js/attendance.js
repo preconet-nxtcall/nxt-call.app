@@ -2,14 +2,17 @@
 class AttendanceManager {
 
   async loadAttendance(date = null, page = 1, per_page = 25) {
+    console.log("loadAttendance called with date:", date);
     try {
       let url = `/api/admin/attendance?page=${page}&per_page=${per_page}`;
       if (date) {
         url += `&date=${date}`;
       } else {
-        // Default to today if no date provided
-        const today = new Date().toISOString().split('T')[0];
+        // Default to today (Local Time)
+        // en-CA gives YYYY-MM-DD
+        const today = new Date().toLocaleDateString('en-CA');
         url += `&date=${today}`;
+        console.log("Using default local date:", today);
       }
 
       const resp = await auth.makeAuthenticatedRequest(url);
@@ -79,8 +82,8 @@ class AttendanceManager {
             <!-- OPEN MAP -->
             ${a.latitude && a.longitude ? `
               <a href="https://www.google.com/maps?q=${a.latitude},${a.longitude}"
-                 target="_blank"
-                 class="text-green-600 hover:underline">
+                target="_blank"
+                class="text-green-600 hover:underline">
                 Map
               </a>
             ` : "-"}
@@ -103,4 +106,6 @@ class AttendanceManager {
   }
 }
 
-const attendanceManager = new AttendanceManager();
+// Attach to window
+window.AttendanceManager = AttendanceManager;
+window.attendanceManager = new AttendanceManager();
