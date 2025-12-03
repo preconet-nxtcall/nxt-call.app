@@ -102,6 +102,7 @@ def create_app(config_class=Config):
     from app.routes.admin_performance import bp as admin_performance_bp
     from app.routes.admin_dashboard import admin_dashboard_bp
     from app.routes.admin_sync import bp as admin_sync_bp
+    from app.routes.admin_users import admin_user_bp  # NEW
     from app.routes.call_analytics import bp as call_analytics_bp  # NEW
 
     # =======================================================
@@ -121,6 +122,7 @@ def create_app(config_class=Config):
     app.register_blueprint(admin_performance_bp)
     app.register_blueprint(admin_dashboard_bp)
     app.register_blueprint(admin_sync_bp)
+    app.register_blueprint(admin_user_bp)  # NEW: User Management Actions
 
     app.register_blueprint(call_analytics_bp)  # NEW
 
