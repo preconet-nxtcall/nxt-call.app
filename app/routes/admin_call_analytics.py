@@ -41,40 +41,36 @@ def admin_analytics_all_users():
             }), 200
 
         # ---------- Top-level totals ----------
-        try:
-            total_calls = db.session.query(func.count(CallHistory.id))\
-                .filter(CallHistory.user_id.in_(user_ids)).scalar() or 0
+        # Removed inner try-except to expose errors
+        total_calls = db.session.query(func.count(CallHistory.id))\
+            .filter(CallHistory.user_id.in_(user_ids)).scalar() or 0
 
-            incoming = db.session.query(func.count(CallHistory.id))\
-                .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "incoming").scalar() or 0
+        incoming = db.session.query(func.count(CallHistory.id))\
+            .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "incoming").scalar() or 0
 
-            outgoing = db.session.query(func.count(CallHistory.id))\
-                .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "outgoing").scalar() or 0
+        outgoing = db.session.query(func.count(CallHistory.id))\
+            .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "outgoing").scalar() or 0
 
-            missed = db.session.query(func.count(CallHistory.id))\
-                .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "missed").scalar() or 0
+        missed = db.session.query(func.count(CallHistory.id))\
+            .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "missed").scalar() or 0
 
-            rejected = db.session.query(func.count(CallHistory.id))\
-                .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "rejected").scalar() or 0
+        rejected = db.session.query(func.count(CallHistory.id))\
+            .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "rejected").scalar() or 0
 
-            # New Metrics
-            total_answered = incoming + outgoing
+        # New Metrics
+        total_answered = incoming + outgoing
 
-            unique_numbers = db.session.query(func.count(func.distinct(CallHistory.phone_number)))\
-                .filter(CallHistory.user_id.in_(user_ids)).scalar() or 0
+        unique_numbers = db.session.query(func.count(func.distinct(CallHistory.phone_number)))\
+            .filter(CallHistory.user_id.in_(user_ids)).scalar() or 0
 
-            avg_inbound_duration = db.session.query(func.avg(CallHistory.duration))\
-                .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "incoming").scalar() or 0
+        avg_inbound_duration = db.session.query(func.avg(CallHistory.duration))\
+            .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "incoming").scalar() or 0
 
-            avg_outbound_duration = db.session.query(func.avg(CallHistory.duration))\
-                .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "outgoing").scalar() or 0
-            
-            total_duration = db.session.query(func.sum(CallHistory.duration))\
-                .filter(CallHistory.user_id.in_(user_ids)).scalar() or 0
-
-        except Exception:
-            total_calls = incoming = outgoing = missed = rejected = 0
-            total_answered = unique_numbers = avg_inbound_duration = avg_outbound_duration = total_duration = 0
+        avg_outbound_duration = db.session.query(func.avg(CallHistory.duration))\
+            .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "outgoing").scalar() or 0
+        
+        total_duration = db.session.query(func.sum(CallHistory.duration))\
+            .filter(CallHistory.user_id.in_(user_ids)).scalar() or 0
 
         # ---------- Daily trend (last 7 days) ----------
         week_ago = datetime.utcnow() - timedelta(days=7)
