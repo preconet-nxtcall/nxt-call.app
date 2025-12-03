@@ -46,16 +46,16 @@ def admin_analytics_all_users():
                 .filter(CallHistory.user_id.in_(user_ids)).scalar() or 0
 
             incoming = db.session.query(func.count(CallHistory.id))\
-                .filter(CallHistory.user_id.in_(user_ids), CallHistory.call_type == "incoming").scalar() or 0
+                .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "incoming").scalar() or 0
 
             outgoing = db.session.query(func.count(CallHistory.id))\
-                .filter(CallHistory.user_id.in_(user_ids), CallHistory.call_type == "outgoing").scalar() or 0
+                .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "outgoing").scalar() or 0
 
             missed = db.session.query(func.count(CallHistory.id))\
-                .filter(CallHistory.user_id.in_(user_ids), CallHistory.call_type == "missed").scalar() or 0
+                .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "missed").scalar() or 0
 
             rejected = db.session.query(func.count(CallHistory.id))\
-                .filter(CallHistory.user_id.in_(user_ids), CallHistory.call_type == "rejected").scalar() or 0
+                .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "rejected").scalar() or 0
 
         except Exception:
             total_calls = incoming = outgoing = missed = rejected = 0
@@ -92,19 +92,19 @@ def admin_analytics_all_users():
                 User.name.label("user_name"),
 
                 func.coalesce(func.sum(
-                    case((CallHistory.call_type == "incoming", 1), else_=0)
+                    case((func.lower(CallHistory.call_type) == "incoming", 1), else_=0)
                 ), 0).label("incoming"),
 
                 func.coalesce(func.sum(
-                    case((CallHistory.call_type == "outgoing", 1), else_=0)
+                    case((func.lower(CallHistory.call_type) == "outgoing", 1), else_=0)
                 ), 0).label("outgoing"),
 
                 func.coalesce(func.sum(
-                    case((CallHistory.call_type == "missed", 1), else_=0)
+                    case((func.lower(CallHistory.call_type) == "missed", 1), else_=0)
                 ), 0).label("missed"),
 
                 func.coalesce(func.sum(
-                    case((CallHistory.call_type == "rejected", 1), else_=0)
+                    case((func.lower(CallHistory.call_type) == "rejected", 1), else_=0)
                 ), 0).label("rejected"),
 
                 func.coalesce(func.sum(CallHistory.duration), 0).label("total_duration_seconds"),
@@ -187,10 +187,10 @@ def admin_analytics_single_user(user_id):
         # Query stats
         stats = db.session.query(
             func.count(CallHistory.id).label("total"),
-            func.sum(case((CallHistory.call_type == "incoming", 1), else_=0)).label("incoming"),
-            func.sum(case((CallHistory.call_type == "outgoing", 1), else_=0)).label("outgoing"),
-            func.sum(case((CallHistory.call_type == "missed", 1), else_=0)).label("missed"),
-            func.sum(case((CallHistory.call_type == "rejected", 1), else_=0)).label("rejected"),
+            func.sum(case((func.lower(CallHistory.call_type) == "incoming", 1), else_=0)).label("incoming"),
+            func.sum(case((func.lower(CallHistory.call_type) == "outgoing", 1), else_=0)).label("outgoing"),
+            func.sum(case((func.lower(CallHistory.call_type) == "missed", 1), else_=0)).label("missed"),
+            func.sum(case((func.lower(CallHistory.call_type) == "rejected", 1), else_=0)).label("rejected"),
             func.sum(CallHistory.duration).label("duration")
         ).filter(
             CallHistory.user_id == user_id,

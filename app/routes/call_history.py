@@ -147,7 +147,7 @@ def sync_call_history():
                     user_id=user_id,
                     phone_number=phone_number,
                     formatted_number=entry.get("formatted_number") or "",
-                    call_type=call_type,
+                    call_type=call_type.lower() if call_type else "unknown",
                     duration=duration,
                     timestamp=dt,
                     contact_name=entry.get("contact_name") or ""

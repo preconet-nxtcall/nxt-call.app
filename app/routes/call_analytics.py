@@ -92,10 +92,10 @@ def get_analytics():
         total_calls = CallHistory.query.filter_by(user_id=user_id).count()
 
         # ---- Each Call Type ----
-        incoming = CallHistory.query.filter_by(user_id=user_id, call_type="incoming").count()
-        outgoing = CallHistory.query.filter_by(user_id=user_id, call_type="outgoing").count()
-        missed = CallHistory.query.filter_by(user_id=user_id, call_type="missed").count()
-        rejected = CallHistory.query.filter_by(user_id=user_id, call_type="rejected").count()
+        incoming = CallHistory.query.filter(CallHistory.user_id == user_id, func.lower(CallHistory.call_type) == "incoming").count()
+        outgoing = CallHistory.query.filter(CallHistory.user_id == user_id, func.lower(CallHistory.call_type) == "outgoing").count()
+        missed = CallHistory.query.filter(CallHistory.user_id == user_id, func.lower(CallHistory.call_type) == "missed").count()
+        rejected = CallHistory.query.filter(CallHistory.user_id == user_id, func.lower(CallHistory.call_type) == "rejected").count()
 
         # ---- Total Duration ----
         total_duration = (

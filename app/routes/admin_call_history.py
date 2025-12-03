@@ -75,8 +75,11 @@ def all_call_history():
         # Apply date filter
         if custom_date:
             try:
-                # Reverting to func.date() as it handles timezone/day boundaries more flexibly in some DBs
-                query = query.filter(func.date(CallHistory.timestamp) == custom_date)
+                # Use explicit string range for maximum compatibility
+                # This ensures we cover the entire day regardless of object types
+                start_date_str = f"{custom_date} 00:00:00"
+                end_date_str = f"{custom_date} 23:59:59"
+                query = query.filter(CallHistory.timestamp >= start_date_str, CallHistory.timestamp <= end_date_str)
             except Exception:
                 return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
         elif start_time:
