@@ -144,3 +144,61 @@ def admin_analytics_all_users():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+
+@bp.route("/<int:user_id>", methods=["GET"])
+@jwt_required()
+def admin_analytics_single_user(user_id):
+    """
+    Returns analytics for a SINGLE user for a specific period (default: today).
+    """
+    if not is_admin():
+        return jsonify({"error": "Admin access required"}), 403
+
+    try:
+        admin_id = int(get_jwt_identity())
+
+        # Verify user belongs to admin
+        user = User.query.filter_by(id=user_id, admin_id=admin_id).first()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        # Determine date range (default: today)
+        period = request.args.get("period", "today")
+        now = datetime.utcnow()
+        
+        if period == "today":
+            start_dt = datetime(now.year, now.month, now.day)
+            end_dt = start_dt + timedelta(days=1)
+        else:
+            # Fallback to today if unknown
+            start_dt = datetime(now.year, now.month, now.day)
+            end_dt = start_dt + timedelta(days=1)
+
+        # Query stats
+        stats = db.session.query(
+            func.count(CallHistory.id).label("total"),
+            func.sum(case((CallHistory.call_type == "incoming", 1), else_=0)).label("incoming"),
+            func.sum(case((CallHistory.call_type == "outgoing", 1), else_=0)).label("outgoing"),
+            func.sum(case((CallHistory.call_type == "missed", 1), else_=0)).label("missed"),
+            func.sum(case((CallHistory.call_type == "rejected", 1), else_=0)).label("rejected"),
+            func.sum(CallHistory.duration).label("duration")
+        ).filter(
+            CallHistory.user_id == user_id,
+            CallHistory.timestamp >= start_dt,
+            CallHistory.timestamp < end_dt
+        ).first()
+
+        return jsonify({
+            "user_name": user.name,
+            "period": period,
+            "total_calls": int(stats.total or 0),
+            "incoming": int(stats.incoming or 0),
+            "outgoing": int(stats.outgoing or 0),
+            "missed": int(stats.missed or 0),
+            "rejected": int(stats.rejected or 0),
+            "total_duration_seconds": int(stats.duration or 0)
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400

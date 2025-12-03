@@ -95,7 +95,45 @@ class PerformanceManager {
   }
 
   async viewUserDetails(user_id) {
-    auth.showNotification("Feature coming soon: User details (#" + user_id + ")", "info");
+    try {
+      // Show loading state or just open modal with loader
+      const modal = document.getElementById('userDetailsModal');
+      if (modal) modal.classList.remove('hidden');
+
+      const resp = await auth.makeAuthenticatedRequest(`/api/admin/call-analytics/${user_id}?period=today`);
+      if (!resp.ok) {
+        auth.showNotification("Failed to load user details", "error");
+        if (modal) modal.classList.add('hidden');
+        return;
+      }
+
+      const data = await resp.json();
+
+      // Populate Modal
+      document.getElementById('modal-user-name').textContent = data.user_name || "User Details";
+      document.getElementById('modal-total').textContent = data.total_calls || 0;
+      document.getElementById('modal-duration').textContent = this.formatDuration(data.total_duration_seconds || 0);
+      document.getElementById('modal-incoming').textContent = data.incoming || 0;
+      document.getElementById('modal-outgoing').textContent = data.outgoing || 0;
+      document.getElementById('modal-missed').textContent = data.missed || 0;
+      document.getElementById('modal-rejected').textContent = data.rejected || 0;
+
+    } catch (e) {
+      console.error(e);
+      auth.showNotification("Error loading user details", "error");
+      const modal = document.getElementById('userDetailsModal');
+      if (modal) modal.classList.add('hidden');
+    }
+  }
+
+  formatDuration(seconds) {
+    if (!seconds || seconds === 0) return "0s";
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
   }
 }
 
