@@ -82,6 +82,62 @@ class AdminsManager {
     }
 
     /************************************************************
+     * TOGGLE ADMIN STATUS (BLOCK/UNBLOCK)
+     ************************************************************/
+    async toggleAdminStatus(adminId, currentStatus) {
+        if (!confirm(`Are you sure you want to ${currentStatus ? 'block' : 'unblock'} this admin?`)) {
+            return;
+        }
+
+        try {
+            const response = await auth.makeAuthenticatedRequest(
+                `/api/superadmin/admin/${adminId}/status`,
+                { method: "PUT" }
+            );
+            const data = await response.json();
+
+            if (response.ok) {
+                auth.showNotification(data.message, "success");
+                this.loadAdmins();
+            } else {
+                auth.showNotification(data.error || "Failed to update status", "error");
+            }
+
+        } catch (error) {
+            console.error("TOGGLE STATUS ERROR:", error);
+            auth.showNotification("Server error", "error");
+        }
+    }
+
+    /************************************************************
+     * DELETE ADMIN
+     ************************************************************/
+    async deleteAdmin(adminId) {
+        if (!confirm("Are you sure you want to delete this admin? This action cannot be undone.")) {
+            return;
+        }
+
+        try {
+            const response = await auth.makeAuthenticatedRequest(
+                `/api/superadmin/admin/${adminId}`,
+                { method: "DELETE" }
+            );
+            const data = await response.json();
+
+            if (response.ok) {
+                auth.showNotification(data.message, "success");
+                this.loadAdmins();
+            } else {
+                auth.showNotification(data.error || "Failed to delete admin", "error");
+            }
+
+        } catch (error) {
+            console.error("DELETE ADMIN ERROR:", error);
+            auth.showNotification("Server error", "error");
+        }
+    }
+
+    /************************************************************
      * RENDER ADMIN TABLE
      ************************************************************/
     renderAdmins() {
@@ -150,6 +206,25 @@ class AdminsManager {
                     <!-- STATUS -->
                     <td class="px-6 py-4">
                         ${status}
+                    </td>
+
+                    <!-- ACTIONS -->
+                    <td class="px-6 py-4">
+                        <div class="flex items-center space-x-2">
+                            <!-- Toggle Status Button -->
+                            <button onclick="adminsManager.toggleAdminStatus(${admin.id}, ${admin.is_active})"
+                                class="p-2 rounded hover:bg-gray-100 text-gray-600 transition"
+                                title="${admin.is_active ? 'Block Admin' : 'Unblock Admin'}">
+                                <i class="fas ${admin.is_active ? 'fa-ban text-orange-500' : 'fa-check-circle text-green-500'}"></i>
+                            </button>
+
+                            <!-- Delete Button -->
+                            <button onclick="adminsManager.deleteAdmin(${admin.id})"
+                                class="p-2 rounded hover:bg-red-50 text-red-600 transition"
+                                title="Delete Admin">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </td>
 
                 </tr>

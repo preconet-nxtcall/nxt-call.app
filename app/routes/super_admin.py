@@ -231,3 +231,85 @@ def delete_activity_logs():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+
+# =========================================================
+# TOGGLE ADMIN STATUS (BLOCK/UNBLOCK)
+# =========================================================
+@bp.route("/admin/<int:admin_id>/status", methods=["PUT"])
+@jwt_required()
+def toggle_admin_status(admin_id):
+    try:
+        # Verify super admin
+        super_admin_id = get_jwt_identity()
+        if not SuperAdmin.query.get(super_admin_id):
+            return jsonify({"error": "Unauthorized"}), 401
+
+        admin = Admin.query.get(admin_id)
+        if not admin:
+            return jsonify({"error": "Admin not found"}), 404
+
+        # Toggle status
+        admin.is_active = not admin.is_active
+        db.session.commit()
+
+        action = "Unblocked" if admin.is_active else "Blocked"
+
+        # Log activity
+        log = ActivityLog(
+            actor_role=UserRole.SUPER_ADMIN,
+            actor_id=super_admin_id,
+            action=f"{action} Admin: {admin.name}",
+            target_type="admin",
+            target_id=admin.id
+        )
+        db.session.add(log)
+        db.session.commit()
+
+        return jsonify({
+            "message": f"Admin {action.lower()} successfully",
+            "is_active": admin.is_active
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+# =========================================================
+# DELETE ADMIN
+# =========================================================
+@bp.route("/admin/<int:admin_id>", methods=["DELETE"])
+@jwt_required()
+def delete_admin(admin_id):
+    try:
+        # Verify super admin
+        super_admin_id = get_jwt_identity()
+        if not SuperAdmin.query.get(super_admin_id):
+            return jsonify({"error": "Unauthorized"}), 401
+
+        admin = Admin.query.get(admin_id)
+        if not admin:
+            return jsonify({"error": "Admin not found"}), 404
+
+        # Delete admin
+        admin_name = admin.name
+        db.session.delete(admin)
+        db.session.commit()
+
+        # Log activity
+        log = ActivityLog(
+            actor_role=UserRole.SUPER_ADMIN,
+            actor_id=super_admin_id,
+            action=f"Deleted Admin: {admin_name}",
+            target_type="admin",
+            target_id=admin_id
+        )
+        db.session.add(log)
+        db.session.commit()
+
+        return jsonify({"message": "Admin deleted successfully"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
