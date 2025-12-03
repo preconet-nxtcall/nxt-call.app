@@ -372,13 +372,9 @@
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h3 class="text-lg font-bold text-gray-900">Attendance Records</h3>
-              <div class="flex gap-2 bg-gray-100 p-1 rounded-lg">
-                <button id="attendanceToday"
-                  class="px-4 py-1.5 rounded-md text-sm font-medium bg-white text-gray-900 shadow-sm transition-all">Today</button>
-                <button id="attendanceWeek"
-                  class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-gray-900 transition-all">Week</button>
-                <button id="attendanceMonth"
-                  class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-gray-900 transition-all">Month</button>
+              <div class="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+                <input type="date" id="attendanceDateFilter"
+                  class="bg-white border-none text-sm rounded-md px-3 py-1.5 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-700">
               </div>
             </div>
             <div class="overflow-x-auto">
@@ -430,13 +426,6 @@
           <div id="call-analytics-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             <!-- Content injected by JS -->
           </div>
-
-
-
-
-
-
-
 
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h3 class="text-lg font-bold text-gray-900 mb-6">User Performance Summary</h3>
@@ -656,27 +645,15 @@
       if (callSearch) callSearch.addEventListener('input', debounce(() => filterCalls(), 300));
       if (callType) callType.addEventListener('change', filterCalls);
 
-      // Attendance Buttons
-      const attToday = document.getElementById('attendanceToday');
-      const attWeek = document.getElementById('attendanceWeek');
-      const attMonth = document.getElementById('attendanceMonth');
-
-      if (attToday) attToday.onclick = function () { setAttFilter(this, 'today'); };
-      if (attWeek) attWeek.onclick = function () { setAttFilter(this, 'week'); };
-      if (attMonth) attMonth.onclick = function () { setAttFilter(this, 'month'); };
-    }
-
-    function setAttFilter(btn, range) {
-      // Reset all
-      [document.getElementById('attendanceToday'), document.getElementById('attendanceWeek'), document.getElementById('attendanceMonth')].forEach(b => {
-        b.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
-        b.classList.add('text-gray-500', 'hover:text-gray-900');
-      });
-      // Set active
-      btn.classList.remove('text-gray-500', 'hover:text-gray-900');
-      btn.classList.add('bg-white', 'text-gray-900', 'shadow-sm');
-
-      if (attendanceManager?.loadAttendance) attendanceManager.loadAttendance(range);
+      // Attendance Date Filter
+      const attDate = document.getElementById('attendanceDateFilter');
+      if (attDate) {
+        // Set default to today
+        attDate.valueAsDate = new Date();
+        attDate.addEventListener('change', function () {
+          if (attendanceManager?.loadAttendance) attendanceManager.loadAttendance(this.value);
+        });
+      }
     }
 
     function filterUsers() {

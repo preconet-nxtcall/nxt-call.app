@@ -28,18 +28,24 @@ def get_admin_attendance():
     if not admin:
         return jsonify({"attendance": [], "meta": {}}), 200
 
-    # Time Filter (today/week/month)
-    filter_type = request.args.get("filter", "today")
-
-    now = datetime.utcnow()
+    # Date Filter (YYYY-MM-DD)
+    date_str = request.args.get("date")
+    
     start_time = None
+    end_time = None
 
-    if filter_type == "today":
+    if date_str:
+        try:
+            dt = datetime.strptime(date_str, "%Y-%m-%d")
+            start_time = dt
+            end_time = dt + timedelta(days=1)
+        except ValueError:
+            pass  # Invalid date format, ignore or handle error
+    else:
+        # Default to today if no date provided
+        now = datetime.utcnow()
         start_time = datetime(now.year, now.month, now.day)
-    elif filter_type == "week":
-        start_time = now - timedelta(days=7)
-    elif filter_type == "month":
-        start_time = now - timedelta(days=30)
+        end_time = start_time + timedelta(days=1)
 
     # Pagination
     page = int(request.args.get("page", 1))
@@ -48,8 +54,8 @@ def get_admin_attendance():
     # Query all users of this admin
     base_query = db.session.query(Attendance).join(User).filter(User.admin_id == admin_id)
 
-    if start_time:
-        base_query = base_query.filter(Attendance.check_in >= start_time)
+    if start_time and end_time:
+        base_query = base_query.filter(Attendance.check_in >= start_time, Attendance.check_in < end_time)
 
     paginated = base_query.order_by(Attendance.check_in.desc()).paginate(page=page, per_page=per_page, error_out=False)
 

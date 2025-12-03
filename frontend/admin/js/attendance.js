@@ -1,11 +1,18 @@
 /* admin/js/attendance.js */
 class AttendanceManager {
 
-  async loadAttendance(filter = "today", page = 1, per_page = 25) {
+  async loadAttendance(date = null, page = 1, per_page = 25) {
     try {
-      const resp = await auth.makeAuthenticatedRequest(
-        `/api/admin/attendance?filter=${filter}&page=${page}&per_page=${per_page}`
-      );
+      let url = `/api/admin/attendance?page=${page}&per_page=${per_page}`;
+      if (date) {
+        url += `&date=${date}`;
+      } else {
+        // Default to today if no date provided
+        const today = new Date().toISOString().split('T')[0];
+        url += `&date=${today}`;
+      }
+
+      const resp = await auth.makeAuthenticatedRequest(url);
 
       if (!resp) return;
       const data = await resp.json();
