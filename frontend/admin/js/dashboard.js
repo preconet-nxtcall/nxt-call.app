@@ -18,6 +18,17 @@ class DashboardManager {
 
       this.stats = data.stats || {};
 
+      // Update Sidebar Admin Profile
+      const adminNameEl = document.getElementById('sidebar-admin-name');
+      const adminEmailEl = document.getElementById('sidebar-admin-email');
+
+      if (adminNameEl && this.stats.admin_name) {
+        adminNameEl.textContent = this.stats.admin_name;
+      }
+      if (adminEmailEl && this.stats.admin_email) {
+        adminEmailEl.textContent = this.stats.admin_email;
+      }
+
       this.renderStats();
       this.renderRecentSync();
       this.renderUserLogs();
