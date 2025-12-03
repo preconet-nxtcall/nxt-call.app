@@ -2,331 +2,482 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Call Manager Pro - Super Admin</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Super Admin Panel - Call Manager Pro</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
                     colors: {
-                        primary: '#000000',
-                        secondary: '#333333',
-                        accent: '#666666',
-                        background: '#ffffff',
-                        surface: '#f5f5f5',
-                        text: '#000000',
-                        muted: '#888888',
-                        border: '#dddddd',
-                        blue: {
-                            50: '#f9fafb',
-                            100: '#f3f4f6',
-                            200: '#e5e7eb',
-                            300: '#d1d5db',
-                            400: '#9ca3af',
-                            500: '#6b7280',
-                            600: '#4b5563',
-                            700: '#374151',
-                            800: '#1f2937',
-                            900: '#111827',
-                        },
-                        red: {
-                            50: '#f9fafb',
-                            100: '#f3f4f6',
-                            200: '#e5e7eb',
-                            300: '#d1d5db',
-                            400: '#9ca3af',
-                            500: '#6b7280',
-                            600: '#4b5563',
-                            700: '#374151',
-                            800: '#1f2937',
-                            900: '#111827',
-                        },
-                        green: {
-                            50: '#f9fafb',
-                            100: '#f3f4f6',
-                            200: '#e5e7eb',
-                            300: '#d1d5db',
-                            400: '#9ca3af',
-                            500: '#6b7280',
-                            600: '#4b5563',
-                            700: '#374151',
-                            800: '#1f2937',
-                            900: '#111827',
-                        },
+                        brand: {
+                            dark: '#111827', // Sidebar bg
+                            primary: '#3B82F6', // Blue accent
+                            success: '#10B981', // Green accent
+                            warning: '#F59E0B', // Yellow accent
+                            danger: '#EF4444', // Red accent
+                        }
                     }
                 }
             }
         }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
     <style>
-        .sidebar {
-            transition: all 0.3s ease;
-            transform: translateX(-100%);
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Sidebar Transition */
+        #sidebar {
+            transition: transform 0.3s ease-in-out;
             z-index: 50;
         }
 
-        .sidebar.active {
-            transform: translateX(0);
+        @media (max-width: 1023px) {
+            #sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                height: 100%;
+            }
+
+            #sidebar.active {
+                transform: translateX(0);
+            }
         }
 
-        .nav-item.active {
-            background: #f3f4f6;
-            border-right: 4px solid #000000;
-        }
-
-        .overlay {
+        /* Overlay */
+        #overlay {
             display: none;
             position: fixed;
             inset: 0;
             background: rgba(0, 0, 0, 0.5);
             z-index: 40;
+            backdrop-filter: blur(2px);
         }
 
-        .overlay.active {
+        #overlay.active {
             display: block;
         }
 
-        @media (min-width: 1024px) {
-            .sidebar {
-                transform: translateX(0) !important;
-            }
+        /* Card Hover Effects */
+        .hover-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
 
-            .overlay {
-                display: none !important;
-            }
+        .hover-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Utility for hiding sections */
+        .hidden-section {
+            display: none !important;
         }
     </style>
 </head>
 
-<body class="bg-gray-50 flex h-screen">
+<body class="bg-gray-50 text-gray-800 antialiased">
 
-    <!-- Overlay -->
-    <div class="overlay" id="mobile-overlay"></div>
+    <div id="overlay" aria-hidden="true"></div>
 
-    <!-- Sidebar -->
-    <div class="sidebar bg-white shadow-lg w-64 fixed h-full">
-        <div class="p-6 border-b border-gray-200 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-phone-alt text-white text-lg"></i>
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="w-64 bg-gray-900 text-white flex flex-col shadow-2xl">
+            <!-- Logo Area -->
+            <div class="h-16 flex items-center px-6 border-b border-gray-800 bg-gray-900">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/30">
+                        <i class="fas fa-shield-alt text-white text-sm"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold tracking-tight">Super<span class="text-blue-500">Admin</span></h1>
+                    </div>
+                </div>
+                <button id="closeSidebar" class="lg:hidden ml-auto text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+                <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Overview</p>
+
+                <a id="menuDashboard"
+                    class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg bg-blue-600 text-white shadow-md cursor-pointer">
+                    <i
+                        class="fas fa-chart-pie w-6 text-center text-blue-200 group-hover:text-white transition-colors"></i>
+                    <span class="ml-2">Dashboard</span>
+                </a>
+
+                <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2">Management</p>
+
+                <a id="menuAdmins"
+                    class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer">
+                    <i
+                        class="fas fa-users-cog w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i>
+                    <span class="ml-2">Manage Admins</span>
+                </a>
+
+                <a id="menuActivity"
+                    class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer">
+                    <i
+                        class="fas fa-history w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i>
+                    <span class="ml-2">Activity Logs</span>
+                </a>
+            </nav>
+
+            <!-- User Profile / Logout -->
+            <div class="p-4 border-t border-gray-800 bg-gray-900">
+                <div class="flex items-center gap-3 mb-3">
+                    <div
+                        class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-md">
+                        SA
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-white truncate" id="current-superadmin-name">Super Admin</p>
+                        <p class="text-xs text-gray-500 truncate">superadmin@example.com</p>
+                    </div>
+                </div>
+                <button id="logoutBtn"
+                    class="w-full flex items-center justify-center px-4 py-2 border border-gray-700 rounded-lg shadow-sm text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700 hover:text-white transition-colors">
+                    <i class="fas fa-sign-out-alt mr-2"></i> Sign out
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main id="mainContent" class="flex-1 overflow-y-auto bg-gray-50 relative">
+
+            <!-- Header -->
+            <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+                <div class="px-6 py-4 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <button id="openSidebar" class="lg:hidden text-gray-500 hover:text-gray-700 p-1">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <div>
+                            <h2 id="pageTitle" class="text-xl font-bold text-gray-900">Dashboard</h2>
+                            <p id="pageSubtitle" class="text-xs text-gray-500 mt-0.5">System overview & statistics</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-xs font-medium text-gray-900" id="currentDate">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-6 lg:p-8 max-w-7xl mx-auto">
+
+                <!-- DASHBOARD SECTION -->
+                <section id="sectionDashboard" class="space-y-6">
+
+                    <!-- Stats Grid -->
+                    <div id="stats-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <!-- Content injected by JS -->
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover-card flex flex-col">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">Recent System Activity</h3>
+                        <div id="recent-activity" class="flex-1 overflow-y-auto space-y-4 pr-2 max-h-[400px]">
+                            <!-- Content injected by JS -->
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- ADMINS SECTION -->
+                <section id="sectionAdmins" class="hidden-section space-y-6">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div
+                            class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <h3 class="text-lg font-bold text-gray-900">Administrators</h3>
+                            <button onclick="document.getElementById('createAdminModal').classList.remove('hidden')"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                                <i class="fas fa-plus"></i> Create Admin
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold">
+                                    <tr>
+                                        <th class="px-6 py-4">Admin Name</th>
+                                        <th class="px-6 py-4">Email</th>
+                                        <th class="px-6 py-4">User Limit</th>
+                                        <th class="px-6 py-4">Users Created</th>
+                                        <th class="px-6 py-4">Expiry Date</th>
+                                        <th class="px-6 py-4">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admins-table-body" class="divide-y divide-gray-100 bg-white">
+                                    <!-- Content injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ACTIVITY LOGS SECTION -->
+                <section id="sectionActivity" class="hidden-section space-y-6">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div
+                            class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <h3 class="text-lg font-bold text-gray-900">System Activity Logs</h3>
+                            <div class="flex gap-3">
+                                <button id="deleteLogsBtn"
+                                    class="bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                                    <i class="fas fa-trash-alt"></i> Delete All Logs
+                                </button>
+                                <button onclick="activityManager.loadActivity()"
+                                    class="bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold">
+                                    <tr>
+                                        <th class="px-6 py-4">Action</th>
+                                        <th class="px-6 py-4">Actor</th>
+                                        <th class="px-6 py-4">Target</th>
+                                        <th class="px-6 py-4">Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="activity-table-body" class="divide-y divide-gray-100 bg-white">
+                                    <!-- Content injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Admin Modal -->
+    <div id="createAdminModal"
+        class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 transform transition-all scale-100">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-gray-900">Create New Admin</h3>
+                <button onclick="document.getElementById('createAdminModal').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <form id="createAdminForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <input id="adminName" type="text"
+                        class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold text-gray-800">Call Manager Pro</h1>
-                    <p class="text-xs text-gray-500">Super Admin Panel</p>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                    <input id="adminEmail" type="email"
+                        class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required>
                 </div>
-            </div>
-
-            <button class="lg:hidden text-gray-500 hover:text-gray-700" id="close-sidebar">
-                <i class="fas fa-times text-xl"></i>
-            </button>
-        </div>
-
-        <nav class="mt-8">
-            <a href="#dashboard"
-                class="nav-item active flex items-center space-x-3 px-6 py-3 text-gray-700 hover:bg-blue-50 transition">
-                <i class="fas fa-chart-pie w-5"></i>
-                <span>Dashboard</span>
-            </a>
-
-            <a href="#admins"
-                class="nav-item flex items-center space-x-3 px-6 py-3 text-gray-700 hover:bg-blue-50 transition">
-                <i class="fas fa-users-cog w-5"></i>
-                <span>Manage Admins</span>
-            </a>
-
-            <a href="#activity"
-                class="nav-item flex items-center space-x-3 px-6 py-3 text-gray-700 hover:bg-blue-50 transition">
-                <i class="fas fa-history w-5"></i>
-                <span>Activity Logs</span>
-            </a>
-        </nav>
-
-        <div class="absolute bottom-0 w-full p-4 border-t border-gray-200">
-            <div class="flex items-center space-x-3 px-2">
-                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                    <i class="fas fa-user-shield text-blue-600"></i>
-                </div>
-
-                <div class="flex-1">
-                    <p class="text-sm font-medium" id="current-superadmin-name">Loading...</p>
-                    <p class="text-xs text-gray-500">Super Admin</p>
-                </div>
-
-                <button id="logout-btn" class="text-gray-500 hover:text-red-500 transition">
-                    <i class="fas fa-sign-out-alt text-md"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="main-content lg:ml-64 flex-1 overflow-auto">
-
-        <!-- Header -->
-        <header class="bg-white shadow-sm border-b border-gray-200">
-            <div class="px-4 lg:px-8 py-4 flex justify-between items-center">
-
-                <div class="flex items-center space-x-4">
-                    <button class="lg:hidden text-gray-500" id="hamburger-menu">
-                        <i class="fas fa-bars text-xl"></i>
-                    </button>
-
+                <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <h2 class="text-2xl font-bold text-gray-800" id="page-title">Dashboard Overview</h2>
-                        <p class="text-sm text-gray-500" id="page-subtitle">Welcome back!</p>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input id="adminPassword" type="password"
+                            class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">User Limit</label>
+                        <input id="userLimit" type="number" value="10"
+                            class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     </div>
                 </div>
-
-                <button id="logout-btn-header" class="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center">
-                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
-                </button>
-
-            </div>
-        </header>
-
-        <!-- DASHBOARD SECTION -->
-        <div id="dashboard-section" class="p-4 lg:p-8">
-
-            <div id="stats-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <!-- Stats inserted here -->
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                <!-- Create Admin -->
-                <div class="lg:col-span-2 bg-white rounded-xl shadow p-6 border">
-
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-lg font-semibold">Create New Admin</h3>
-                        <i class="fas fa-user-plus bg-blue-100 p-2 rounded text-blue-600"></i>
-                    </div>
-
-                    <form id="createAdminForm" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input id="adminName" type="text" placeholder="Full Name"
-                                class="w-full border px-4 py-2 rounded" required>
-
-                            <input id="adminEmail" type="email" placeholder="Email"
-                                class="w-full border px-4 py-2 rounded" required>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input id="adminPassword" type="password" placeholder="Password"
-                                class="w-full border px-4 py-2 rounded" required>
-
-                            <input id="userLimit" type="number" placeholder="User Limit"
-                                class="w-full border px-4 py-2 rounded">
-                        </div>
-
-                        <input id="expiryDate" type="date" class="w-full border px-4 py-2 rounded" required>
-
-                        <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700">
-                            Create Admin Account
-                        </button>
-                    </form>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                    <input id="expiryDate" type="date"
+                        class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required>
                 </div>
 
-                <!-- Recent Activity -->
-                <div class="bg-white rounded-xl shadow p-6 border">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-lg font-semibold">Recent Activity</h3>
-                        <i class="fas fa-history bg-green-100 p-2 rounded text-green-600"></i>
-                    </div>
-
-                    <div id="recent-activity" class="space-y-4 max-h-96 overflow-y-auto"></div>
-                </div>
-
-            </div>
-
-        </div>
-
-        <!-- MANAGE ADMINS SECTION -->
-        <div id="admins-section" class="p-4 lg:p-8 hidden">
-            <div class="bg-white rounded-xl shadow p-6 border">
-
-                <div class="flex justify-between mb-6">
-                    <h3 class="text-lg font-semibold">Administrators Management</h3>
-                    <button onclick="adminsManager.loadAdmins()"
-                        class="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
-                        <i class="fas fa-sync-alt mr-2"></i> Refresh
+                <div class="pt-4">
+                    <button type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow-md transition-all">
+                        Create Admin Account
                     </button>
                 </div>
-
-                <table class="w-full min-w-max">
-                    <thead>
-                        <tr class="bg-gray-50 border-b">
-                            <th class="px-4 py-3 text-left">Admin</th>
-                            <th class="px-4 py-3 text-left">Users</th>
-                            <th class="px-4 py-3 text-left">Expiry</th>
-                            <th class="px-4 py-3 text-left">Status</th>
-                            <th class="px-4 py-3 text-left">Actions</th>
-                        </tr>
-                    </thead>
-
-                    <tbody id="admins-table-body"></tbody>
-                </table>
-
-            </div>
+            </form>
         </div>
-
-        <!-- ACTIVITY LOGS SECTION -->
-        <div id="activity-section" class="p-4 lg:p-8 hidden">
-            <div class="bg-white rounded-xl shadow p-6 border">
-
-                <div class="flex justify-between mb-6">
-                    <h3 class="text-lg font-semibold">Activity Logs</h3>
-                    <button onclick="activityManager.loadActivity()"
-                        class="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
-                        <i class="fas fa-sync-alt mr-2"></i>Refresh
-                    </button>
-                </div>
-
-                <!-- FIXED FILTER -->
-                <div class="mb-4">
-                    <label class="text-sm font-medium text-gray-700">Filter by Role:</label>
-                    <select id="activityFilter" class="border px-3 py-2 rounded ml-2">
-                        <option value="">All</option>
-                        <option value="super_admin">Super Admin</option>
-                        <option value="admin">Admin</option>
-                        <option value="user">User</option>
-                    </select>
-                </div>
-
-                <table class="w-full min-w-max">
-                    <thead>
-                        <tr class="bg-gray-50 border-b">
-                            <th class="px-4 py-3 text-left">Action</th>
-                            <th class="px-4 py-3 text-left">Actor</th>
-                            <th class="px-4 py-3 text-left">Target</th>
-                            <th class="px-4 py-3 text-left">Timestamp</th>
-                        </tr>
-                    </thead>
-                    <tbody id="activity-table-body"></tbody>
-                </table>
-
-            </div>
-        </div>
-
     </div>
 
-    <!-- JS -->
+    <div id="notificationArea" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/super_admin/js/auth.js"></script>
     <script src="/super_admin/js/dashboard.js"></script>
     <script src="/super_admin/js/admins.js"></script>
     <script src="/super_admin/js/activity.js"></script>
 
     <script>
-        document.getElementById("logout-btn")?.addEventListener("click", () => auth.logout());
-        document.getElementById("logout-btn-header")?.addEventListener("click", () => auth.logout());
+        // Set current date
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', dateOptions);
+
+        // Initialize Managers
+        window.dashboard = window.dashboard || new DashboardManager();
+        window.adminsManager = window.adminsManager || new AdminsManager();
+        window.activityManager = window.activityManager || new ActivityManager();
+
+        // DOM Elements
+        const menuItems = {
+            dashboard: document.getElementById('menuDashboard'),
+            admins: document.getElementById('menuAdmins'),
+            activity: document.getElementById('menuActivity'),
+        };
+
+        const sections = {
+            dashboard: document.getElementById('sectionDashboard'),
+            admins: document.getElementById('sectionAdmins'),
+            activity: document.getElementById('sectionActivity'),
+        };
+
+        const pageTitle = document.getElementById('pageTitle');
+        const pageSubtitle = document.getElementById('pageSubtitle');
+
+        // Helper to hide all sections
+        function hideAll() {
+            Object.values(sections).forEach(el => el?.classList.add('hidden-section'));
+            Object.values(menuItems).forEach(el => {
+                el?.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                el?.classList.add('text-gray-300', 'hover:bg-gray-800', 'hover:text-white');
+                const icon = el?.querySelector('i');
+                if (icon) {
+                    icon.classList.remove('text-blue-200');
+                    icon.classList.add('text-gray-400');
+                }
+            });
+        }
+
+        // Helper to activate menu item
+        function activateMenu(key, title, subtitle) {
+            hideAll();
+            sections[key]?.classList.remove('hidden-section');
+
+            const btn = menuItems[key];
+            if (btn) {
+                btn.classList.remove('text-gray-300', 'hover:bg-gray-800', 'hover:text-white');
+                btn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    icon.classList.remove('text-gray-400');
+                    icon.classList.add('text-blue-200');
+                }
+            }
+
+            if (pageTitle) pageTitle.textContent = title;
+            if (pageSubtitle) pageSubtitle.textContent = subtitle;
+
+            // Close sidebar on mobile
+            if (window.innerWidth < 1024) {
+                document.getElementById('sidebar')?.classList.remove('active');
+                document.getElementById('overlay')?.classList.remove('active');
+            }
+        }
+
+        // Event Listeners
+        menuItems.dashboard.onclick = () => {
+            activateMenu('dashboard', 'Dashboard', 'System overview & statistics');
+            if (dashboard?.loadStats) dashboard.loadStats();
+        };
+
+        menuItems.admins.onclick = () => {
+            activateMenu('admins', 'Manage Admins', 'Create & manage administrator accounts');
+            if (adminsManager?.loadAdmins) adminsManager.loadAdmins();
+        };
+
+        menuItems.activity.onclick = () => {
+            activateMenu('activity', 'Activity Logs', 'System-wide activity tracking');
+            if (activityManager?.loadActivity) activityManager.loadActivity();
+        };
+
+        // Sidebar Toggles
+        document.getElementById('openSidebar')?.addEventListener('click', () => {
+            document.getElementById('sidebar')?.classList.add('active');
+            document.getElementById('overlay')?.classList.add('active');
+        });
+        document.getElementById('closeSidebar')?.addEventListener('click', () => {
+            document.getElementById('sidebar')?.classList.remove('active');
+            document.getElementById('overlay')?.classList.remove('active');
+        });
+        document.getElementById('overlay')?.addEventListener('click', () => {
+            document.getElementById('sidebar')?.classList.remove('active');
+            document.getElementById('overlay')?.classList.remove('active');
+        });
+
+        // Logout
+        document.getElementById('logoutBtn')?.addEventListener('click', () => auth.logout());
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!auth.getToken()) {
+                window.location.href = "/super_admin/login.html";
+                return;
+            }
+            // Trigger default load
+            menuItems.dashboard.click();
+        });
+
+        // Form Submit (Create Admin)
+        document.getElementById('createAdminForm')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (adminsManager?.createAdmin) adminsManager.createAdmin();
+        });
+
+        // Delete Logs
+        document.getElementById('deleteLogsBtn')?.addEventListener('click', () => {
+            if (confirm('Are you sure you want to delete ALL activity logs? This action cannot be undone.')) {
+                if (activityManager?.deleteLogs) activityManager.deleteLogs();
+            }
+        });
+
     </script>
-
-
 </body>
 
 </html>

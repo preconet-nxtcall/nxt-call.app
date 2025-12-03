@@ -1,21 +1,10 @@
 /************************************************************
  * SUPER ADMIN DASHBOARD CONTROLLER
  ************************************************************/
-class SuperAdminDashboard {
+class DashboardManager {
     constructor() {
         this.stats = null;
-        this.init();
-    }
-
-    /************************************************************
-     * INITIAL SETUP
-     ************************************************************/
-    async init() {
-        console.log("DEBUG: Initializing SuperAdmin Dashboard...");
-        this.setupNavigation();
-        this.setupEventListeners();
-        await this.loadStats();
-        await this.loadRecentActivity();
+        // Navigation is handled in index.html now
     }
 
     /************************************************************
@@ -28,11 +17,11 @@ class SuperAdminDashboard {
             const response = await auth.makeAuthenticatedRequest("/api/superadmin/dashboard-stats");
             const data = await response.json();
 
-            console.log("DEBUG: Dashboard stats received:", data);
-
             if (response.ok) {
                 this.stats = data.stats;
                 this.renderStats();
+                // Also load recent activity when loading dashboard
+                this.loadRecentActivity();
             } else {
                 auth.showNotification(data.error || "Failed to load dashboard stats", "error");
             }
@@ -83,13 +72,13 @@ class SuperAdminDashboard {
 
         container.innerHTML = cards
             .map(card => `
-                <div class="stat-card bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover-card">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-xs text-gray-500">${card.label}</p>
-                            <p class="text-3xl font-bold text-gray-800 mt-1">${card.value}</p>
+                            <p class="text-sm font-medium text-gray-500">${card.label}</p>
+                            <p class="text-3xl font-bold text-gray-900 mt-2">${card.value}</p>
                         </div>
-                        <div class="${card.bg} w-12 h-12 rounded-lg flex items-center justify-center">
+                        <div class="${card.bg} w-12 h-12 rounded-xl flex items-center justify-center shadow-sm">
                             <i class="fas fa-${card.icon} ${card.color} text-xl"></i>
                         </div>
                     </div>
@@ -103,22 +92,15 @@ class SuperAdminDashboard {
      ************************************************************/
     async loadRecentActivity() {
         try {
-            console.log("DEBUG: Loading recent activity...");
-
             const response = await auth.makeAuthenticatedRequest("/api/superadmin/logs");
             const data = await response.json();
 
-            console.log("DEBUG: Recent Activity:", data);
-
             if (response.ok) {
                 this.renderRecentActivity(data.logs || []);
-            } else {
-                auth.showNotification(data.error || "Unable to load recent activity", "error");
             }
 
         } catch (error) {
             console.error("ERROR Loading Activity:", error);
-            auth.showNotification("Error loading recent activity", "error");
         }
     }
 
@@ -131,42 +113,38 @@ class SuperAdminDashboard {
 
         if (logs.length === 0) {
             container.innerHTML = `
-                <div class="text-center text-gray-500 py-6">
-                    <i class="fas fa-history text-3xl text-gray-300"></i>
+                <div class="text-center text-gray-500 py-10">
+                    <i class="fas fa-history text-3xl text-gray-300 mb-2"></i>
                     <p>No recent activity</p>
                 </div>
             `;
             return;
         }
 
-        container.innerHTML = logs.slice(0, 8).map(log => `
-            <div class="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition">
-                <div class="w-9 h-9 rounded-full flex items-center justify-center
-                    ${
-                        log.actor_role === "super_admin" ? "bg-purple-100 text-purple-600" :
-                        log.actor_role === "admin" ? "bg-blue-100 text-blue-600" :
-                        "bg-green-100 text-green-600"
-                    }">
-                    <i class="fas fa-${this.getIcon(log.action)}"></i>
+        container.innerHTML = logs.slice(0, 10).map(log => `
+            <div class="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition border-b border-gray-50 last:border-0">
+                <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center
+                    ${log.actor_role === "super_admin" ? "bg-purple-100 text-purple-600" :
+                log.actor_role === "admin" ? "bg-blue-100 text-blue-600" :
+                    "bg-green-100 text-green-600"
+            }">
+                    <i class="fas fa-${this.getIcon(log.action)} text-xs"></i>
                 </div>
 
-                <div>
-                    <p class="text-sm text-gray-800">${log.action}</p>
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium text-gray-900 truncate">${log.action}</p>
                     <p class="text-xs text-gray-500">${this.formatTime(log.timestamp)}</p>
                 </div>
             </div>
         `).join("");
     }
 
-    /************************************************************
-     * SMALL HELPERS
-     ************************************************************/
     getIcon(action) {
         if (!action) return "history";
         const a = action.toLowerCase();
-        if (a.includes("create")) return "plus-circle";
+        if (a.includes("create")) return "plus";
         if (a.includes("delete")) return "trash";
-        if (a.includes("update")) return "edit";
+        if (a.includes("update")) return "pen";
         if (a.includes("login")) return "sign-in-alt";
         if (a.includes("logout")) return "sign-out-alt";
         return "history";
@@ -175,73 +153,6 @@ class SuperAdminDashboard {
     formatTime(timestamp) {
         if (!timestamp) return "Unknown";
         const d = new Date(timestamp);
-        return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
-    }
-
-    /************************************************************
-     * NAVIGATION (Switch Sections)
-     ************************************************************/
-    setupNavigation() {
-        const navItems = document.querySelectorAll(".nav-item");
-
-        navItems.forEach(item => {
-            item.addEventListener("click", (e) => {
-                e.preventDefault();
-
-                // highlight active
-                navItems.forEach(n => n.classList.remove("active"));
-                item.classList.add("active");
-
-                const target = item.getAttribute("href").replace("#", "");
-                this.showSection(target);
-            });
-        });
-    }
-
-    showSection(section) {
-        const sections = ["dashboard", "admins", "activity"];
-
-        sections.forEach(sec => {
-            const el = document.getElementById(`${sec}-section`);
-            if (el) el.style.display = "none";
-        });
-
-        document.getElementById(`${section}-section`).style.display = "block";
-
-        const title = document.getElementById("page-title");
-        const subtitle = document.getElementById("page-subtitle");
-
-        if (section === "dashboard") {
-            title.textContent = "Dashboard Overview";
-            subtitle.textContent = "Welcome back! Here's your system overview.";
-            this.loadStats();
-            this.loadRecentActivity();
-        }
-
-        if (section === "admins") {
-            title.textContent = "Manage Administrators";
-            subtitle.textContent = "Create & manage admin accounts.";
-            adminsManager.loadAdmins();
-        }
-
-        if (section === "activity") {
-            title.textContent = "Activity Logs";
-            subtitle.textContent = "Track system activities.";
-            activityManager.loadActivity();
-        }
-    }
-
-    /************************************************************
-     * EVENT HANDLERS
-     ************************************************************/
-    setupEventListeners() {
-        console.log("Super Admin Dashboard Ready ✔");
+        return d.toLocaleString();
     }
 }
-
-/************************************************************
- * INITIALIZE
- ************************************************************/
-document.addEventListener("DOMContentLoaded", () => {
-    window.superAdminDashboard = new SuperAdminDashboard();
-});

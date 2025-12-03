@@ -197,3 +197,37 @@ def activity_logs():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# =========================================================
+# DELETE ACTIVITY LOGS
+# =========================================================
+@bp.route("/logs", methods=["DELETE"])
+@jwt_required()
+def delete_activity_logs():
+    try:
+        # Verify super admin
+        super_admin_id = get_jwt_identity()
+        if not SuperAdmin.query.get(super_admin_id):
+            return jsonify({"error": "Unauthorized"}), 401
+
+        # Delete all logs
+        num_deleted = db.session.query(ActivityLog).delete()
+        db.session.commit()
+
+        # Create a new log for this action
+        log = ActivityLog(
+            actor_role=UserRole.SUPER_ADMIN,
+            actor_id=super_admin_id,
+            action="Deleted all activity logs",
+            target_type="system",
+            target_id=0
+        )
+        db.session.add(log)
+        db.session.commit()
+
+        return jsonify({"message": f"Deleted {num_deleted} logs"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
