@@ -91,7 +91,7 @@ class DashboardManager {
             <div>
               <div class="font-medium">${r.name}</div>
               <div class="text-xs text-gray-500">
-                Last Sync: ${r.last_sync ? new Date(r.last_sync).toLocaleString() : 'Never'}
+                Last Sync: ${window.formatDateTime(r.last_sync)}
               </div>
             </div>
             <div class="text-sm ${r.is_active ? 'text-green-600' : 'text-red-600'}">
@@ -130,7 +130,7 @@ class DashboardManager {
               <div class="w-2 h-2 rounded-full ${l.is_active ? 'bg-green-500' : 'bg-red-500'}"></div>
               <div>
                 <div class="font-medium text-gray-900">${l.user_name || 'Unknown'}</div>
-                <div class="text-xs text-gray-500">Last Check-in: ${l.timestamp !== 'Never' ? new Date(l.timestamp).toLocaleString() : 'Never'}</div>
+                <div class="text-xs text-gray-500">Last Check-in: ${l.timestamp !== 'Never' ? window.formatDateTime(l.timestamp) : 'Never'}</div>
               </div>
             </div>
             <div class="text-xs font-medium px-2 py-1 rounded-full ${l.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">

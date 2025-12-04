@@ -171,7 +171,7 @@ class CallHistoryManager {
                 <td class="p-3">${r.call_type || '-'}</td>
                 <td class="p-3">${r.duration ? r.duration + "s" : "-"}</td>
                 <td class="p-3 text-sm text-gray-600">
-                  ${r.timestamp ? new Date(r.timestamp).toLocaleString() : '-'}
+                  ${window.formatDateTime(r.timestamp)}
                 </td>
               </tr>
             `
@@ -261,7 +261,7 @@ class CallHistoryManager {
         (r.contact_name || '-').replace(/,/g, " "),
         r.call_type || '-',
         r.duration || 0,
-        r.timestamp ? new Date(r.timestamp).toLocaleString() : '-'
+        window.formatDateTime(r.timestamp)
       ]);
 
       let csvContent = "data:text/csv;charset=utf-8,"

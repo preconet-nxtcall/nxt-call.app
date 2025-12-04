@@ -4,6 +4,22 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("Admin Panel Loaded");
 
     // ---------------------------------
+    // 0. GLOBAL HELPERS
+    // ---------------------------------
+    window.formatDateTime = (dateString) => {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            hour12: true
+        });
+    };
+
+    // ---------------------------------
     // 1. SIDEBAR TOGGLE
     // ---------------------------------
     const sidebar = document.getElementById("sidebar");

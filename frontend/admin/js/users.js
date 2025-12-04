@@ -177,8 +177,8 @@ class UsersManager {
         document.getElementById('um-modal-created').textContent = localUser.created_at ? new Date(localUser.created_at).toLocaleDateString() : '-';
       }
 
-      document.getElementById('um-modal-last-sync').textContent = analytics.last_sync ? new Date(analytics.last_sync).toLocaleString() : 'Never';
-      document.getElementById('um-modal-last-login').textContent = analytics.last_login ? new Date(analytics.last_login).toLocaleString() : 'Never';
+      document.getElementById('um-modal-last-sync').textContent = window.formatDateTime(analytics.last_sync);
+      document.getElementById('um-modal-last-login').textContent = window.formatDateTime(analytics.last_login);
 
       document.getElementById('um-modal-attendance').textContent = analytics.attendance.total_attendance || 0;
       document.getElementById('um-modal-calls').textContent = analytics.calls.total_calls || 0;

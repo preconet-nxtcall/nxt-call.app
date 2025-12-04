@@ -109,13 +109,13 @@ class AttendanceManager {
 
           <!-- CHECK IN -->
           <td class="p-3 text-gray-700">
-            ${a.check_in ? new Date(a.check_in).toLocaleString() : "-"}
+            ${window.formatDateTime(a.check_in)}
             <div class="text-xs text-gray-500">${a.address || ""}</div>
           </td>
 
           <!-- CHECK OUT -->
           <td class="p-3 text-gray-700">
-            ${a.check_out ? new Date(a.check_out).toLocaleString() : "-"}
+            ${window.formatDateTime(a.check_out)}
           </td>
 
           <!-- STATUS -->
