@@ -73,8 +73,7 @@ with app.app_context():
         print("✅ Default Super Admin created: super@callmanager.com / admin123")
     else:
         print("ℹ️ Super Admin already exists.")
-    else:
-        print("ℹ️ Super Admin already exists.")
+
 PYCODE
 
 # Run constraint fixes
