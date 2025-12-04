@@ -30,6 +30,21 @@ def iso(dt):
     except Exception:
         return str(dt)
 
+def is_online(dt):
+    """
+    Returns True if dt is within the last 5 minutes.
+    """
+    if not dt:
+        return False
+    
+    # Ensure dt is timezone-aware (UTC)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+        
+    now = datetime.now(timezone.utc)
+    diff = now - dt
+    return diff < timedelta(minutes=5)
+
 def admin_required():
     claims = get_jwt()
     return claims.get("role") == "admin"
@@ -577,7 +592,7 @@ def recent_sync():
             "email": u.email,
             "last_sync": iso(u.last_sync),
             "time_ago": "Just now", # simplified, frontend can calc relative time
-            "is_active": u.is_active
+            "is_active": is_online(u.last_sync)
         })
 
     return jsonify({"recent_sync": data}), 200
@@ -607,7 +622,7 @@ def user_logs():
             "action": f"Checked {att.status}", # "Checked in" or "Checked out"
             "timestamp": iso(att.created_at),
             "type": "attendance",
-            "is_active": user.is_active
+            "is_active": is_online(user.last_sync)
         })
 
     return jsonify({"logs": data}), 200
