@@ -2,18 +2,24 @@
 class AttendanceManager {
 
   constructor() {
+    this.loadUsersForFilter();
     this.initEventListeners();
   }
 
   initEventListeners() {
+    const userFilter = document.getElementById("attendanceUserFilter");
     const dateFilter = document.getElementById("attendanceDateFilter");
     const btnExport = document.getElementById("btnExportAttendance");
 
-    if (dateFilter) {
-      dateFilter.addEventListener("change", () => {
-        this.loadAttendance(dateFilter.value);
-      });
-    }
+    const refresh = () => {
+      this.loadAttendance(
+        dateFilter?.value,
+        userFilter?.value === 'all' ? null : userFilter?.value
+      );
+    };
+
+    if (userFilter) userFilter.addEventListener("change", refresh);
+    if (dateFilter) dateFilter.addEventListener("change", refresh);
 
     if (btnExport) {
       btnExport.addEventListener("click", () => {
@@ -24,19 +30,48 @@ class AttendanceManager {
 
   // Standard interface for main.js
   load() {
+    const userFilter = document.getElementById("attendanceUserFilter");
     const dateFilter = document.getElementById("attendanceDateFilter");
+
+    if (userFilter) userFilter.value = "all";
     if (dateFilter) dateFilter.value = "";
+
     this.loadAttendance();
   }
 
-  async loadAttendance(date = null, page = 1, per_page = 25) {
-    console.log("loadAttendance called with date:", date);
+  async loadUsersForFilter() {
+    try {
+      const resp = await auth.makeAuthenticatedRequest('/api/admin/users?per_page=100');
+      if (!resp || !resp.ok) return;
+      const data = await resp.json();
+      const users = data.users || [];
+
+      const select = document.getElementById('attendanceUserFilter');
+      if (!select) return;
+
+      select.innerHTML = '<option value="all">All Users</option>';
+
+      users.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.id;
+        opt.textContent = u.name;
+        select.appendChild(opt);
+      });
+    } catch (e) {
+      console.error("Failed to load users for filter", e);
+    }
+  }
+
+  async loadAttendance(date = null, user_id = null, page = 1, per_page = 25) {
+    console.log("loadAttendance called with date:", date, "user:", user_id);
     try {
       let url = `/api/admin/attendance?page=${page}&per_page=${per_page}`;
       if (date) {
         url += `&date=${date}`;
       }
-      // Removed default date logic to show all records by default
+      if (user_id && user_id !== 'all') {
+        url += `&user_id=${user_id}`;
+      }
 
       const resp = await auth.makeAuthenticatedRequest(url);
 
@@ -138,13 +173,15 @@ class AttendanceManager {
 
   async exportAttendance() {
     const dateFilter = document.getElementById("attendanceDateFilter");
+    const userFilter = document.getElementById("attendanceUserFilter");
+
     const date = dateFilter ? dateFilter.value : null;
+    const user_id = userFilter?.value === 'all' ? null : userFilter?.value;
 
     try {
       let url = `/api/admin/attendance?per_page=10000`; // Fetch large number for export
-      if (date) {
-        url += `&date=${date}`;
-      }
+      if (date) url += `&date=${date}`;
+      if (user_id) url += `&user_id=${user_id}`;
 
       const resp = await auth.makeAuthenticatedRequest(url);
       if (!resp || !resp.ok) {

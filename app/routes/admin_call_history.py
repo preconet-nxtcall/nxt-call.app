@@ -62,9 +62,11 @@ def all_call_history():
                 user_id = int(user_id)
             except ValueError:
                 user_id = None
+        else:
+            user_id = None
 
         # ============================
-        # BASE QUERY (JOIN + ADMIN FILTER)
+        # 6️⃣ BASE QUERY (JOIN + ADMIN FILTER)
         # ============================
         query = (
             db.session.query(CallHistory, User)

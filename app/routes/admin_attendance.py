@@ -59,6 +59,14 @@ def get_admin_attendance():
         # Explicit join to avoid ambiguity
         base_query = db.session.query(Attendance).join(User, Attendance.user_id == User.id).filter(User.admin_id == admin_id)
 
+        # User Filter (ADDED)
+        user_id = request.args.get("user_id")
+        if user_id and user_id != "all":
+            try:
+                base_query = base_query.filter(Attendance.user_id == int(user_id))
+            except ValueError:
+                pass
+
         if start_time and end_time:
             base_query = base_query.filter(Attendance.check_in >= start_time, Attendance.check_in <= end_time)
 
