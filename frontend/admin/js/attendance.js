@@ -22,6 +22,11 @@ class AttendanceManager {
     }
   }
 
+  // Standard interface for main.js
+  load() {
+    this.loadAttendance();
+  }
+
   async loadAttendance(date = null, page = 1, per_page = 25) {
     console.log("loadAttendance called with date:", date);
     try {
