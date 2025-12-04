@@ -127,7 +127,7 @@ class UsersManager {
   // VIEW USER -----------------------------------
   async view(id) {
     try {
-      const resp = await auth.makeAuthenticatedRequest(`/api/admin/user-data/${id}`);
+      const resp = await auth.makeAuthenticatedRequest(`/api/admin/user-analytics/${id}`);
       if (!resp) return;
 
       const data = await resp.json();
@@ -136,23 +136,44 @@ class UsersManager {
         return;
       }
 
-      const user = data.user;
+      const analytics = data.analytics;
+      const user = analytics.user;
 
       // Populate Modal
       document.getElementById('um-modal-name').textContent = user.name || '-';
       document.getElementById('um-modal-email').textContent = user.email || '-';
-      document.getElementById('um-modal-phone').textContent = user.phone || '-';
+      document.getElementById('um-modal-phone').textContent = user.phone || '-'; // Phone might be in user object or not, depending on API. Assuming it's in user object from analytics response.
 
-      const statusEl = document.getElementById('um-modal-status');
-      statusEl.textContent = user.is_active ? 'Active' : 'Inactive';
-      statusEl.className = `text-sm font-medium ${user.is_active ? 'text-green-600' : 'text-red-600'}`;
+      // Note: The analytics.user object in admin.py only has id, name, email. 
+      // If phone is needed, we might need to fetch it separately or update backend. 
+      // For now, let's use what we have or placeholder.
+      // Actually, let's check if we can get phone from the list if we have it, or just show '-' if missing.
 
-      document.getElementById('um-modal-last-sync').textContent = user.last_sync ? new Date(user.last_sync).toLocaleString() : 'Never';
-      document.getElementById('um-modal-last-login').textContent = user.last_login ? new Date(user.last_login).toLocaleString() : 'Never';
-      document.getElementById('um-modal-created').textContent = user.created_at ? new Date(user.created_at).toLocaleDateString() : '-';
+      // Status is not in analytics.user. We can infer or fetch. 
+      // But wait, the previous code used `data.user` which had everything. 
+      // `user-analytics` returns `analytics` object.
+      // Let's rely on what `user-analytics` returns.
 
-      document.getElementById('um-modal-attendance').textContent = user.attendance_records || 0;
-      document.getElementById('um-modal-calls').textContent = user.call_records || 0;
+      // Update: I will update the backend to include phone and status in user-analytics if needed, 
+      // BUT for now I will just use what is available. 
+      // `user-analytics` returns: user {id, name, email}, calls, attendance, last_sync, last_login, performance.
+
+      // I'll try to find the user in `this.users` to get status and phone if missing.
+      const localUser = this.users.find(u => u.id === id);
+      if (localUser) {
+        document.getElementById('um-modal-phone').textContent = localUser.phone || '-';
+        const statusEl = document.getElementById('um-modal-status');
+        statusEl.textContent = localUser.is_active ? 'Active' : 'Inactive';
+        statusEl.className = `text-sm font-medium ${localUser.is_active ? 'text-green-600' : 'text-red-600'}`;
+        document.getElementById('um-modal-created').textContent = localUser.created_at ? new Date(localUser.created_at).toLocaleDateString() : '-';
+      }
+
+      document.getElementById('um-modal-last-sync').textContent = analytics.last_sync ? new Date(analytics.last_sync).toLocaleString() : 'Never';
+      document.getElementById('um-modal-last-login').textContent = analytics.last_login ? new Date(analytics.last_login).toLocaleString() : 'Never';
+
+      document.getElementById('um-modal-attendance').textContent = analytics.attendance.total_attendance || 0;
+      document.getElementById('um-modal-calls').textContent = analytics.calls.total_calls || 0;
+      document.getElementById('um-modal-score').textContent = analytics.performance.score || 0;
 
       // Show Modal
       document.getElementById('userManagementModal').classList.remove('hidden');

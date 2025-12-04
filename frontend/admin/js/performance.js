@@ -217,7 +217,7 @@ class PerformanceManager {
       }
 
       const data = await resp.json();
-      const calls = data.calls || [];
+      const calls = data.call_history || [];
 
       if (calls.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No call records found</td></tr>';
