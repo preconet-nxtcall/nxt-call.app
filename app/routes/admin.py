@@ -474,11 +474,11 @@ def user_call_history(user_id):
         def serialize(c):
             return {
                 "id": c.id,
-                "number": c.number,
+                "number": c.phone_number, # FIXED: was c.number
                 "call_type": c.call_type,
                 "timestamp": iso(getattr(c, "timestamp", None)),
                 "duration": c.duration,
-                "name": c.name,
+                "name": c.contact_name, # FIXED: was c.name
                 "created_at": iso(getattr(c, "created_at", None))
             }
 
@@ -555,32 +555,48 @@ def user_analytics(user_id):
 
     try:
         # Calls
-        call_stats = db.session.query(
-            func.count(CallHistory.id).label("total_calls"),
-            func.sum(func.case([(CallHistory.duration > 0, 1)], else_=0)).label("answered_calls"),
-            func.avg(CallHistory.duration).label("avg_duration")
-        ).filter(CallHistory.user_id == user_id).one()
+        try:
+            call_stats = db.session.query(
+                func.count(CallHistory.id).label("total_calls"),
+                func.sum(func.case([(CallHistory.duration > 0, 1)], else_=0)).label("answered_calls"),
+                func.avg(CallHistory.duration).label("avg_duration")
+            ).filter(CallHistory.user_id == user_id).one()
 
-        total_calls = int(call_stats.total_calls or 0)
-        answered_calls = int(call_stats.answered_calls or 0)
-        avg_duration = float(call_stats.avg_duration or 0.0)
+            total_calls = int(call_stats.total_calls or 0)
+            answered_calls = int(call_stats.answered_calls or 0)
+            avg_duration = float(call_stats.avg_duration or 0.0)
+        except Exception as e:
+            current_app.logger.error(f"Error calculating call stats for user {user_id}: {e}")
+            total_calls = 0
+            answered_calls = 0
+            avg_duration = 0.0
 
         # Attendance
-        att_stats = db.session.query(
-            func.count(Attendance.id).label("total_att"),
-            func.sum(func.case([(Attendance.status == "on-time", 1)], else_=0)).label("on_time")
-        ).filter(Attendance.user_id == user_id).one()
+        try:
+            att_stats = db.session.query(
+                func.count(Attendance.id).label("total_att"),
+                func.sum(func.case([(Attendance.status == "on-time", 1)], else_=0)).label("on_time")
+            ).filter(Attendance.user_id == user_id).one()
 
-        total_att = int(att_stats.total_att or 0)
-        on_time = int(att_stats.on_time or 0)
-        on_time_rate = round((on_time / total_att) * 100, 2) if total_att else 0.0
+            total_att = int(att_stats.total_att or 0)
+            on_time = int(att_stats.on_time or 0)
+            on_time_rate = round((on_time / total_att) * 100, 2) if total_att else 0.0
+        except Exception as e:
+            current_app.logger.error(f"Error calculating attendance stats for user {user_id}: {e}")
+            total_att = 0
+            on_time = 0
+            on_time_rate = 0.0
 
         # last sync & login
         last_sync = getattr(user, "last_sync", None)
         last_login = getattr(user, "last_login", None)
 
         # computed performance
-        perf_score = calculate_performance_for_user(user_id)
+        try:
+            perf_score = calculate_performance_for_user(user_id)
+        except Exception as e:
+            current_app.logger.error(f"Error calculating performance for user {user_id}: {e}")
+            perf_score = 0
 
         analytics = {
             "user": {
@@ -615,11 +631,11 @@ def user_analytics(user_id):
 
 
 # -------------------------
-# OPTIONAL: Endpoint to recalc & persist performance for all users (admin only)
+# ADMIN CALL HISTORY (ALL)
 # -------------------------
-@bp.route("/recalc-performance", methods=["POST"])
+@bp.route("/all-call-history", methods=["GET"])
 @jwt_required()
-def recalc_performance_all():
+def all_call_history():
     if not admin_required():
         return jsonify({"error": "Admin role required"}), 403
 
@@ -628,17 +644,54 @@ def recalc_performance_all():
         return resp
 
     try:
-        users = User.query.filter_by(admin_id=admin.id).all()
-        updated = []
-        for u in users:
-            score = calculate_performance_for_user(u.id)
-            u.performance_score = score
-            updated.append({"user_id": u.id, "performance_score": score})
+        # Join CallHistory with User to filter by admin
+        query = CallHistory.query.join(User, CallHistory.user_id == User.id).filter(User.admin_id == admin.id)
 
-        db.session.commit()
-        return jsonify({"message": "Performance recalculated", "updated": updated}), 200
+        # Filters
+        user_id = request.args.get("user_id")
+        if user_id and user_id != "all":
+            query = query.filter(CallHistory.user_id == user_id)
 
-    except Exception:
-        db.session.rollback()
-        current_app.logger.exception("Recalc performance failed")
+        call_type = request.args.get("call_type")
+        if call_type and call_type != "all":
+            query = query.filter(CallHistory.call_type == call_type)
+
+        search = request.args.get("search", "").strip()
+        if search:
+            # Search by phone number or contact name
+            term = f"%{search}%"
+            query = query.filter(
+                (CallHistory.phone_number.ilike(term)) | (CallHistory.contact_name.ilike(term))
+            )
+
+        # Date filter (optional, if needed)
+        date_str = request.args.get("date")
+        if date_str:
+            try:
+                start_dt = datetime.strptime(date_str, "%Y-%m-%d")
+                end_dt = start_dt.replace(hour=23, minute=59, second=59)
+                query = query.filter(CallHistory.timestamp >= start_dt, CallHistory.timestamp <= end_dt)
+            except ValueError:
+                pass
+
+        query = query.order_by(CallHistory.timestamp.desc())
+
+        def serialize(c):
+            return {
+                "id": c.id,
+                "user_id": c.user_id,
+                "user_name": c.user.name if c.user else None,
+                "phone_number": c.phone_number,
+                "call_type": c.call_type,
+                "timestamp": iso(getattr(c, "timestamp", None)),
+                "duration": c.duration,
+                "contact_name": c.contact_name,
+                "created_at": iso(getattr(c, "created_at", None))
+            }
+
+        items, meta = paginate_query(query, serialize)
+        return jsonify({"call_history": items, "meta": meta}), 200
+
+    except Exception as e:
+        current_app.logger.exception("All call history failed")
         return jsonify({"error": "Internal server error"}), 500
