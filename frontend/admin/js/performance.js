@@ -228,14 +228,14 @@ class PerformanceManager {
         <tr>
           <td class="px-6 py-4 whitespace-nowrap">
             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-              ${call.type === 'incoming' ? 'bg-green-100 text-green-800' :
-          call.type === 'outgoing' ? 'bg-blue-100 text-blue-800' :
+              ${call.call_type === 'incoming' ? 'bg-green-100 text-green-800' :
+          call.call_type === 'outgoing' ? 'bg-blue-100 text-blue-800' :
             'bg-red-100 text-red-800'}">
-              ${call.type}
+              ${call.call_type}
             </span>
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-            ${call.number}
+            ${call.phone_number}
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
             ${this.formatDuration(call.duration)}
