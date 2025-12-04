@@ -1,8 +1,6 @@
 class CallAnalyticsManager {
 
   constructor() {
-    this.activityChart = null;
-    this.durationChart = null;
     this.data = null;
   }
 
@@ -21,12 +19,10 @@ class CallAnalyticsManager {
       this.data = data;
 
       this.updateKPICards();
-      this.renderCharts();
+      // Charts removed as per request
+      // this.renderCharts();
 
       // Also load the user summary table if needed
-      // Note: The admin API already returns 'user_summary' in the main response!
-      // So we might not need to call loadUserSummary separately if the API provides it.
-      // Let's check if data.user_summary exists.
       if (this.data.user_summary) {
         this.renderTable();
       } else {
@@ -77,191 +73,6 @@ class CallAnalyticsManager {
     setText("analytics-inbound", (kpis.incoming || 0).toLocaleString());
     setText("analytics-avg-outbound", this.formatDuration(kpis.avg_outbound_duration || 0));
     setText("analytics-avg-inbound", this.formatDuration(kpis.avg_inbound_duration || 0));
-  }
-
-  renderCharts() {
-    if (!this.data) return;
-
-    // API returns 'daily_trend' and 'duration_trend' at top level
-    const activityData = this.data.daily_trend || [];
-    const durationData = this.data.duration_trend || [];
-
-    // Activity Chart
-    this.renderActivityChart(activityData);
-
-    // Duration Chart
-    this.renderDurationChart(durationData);
-  }
-
-  renderActivityChart(data) {
-    const ctx = document.getElementById('analyticsActivityChart');
-    if (!ctx) return;
-
-    if (this.activityChart) {
-      this.activityChart.destroy();
-    }
-
-    const labels = data.map(d => new Date(d.date).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' }));
-    const counts = data.map(d => d.count);
-
-    this.activityChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Calls',
-          data: counts,
-          borderColor: '#3B82F6', // Blue-500
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          borderWidth: 3,
-          tension: 0.4,
-          fill: true,
-          pointBackgroundColor: '#FFFFFF',
-          pointBorderColor: '#3B82F6',
-          pointBorderWidth: 2,
-          pointRadius: 4,
-          pointHoverRadius: 6
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          },
-          tooltip: {
-            mode: 'index',
-            intersect: false,
-            backgroundColor: 'rgba(17, 24, 39, 0.9)',
-            titleColor: '#F3F4F6',
-            bodyColor: '#F3F4F6',
-            borderColor: '#374151',
-            borderWidth: 1,
-            padding: 10,
-            displayColors: false,
-            callbacks: {
-              label: function (context) {
-                return context.parsed.y + ' Calls';
-              }
-            }
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            grid: {
-              color: '#F3F4F6',
-              drawBorder: false
-            },
-            ticks: {
-              font: {
-                family: "'Inter', sans-serif",
-                size: 11
-              },
-              color: '#6B7280',
-              padding: 10,
-              precision: 0
-            }
-          },
-          x: {
-            grid: {
-              display: false
-            },
-            ticks: {
-              font: {
-                family: "'Inter', sans-serif",
-                size: 11
-              },
-              color: '#6B7280'
-            }
-          }
-        },
-        interaction: {
-          intersect: false,
-          mode: 'index',
-        },
-      }
-    });
-  }
-
-  renderDurationChart(data) {
-    const ctx = document.getElementById('analyticsDurationChart');
-    if (!ctx) return;
-
-    if (this.durationChart) {
-      this.durationChart.destroy();
-    }
-
-    const labels = data.map(d => new Date(d.date).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' }));
-    const durations = data.map(d => Math.round(d.duration / 60)); // Convert to minutes
-
-    this.durationChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Duration (mins)',
-          data: durations,
-          backgroundColor: '#8B5CF6', // Purple-500
-          borderRadius: 6,
-          barThickness: 24,
-          hoverBackgroundColor: '#7C3AED'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          },
-          tooltip: {
-            backgroundColor: 'rgba(17, 24, 39, 0.9)',
-            titleColor: '#F3F4F6',
-            bodyColor: '#F3F4F6',
-            borderColor: '#374151',
-            borderWidth: 1,
-            padding: 10,
-            displayColors: false,
-            callbacks: {
-              label: function (context) {
-                return context.parsed.y + ' Mins';
-              }
-            }
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            grid: {
-              color: '#F3F4F6',
-              drawBorder: false
-            },
-            ticks: {
-              font: {
-                family: "'Inter', sans-serif",
-                size: 11
-              },
-              color: '#6B7280',
-              padding: 10
-            }
-          },
-          x: {
-            grid: {
-              display: false
-            },
-            ticks: {
-              font: {
-                family: "'Inter', sans-serif",
-                size: 11
-              },
-              color: '#6B7280'
-            }
-          }
-        }
-      }
-    });
   }
 
   async loadUserSummary() {
