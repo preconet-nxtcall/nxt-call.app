@@ -270,13 +270,18 @@ def get_users():
         query = query.order_by(User.created_at.desc())
 
         def serialize(u):
+            # Calculate performance score if missing
+            score = getattr(u, "performance_score", None)
+            if score is None or score == 0:
+                score = calculate_performance_for_user(u.id)
+
             return {
                 "id": u.id,
                 "name": u.name,
                 "email": u.email,
                 "phone": u.phone,
                 "is_active": u.is_active,
-                "performance_score": getattr(u, "performance_score", None),
+                "performance_score": score,
                 "created_at": iso(getattr(u, "created_at", None)),
                 "last_login": iso(getattr(u, "last_login", None)),
                 "last_sync": iso(getattr(u, "last_sync", None)),
@@ -553,7 +558,8 @@ def user_analytics(user_id):
             "user": {
                 "id": user.id,
                 "name": user.name,
-                "email": user.email
+                "email": user.email,
+                "phone": user.phone
             },
             "calls": {
                 "total_calls": total_calls,
