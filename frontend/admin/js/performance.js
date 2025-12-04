@@ -268,18 +268,16 @@ const performanceManager = new PerformanceManager();
 // EVENTS
 document.addEventListener("DOMContentLoaded", () => {
   const sortSelect = document.getElementById("performanceSort");
-  const dateFilter = document.getElementById("performanceDateFilter");
   const userFilter = document.getElementById("performanceUserFilter");
 
   function reload() {
     const s = sortSelect ? sortSelect.value : "desc";
-    const d = dateFilter ? dateFilter.value : "today";
+    const d = "all"; // Default to all time
     const u = userFilter ? userFilter.value : "all";
     performanceManager.loadPerformance(s, d, u);
   }
 
   if (sortSelect) sortSelect.addEventListener("change", reload);
-  if (dateFilter) dateFilter.addEventListener("change", reload);
   if (userFilter) userFilter.addEventListener("change", reload);
 
   // Initial load
