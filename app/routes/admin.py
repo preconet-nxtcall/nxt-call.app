@@ -1,7 +1,7 @@
 # admin.py
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity, get_jwt
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from ..models import db, Admin, User, Attendance, CallHistory, ActivityLog, UserRole
 import re
 from sqlalchemy import func
@@ -294,43 +294,6 @@ def get_users():
     except Exception as e:
         current_app.logger.exception("Get users failed")
         return jsonify({"error": "Internal server error"}), 500
-
-
-# -------------------------
-# DASHBOARD STATS (aggregate)
-# -------------------------
-# -------------------------
-# DASHBOARD STATS (Moved to admin_dashboard.py)
-# -------------------------
-# @bp.route("/dashboard-stats", methods=["GET"])
-# @jwt_required()
-# def dashboard_stats():
-#     return jsonify({"error": "Use admin_dashboard blueprint"}), 404
-
-
-# -------------------------
-# RECENT 10 USER SYNC (paginated)
-# -------------------------
-# -------------------------
-# RECENT SYNC (Moved to admin_dashboard.py)
-# -------------------------
-# @bp.route("/recent-sync", methods=["GET"])
-# @jwt_required()
-# def recent_sync():
-#     return jsonify({"error": "Use admin_dashboard blueprint"}), 404
-
-
-# -------------------------
-# USER ATTENDANCE (admin-wide listing, paginated)
-# -------------------------
-# @bp.route("/attendance", methods=["GET"])
-# -------------------------
-# ADMIN ATTENDANCE (Moved to admin_attendance.py)
-# -------------------------
-# @bp.route("/attendance", methods=["GET"])
-# @jwt_required()
-# def admin_attendance():
-#     return jsonify({"error": "Use admin_attendance blueprint"}), 404
 
 
 # -------------------------
