@@ -51,6 +51,9 @@ def performance():
         # Load filter
         filter_type = request.args.get("filter", "today")
         start_dt, end_dt = get_date_range(filter_type)
+        
+        # User Filter
+        user_id_param = request.args.get("user_id", "all")
 
         # CASE expressions
         incoming_case = case((func.lower(CallHistory.call_type) == "incoming", 1), else_=0)
@@ -58,27 +61,46 @@ def performance():
         missed_case = case((func.lower(CallHistory.call_type) == "missed", 1), else_=0)
         rejected_case = case((func.lower(CallHistory.call_type) == "rejected", 1), else_=0)
 
-        # USER PERFORMANCE
+        # Base query
+        query = db.session.query(
+            User.id,
+            User.name,
+            func.count(CallHistory.id).label("total_calls"),
+            func.sum(CallHistory.duration).label("total_duration"),
+            func.sum(incoming_case).label("incoming"),
+            func.sum(outgoing_case).label("outgoing"),
+            func.sum(missed_case).label("missed"),
+            func.sum(rejected_case).label("rejected"),
+        ).outerjoin(CallHistory, CallHistory.user_id == User.id)
+
+        # Apply Admin Filter
+        filters = [User.admin_id == admin_id]
+
+        # Apply Date Filter (on CallHistory)
+        # We need to be careful: if we filter CallHistory by date, we might exclude users who have no calls in that range
+        # but we still want to show them with 0 calls if they exist.
+        # The outerjoin handles this, but the WHERE clause on CallHistory fields needs to be part of the join condition OR handled carefully.
+        # Actually, the original query had:
+        # or_(CallHistory.id == None, and_(CallHistory.timestamp >= start_dt, ...))
+        # This preserves users with no calls.
+
+        date_condition = or_(
+            CallHistory.id == None,
+            and_(CallHistory.timestamp >= start_dt, CallHistory.timestamp < end_dt)
+        )
+        filters.append(date_condition)
+
+        # Apply User Filter
+        if user_id_param and user_id_param != "all":
+            try:
+                uid = int(user_id_param)
+                filters.append(User.id == uid)
+            except ValueError:
+                pass # Ignore invalid user_id
+
+        # Execute Query
         user_data = (
-            db.session.query(
-                User.id,
-                User.name,
-                func.count(CallHistory.id).label("total_calls"),
-                func.sum(CallHistory.duration).label("total_duration"),
-                func.sum(incoming_case).label("incoming"),
-                func.sum(outgoing_case).label("outgoing"),
-                func.sum(missed_case).label("missed"),
-                func.sum(rejected_case).label("rejected"),
-            )
-            .outerjoin(CallHistory, CallHistory.user_id == User.id)
-            .filter(
-                User.admin_id == admin_id,
-                or_(
-                    CallHistory.id == None,
-                    and_(CallHistory.timestamp >= start_dt,
-                         CallHistory.timestamp < end_dt)
-                )
-            )
+            query.filter(*filters)
             .group_by(User.id)
             .all()
         )
