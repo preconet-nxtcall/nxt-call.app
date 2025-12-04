@@ -24,8 +24,15 @@ class CallAnalyticsManager {
       this.renderCharts();
 
       // Also load the user summary table if needed
-      await this.loadUserSummary();
-      this.renderTable();
+      // Note: The admin API already returns 'user_summary' in the main response!
+      // So we might not need to call loadUserSummary separately if the API provides it.
+      // Let's check if data.user_summary exists.
+      if (this.data.user_summary) {
+        this.renderTable();
+      } else {
+        await this.loadUserSummary();
+        this.renderTable();
+      }
 
     } catch (e) {
       console.error(e);
@@ -34,10 +41,10 @@ class CallAnalyticsManager {
   }
 
   updateKPICards() {
-    if (!this.data || !this.data.kpis) return;
+    if (!this.data) return;
 
-    const kpis = this.data.kpis;
-    const lastSync = this.data.last_sync;
+    // API returns flat structure, not nested 'kpis'
+    const kpis = this.data;
 
     // Helper to safely set text content
     const setText = (id, value) => {
@@ -45,32 +52,45 @@ class CallAnalyticsManager {
       if (el) el.textContent = value;
     };
 
-    setText("analytics-total-calls", kpis.total_calls.toLocaleString());
-    setText("analytics-total-duration", this.formatDuration(kpis.total_duration));
-    setText("analytics-total-answered", kpis.total_answered.toLocaleString());
+    setText("analytics-total-calls", (kpis.total_calls || 0).toLocaleString());
+    setText("analytics-total-duration", this.formatDuration(kpis.total_duration || 0));
+    setText("analytics-total-answered", (kpis.total_answered || 0).toLocaleString());
 
-    if (lastSync) {
-      setText("analytics-last-sync", new Date(lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    // Calculate latest sync from user summary if available
+    let latestSync = null;
+    if (this.data.user_summary && Array.isArray(this.data.user_summary)) {
+      const syncs = this.data.user_summary
+        .map(u => u.last_sync ? new Date(u.last_sync) : null)
+        .filter(d => d !== null);
+      if (syncs.length > 0) {
+        latestSync = new Date(Math.max.apply(null, syncs));
+      }
+    }
+
+    if (latestSync) {
+      setText("analytics-last-sync", latestSync.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     } else {
       setText("analytics-last-sync", "Never");
     }
 
-    setText("analytics-outbound", kpis.outgoing.toLocaleString());
-    setText("analytics-inbound", kpis.incoming.toLocaleString());
-    setText("analytics-avg-outbound", this.formatDuration(kpis.avg_outbound_duration));
-    setText("analytics-avg-inbound", this.formatDuration(kpis.avg_inbound_duration));
+    setText("analytics-outbound", (kpis.outgoing || 0).toLocaleString());
+    setText("analytics-inbound", (kpis.incoming || 0).toLocaleString());
+    setText("analytics-avg-outbound", this.formatDuration(kpis.avg_outbound_duration || 0));
+    setText("analytics-avg-inbound", this.formatDuration(kpis.avg_inbound_duration || 0));
   }
 
   renderCharts() {
-    if (!this.data || !this.data.trends) return;
+    if (!this.data) return;
 
-    const trends = this.data.trends;
+    // API returns 'daily_trend' and 'duration_trend' at top level
+    const activityData = this.data.daily_trend || [];
+    const durationData = this.data.duration_trend || [];
 
     // Activity Chart
-    this.renderActivityChart(trends.activity);
+    this.renderActivityChart(activityData);
 
     // Duration Chart
-    this.renderDurationChart(trends.duration);
+    this.renderDurationChart(durationData);
   }
 
   renderActivityChart(data) {
