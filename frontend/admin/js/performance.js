@@ -8,7 +8,12 @@ class PerformanceManager {
 
   // Standard interface for main.js
   load() {
-    this.loadPerformance();
+    const sortSelect = document.getElementById("performanceSort");
+    const userFilter = document.getElementById("performanceUserFilter");
+    if (sortSelect) sortSelect.value = "desc";
+    if (userFilter) userFilter.value = "all";
+
+    this.loadPerformance("desc", "all", "all");
   }
 
   async loadUsersForFilter() {
@@ -35,7 +40,7 @@ class PerformanceManager {
     }
   }
 
-  async loadPerformance(sortType = "desc", dateFilter = "today", userId = "all") {
+  async loadPerformance(sortType = "desc", dateFilter = "all", userId = "all") {
     try {
       let url = `/api/admin/performance?sort=${sortType}&filter=${dateFilter}`;
       if (userId && userId !== 'all') {

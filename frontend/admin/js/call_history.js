@@ -44,6 +44,16 @@ class CallHistoryManager {
 
   // Standard interface for main.js
   load() {
+    const userFilter = document.getElementById('callUserFilter');
+    const dateFilter = document.getElementById('callDateFilter');
+    const typeFilter = document.getElementById('callTypeFilter');
+    const searchInput = document.getElementById('callSearchInput');
+
+    if (userFilter) userFilter.value = 'all';
+    if (dateFilter) dateFilter.value = '';
+    if (typeFilter) typeFilter.value = 'all';
+    if (searchInput) searchInput.value = '';
+
     this.loadCalls();
   }
 

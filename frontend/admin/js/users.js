@@ -36,6 +36,10 @@ class UsersManager {
 
   // Standard interface for main.js
   load() {
+    const searchInput = document.getElementById('userSearchInput');
+    const statusFilter = document.getElementById('userStatusFilter');
+    if (searchInput) searchInput.value = "";
+    if (statusFilter) statusFilter.value = "all";
     this.loadUsers();
   }
 
