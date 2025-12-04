@@ -201,8 +201,8 @@ class AttendanceManager {
       const headers = ["User", "Check In", "Check Out", "Status", "Address"];
       const rows = items.map(a => [
         a.user_name || "Unknown",
-        a.check_in ? new Date(a.check_in).toLocaleString() : "-",
-        a.check_out ? new Date(a.check_out).toLocaleString() : "-",
+        window.formatDateTime(a.check_in),
+        window.formatDateTime(a.check_out),
         a.status,
         (a.address || "").replace(/,/g, " ") // Escape commas
       ]);
