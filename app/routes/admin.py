@@ -576,7 +576,8 @@ def recent_sync():
             "name": u.name,
             "email": u.email,
             "last_sync": iso(u.last_sync),
-            "time_ago": "Just now" # simplified, frontend can calc relative time
+            "time_ago": "Just now", # simplified, frontend can calc relative time
+            "is_active": u.is_active
         })
 
     return jsonify({"recent_sync": data}), 200
@@ -602,10 +603,11 @@ def user_logs():
     for att, user in logs:
         data.append({
             "id": att.id,
-            "user": user.name,
+            "user_name": user.name,
             "action": f"Checked {att.status}", # "Checked in" or "Checked out"
-            "time": iso(att.created_at),
-            "type": "attendance"
+            "timestamp": iso(att.created_at),
+            "type": "attendance",
+            "is_active": user.is_active
         })
 
     return jsonify({"logs": data}), 200
