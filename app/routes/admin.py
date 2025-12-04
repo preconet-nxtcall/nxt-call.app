@@ -294,68 +294,83 @@ def get_users():
     except Exception as e:
         current_app.logger.exception("Get users failed")
         return jsonify({"error": "Internal server error"}), 500
+# attendance punctuality
+total_att = db.session.query(func.count(Attendance.id)).filter(Attendance.user_id == user_id).scalar() or 0
+ontime_att = db.session.query(func.count(Attendance.id)).filter(
+    Attendance.user_id == user_id, Attendance.status == "on-time"
+).scalar() or 0
+
+att_score = (ontime_att / total_att * 100) if total_att else 0
+
+# call responsiveness
+total_calls = db.session.query(func.count(CallHistory.id)).filter(CallHistory.user_id == user_id).scalar() or 0
+answered_calls = db.session.query(func.count(CallHistory.id)).filter(
+    CallHistory.user_id == user_id, CallHistory.duration > 0
+).scalar() or 0
+
+call_score = (answered_calls / total_calls * 100) if total_calls else 0
+
+# combine
+combined = (att_score * 0.6) + (call_score * 0.4)
+return round(combined, 2)
 
 
 # -------------------------
-# DASHBOARD STATS (aggregate)
+# ADMIN LOGIN (unchanged mostly)
 # -------------------------
-@bp.route("/dashboard-stats", methods=["GET"])
-@jwt_required()
-def dashboard_stats():
-    if not admin_required():
-        return jsonify({"error": "Admin role required"}), 403
-
-    admin, resp = get_admin_or_401()
-    if resp:
-        return resp
-
+@bp.route("/login", methods=["POST"])
+def login():
     try:
-        users = User.query.filter_by(admin_id=admin.id).all()
-        total = len(users)
-        active = sum(1 for u in users if u.is_active)
-        synced = sum(1 for u in users if u.last_sync)
-        expired = sum(1 for u in users if callable(getattr(u, "is_expired", None)) and u.is_expired())
+        data = request.get_json() or {}
+        email = data.get("email")
+        password = data.get("password")
 
-        # compute average performance (recalc if None)
-        perf_values = []
-        for u in users:
-            if getattr(u, "performance_score", None) is None:
-                score = calculate_performance_for_user(u.id)
-                # optionally persist: u.performance_score = score
-            else:
-                score = u.performance_score
-            perf_values.append(score or 0)
+        if not email or not password:
+            return jsonify({"error": "email and password are required"}), 400
 
-        avg_perf = round(sum(perf_values) / total, 2) if total else 0
+        admin = Admin.query.filter(func.lower(Admin.email) == func.lower(email)).first()
 
-        # Basic trend placeholder (you can compute time-series from ActivityLog)
-        performance_trend = perf_values[-7:] if len(perf_values) >= 7 else perf_values
+        if not admin or not admin.check_password(password):
+            return jsonify({"error": "Invalid credentials"}), 401
+
+        if not admin.is_active:
+            return jsonify({"error": "Account deactivated"}), 403
+
+        if callable(getattr(admin, "is_expired", None)) and admin.is_expired():
+            return jsonify({"error": "Account expired"}), 403
+
+        # Track last login
+        admin.last_login = datetime.utcnow()
+        db.session.commit()
+
+        token = create_access_token(
+            identity=str(admin.id),
+            additional_claims={"role": "admin"}
+        )
 
         return jsonify({
-            "stats": {
-                "total_users": total,
-                "active_users": active,
-                "expired_users": expired,
-                "user_limit": admin.user_limit,
-                "remaining_slots": (admin.user_limit - total) if admin.user_limit is not None else None,
-                "users_with_sync": synced,
-                "sync_rate": round((synced / total) * 100, 2) if total else 0,
-                "avg_performance": avg_perf,
-                "performance_trend": performance_trend
+            "access_token": token,
+            "user": {
+                "id": admin.id,
+                "name": admin.name,
+                "email": admin.email,
+                "role": "admin",
+                "user_limit": getattr(admin, "user_limit", None),
+                "expiry_date": iso(getattr(admin, "expiry_date", None))
             }
         }), 200
 
     except Exception as e:
-        current_app.logger.exception("Dashboard stats failed")
+        current_app.logger.exception("Admin login error")
         return jsonify({"error": "Internal server error"}), 500
 
 
 # -------------------------
-# RECENT 10 USER SYNC (paginated)
+# CREATE USER (secure & transactional)
 # -------------------------
-@bp.route("/recent-sync", methods=["GET"])
+@bp.route("/create-user", methods=["POST"])
 @jwt_required()
-def recent_sync():
+def create_user():
     if not admin_required():
         return jsonify({"error": "Admin role required"}), 403
 
@@ -364,90 +379,153 @@ def recent_sync():
         return resp
 
     try:
-        query = User.query.filter_by(admin_id=admin.id).filter(User.last_sync.isnot(None)).order_by(User.last_sync.desc())
+        data = request.get_json() or {}
+        name = (data.get("name") or "").strip()
+        email = (data.get("email") or "").strip().lower()
+        password = data.get("password")
+        phone = data.get("phone")
+
+        if not name or not email or not password:
+            return jsonify({"error": "name, email and password are required"}), 400
+
+        if not validate_email(email):
+            return jsonify({"error": "Invalid email address"}), 400
+
+        # user limit check
+        total_users = User.query.filter_by(admin_id=admin.id).count()
+        if getattr(admin, "user_limit", None) is not None and total_users >= admin.user_limit:
+            return jsonify({"error": "User limit reached"}), 400
+
+        if User.query.filter(func.lower(User.email) == email).first():
+            return jsonify({"error": "Email already taken"}), 400
+
+        user = User(
+            name=name,
+            email=email,
+            phone=phone,
+            admin_id=admin.id,
+            created_at=datetime.utcnow()
+        )
+        user.set_password(password)
+
+        # Activity log
+        log = ActivityLog(
+            actor_role=UserRole.ADMIN,
+            actor_id=admin.id,
+            action=f"Created user {email}",
+            target_type="user"
+        )
+
+        db.session.add(user)
+        # flush to get user.id for log target_id
+        db.session.flush()
+        log.target_id = user.id
+        db.session.add(log)
+        db.session.commit()
+
+        return jsonify({"message": "User created", "user_id": user.id}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("Create user failed")
+        return jsonify({"error": "Internal server error"}), 500
+
+
+# -------------------------
+# GET ALL USERS (with pagination)
+# -------------------------
+@bp.route("/users", methods=["GET"])
+@jwt_required()
+def get_users():
+    if not admin_required():
+        return jsonify({"error": "Admin role required"}), 403
+
+    admin, resp = get_admin_or_401()
+    if resp:
+        return resp
+
+    try:
+        query = User.query.filter_by(admin_id=admin.id)
+
+        # Search filter
+        search = request.args.get("search", "").strip()
+        if search:
+            term = f"%{search}%"
+            query = query.filter(
+                (User.name.ilike(term)) | (User.email.ilike(term))
+            )
+
+        # Status filter
+        status = request.args.get("status", "all")
+        if status == "active":
+            query = query.filter(User.is_active == True)
+        elif status == "inactive":
+            query = query.filter(User.is_active == False)
+
+        query = query.order_by(User.created_at.desc())
+
         def serialize(u):
+            # Calculate performance score if missing
+            score = getattr(u, "performance_score", None)
+            if score is None or score == 0:
+                score = calculate_performance_for_user(u.id)
+
             return {
                 "id": u.id,
                 "name": u.name,
                 "email": u.email,
                 "phone": u.phone,
-                "last_sync": iso(getattr(u, "last_sync", None))
+                "is_active": u.is_active,
+                "performance_score": score,
+                "created_at": iso(getattr(u, "created_at", None)),
+                "last_login": iso(getattr(u, "last_login", None)),
+                "last_sync": iso(getattr(u, "last_sync", None)),
+                "has_sync_data": bool(getattr(u, "last_sync", None))
             }
 
         items, meta = paginate_query(query, serialize)
-        return jsonify({"recent_sync": items, "meta": meta}), 200
+        return jsonify({"users": items, "meta": meta}), 200
 
     except Exception as e:
-        current_app.logger.exception("Recent sync failed")
+        current_app.logger.exception("Get users failed")
         return jsonify({"error": "Internal server error"}), 500
+
+
+# -------------------------
+# DASHBOARD STATS (aggregate)
+# -------------------------
+# -------------------------
+# DASHBOARD STATS (Moved to admin_dashboard.py)
+# -------------------------
+# @bp.route("/dashboard-stats", methods=["GET"])
+# @jwt_required()
+# def dashboard_stats():
+#     return jsonify({"error": "Use admin_dashboard blueprint"}), 404
+
+
+# -------------------------
+# RECENT 10 USER SYNC (paginated)
+# -------------------------
+# -------------------------
+# RECENT SYNC (Moved to admin_dashboard.py)
+# -------------------------
+# @bp.route("/recent-sync", methods=["GET"])
+# @jwt_required()
+# def recent_sync():
+#     return jsonify({"error": "Use admin_dashboard blueprint"}), 404
 
 
 # -------------------------
 # USER ATTENDANCE (admin-wide listing, paginated)
 # -------------------------
 # @bp.route("/attendance", methods=["GET"])
-@jwt_required()
-def admin_attendance():
-    if not admin_required():
-        return jsonify({"error": "Admin role required"}), 403
-
-    admin, resp = get_admin_or_401()
-    if resp:
-        return resp
-
-    try:
-        # Join Attendance with User limited to this admin
-        query = db.session.query(Attendance, User).join(User, Attendance.user_id == User.id).filter(User.admin_id == admin.id)
-
-        # Date filter
-        date_str = request.args.get("date")
-        if date_str:
-            try:
-                # Assuming date_str is YYYY-MM-DD
-                # Filter by range [date 00:00:00, date 23:59:59]
-                start_dt = datetime.strptime(date_str, "%Y-%m-%d")
-                end_dt = start_dt.replace(hour=23, minute=59, second=59)
-                query = query.filter(Attendance.created_at >= start_dt, Attendance.created_at <= end_dt)
-            except ValueError:
-                pass # Ignore invalid date format
-
-        query = query.order_by(Attendance.created_at.desc())
-
-        # We will paginate by Attendance.id grouping - but for simplicity we paginate on the ORM result with flask_sqlalchemy paginate helper:
-        # convert to subquery of Attendance IDs matching admin's users
-        # NOTE: The pagination helper expects a query object that returns model instances, but the join above returns tuples.
-        # So we need to construct the query on Attendance model directly with join for filtering.
-        
-        att_q = Attendance.query.join(User, Attendance.user_id == User.id).filter(User.admin_id == admin.id)
-        
-        if date_str:
-             try:
-                start_dt = datetime.strptime(date_str, "%Y-%m-%d")
-                end_dt = start_dt.replace(hour=23, minute=59, second=59)
-                att_q = att_q.filter(Attendance.created_at >= start_dt, Attendance.created_at <= end_dt)
-             except ValueError:
-                pass
-
-        att_q = att_q.order_by(Attendance.created_at.desc())
-
-        def serialize(a):
-            return {
-                "id": a.id,
-                "user_id": a.user_id,
-                "user_name": getattr(a, "user").name if getattr(a, "user", None) else None,
-                "check_in": iso(getattr(a, "check_in", None)),
-                "check_out": iso(getattr(a, "check_out", None)),
-                "status": a.status,
-                "address": a.address,
-                "created_at": iso(getattr(a, "created_at", None))
-            }
-
-        items, meta = paginate_query(att_q, serialize)
-        return jsonify({"attendance": items, "meta": meta}), 200
-
-    except Exception as e:
-        current_app.logger.exception("Admin attendance failed")
-        return jsonify({"error": "Internal server error"}), 500
+# -------------------------
+# ADMIN ATTENDANCE (Moved to admin_attendance.py)
+# -------------------------
+# @bp.route("/attendance", methods=["GET"])
+# @jwt_required()
+# def admin_attendance():
+#     return jsonify({"error": "Use admin_attendance blueprint"}), 404
 
 
 # -------------------------
@@ -633,65 +711,10 @@ def user_analytics(user_id):
 # -------------------------
 # ADMIN CALL HISTORY (ALL)
 # -------------------------
-@bp.route("/all-call-history", methods=["GET"])
-@jwt_required()
-def all_call_history():
-    if not admin_required():
-        return jsonify({"error": "Admin role required"}), 403
-
-    admin, resp = get_admin_or_401()
-    if resp:
-        return resp
-
-    try:
-        # Join CallHistory with User to filter by admin
-        query = CallHistory.query.join(User, CallHistory.user_id == User.id).filter(User.admin_id == admin.id)
-
-        # Filters
-        user_id = request.args.get("user_id")
-        if user_id and user_id != "all":
-            query = query.filter(CallHistory.user_id == user_id)
-
-        call_type = request.args.get("call_type")
-        if call_type and call_type != "all":
-            query = query.filter(CallHistory.call_type == call_type)
-
-        search = request.args.get("search", "").strip()
-        if search:
-            # Search by phone number or contact name
-            term = f"%{search}%"
-            query = query.filter(
-                (CallHistory.phone_number.ilike(term)) | (CallHistory.contact_name.ilike(term))
-            )
-
-        # Date filter (optional, if needed)
-        date_str = request.args.get("date")
-        if date_str:
-            try:
-                start_dt = datetime.strptime(date_str, "%Y-%m-%d")
-                end_dt = start_dt.replace(hour=23, minute=59, second=59)
-                query = query.filter(CallHistory.timestamp >= start_dt, CallHistory.timestamp <= end_dt)
-            except ValueError:
-                pass
-
-        query = query.order_by(CallHistory.timestamp.desc())
-
-        def serialize(c):
-            return {
-                "id": c.id,
-                "user_id": c.user_id,
-                "user_name": c.user.name if c.user else None,
-                "phone_number": c.phone_number,
-                "call_type": c.call_type,
-                "timestamp": iso(getattr(c, "timestamp", None)),
-                "duration": c.duration,
-                "contact_name": c.contact_name,
-                "created_at": iso(getattr(c, "created_at", None))
-            }
-
-        items, meta = paginate_query(query, serialize)
-        return jsonify({"call_history": items, "meta": meta}), 200
-
-    except Exception as e:
-        current_app.logger.exception("All call history failed")
-        return jsonify({"error": "Internal server error"}), 500
+# -------------------------
+# ALL CALL HISTORY (Moved to admin_call_history.py)
+# -------------------------
+# @bp.route("/all-call-history", methods=["GET"])
+# @jwt_required()
+# def all_call_history():
+#     return jsonify({"error": "Use admin_call_history blueprint"}), 404
