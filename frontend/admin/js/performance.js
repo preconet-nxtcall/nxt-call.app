@@ -6,6 +6,11 @@ class PerformanceManager {
     this.loadUsersForFilter();
   }
 
+  // Standard interface for main.js
+  load() {
+    this.loadPerformance();
+  }
+
   async loadUsersForFilter() {
     try {
       const resp = await auth.makeAuthenticatedRequest('/api/admin/users?per_page=100');

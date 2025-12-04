@@ -42,6 +42,11 @@ class CallHistoryManager {
     }
   }
 
+  // Standard interface for main.js
+  load() {
+    this.loadCalls();
+  }
+
   async loadUsersForFilter() {
     try {
       const resp = await auth.makeAuthenticatedRequest('/api/admin/users?per_page=100');

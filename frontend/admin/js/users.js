@@ -34,6 +34,11 @@ class UsersManager {
     };
   }
 
+  // Standard interface for main.js
+  load() {
+    this.loadUsers();
+  }
+
   // MAIN LOADER ---------------------------------
   async loadUsers() {
     try {
