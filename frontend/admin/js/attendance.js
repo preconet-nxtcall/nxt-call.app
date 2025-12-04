@@ -24,6 +24,8 @@ class AttendanceManager {
 
   // Standard interface for main.js
   load() {
+    const dateFilter = document.getElementById("attendanceDateFilter");
+    if (dateFilter) dateFilter.value = "";
     this.loadAttendance();
   }
 
