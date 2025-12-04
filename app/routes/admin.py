@@ -14,10 +14,8 @@ bp = Blueprint("admin", __name__, url_prefix="/api/admin")
 # -------------------------
 EMAIL_PATTERN = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
 
-
 def validate_email(email: str) -> bool:
     return bool(email and EMAIL_PATTERN.match(email))
-
 
 def iso(dt):
     if dt is None:
@@ -32,17 +30,9 @@ def iso(dt):
     except Exception:
         return str(dt)
 
-
 def admin_required():
-    """
-    Simple helper that checks the JWT contains role=admin.
-    Call inside route handlers after jwt_required() by checking get_jwt().
-    """
     claims = get_jwt()
-    if claims.get("role") != "admin":
-        return False
-    return True
-
+    return claims.get("role") == "admin"
 
 def get_admin_or_401():
     """
@@ -62,7 +52,6 @@ def get_admin_or_401():
     if callable(getattr(admin, "is_expired", None)) and admin.is_expired():
         return None, (jsonify({"error": "Account expired"}), 403)
     return admin, None
-
 
 def paginate_query(query, serialize_fn):
     """
@@ -89,7 +78,6 @@ def paginate_query(query, serialize_fn):
         "has_prev": pagination.has_prev,
     }
     return items, meta
-
 
 def calculate_performance_for_user(user_id):
     """
@@ -144,12 +132,13 @@ def login():
         if callable(getattr(admin, "is_expired", None)) and admin.is_expired():
             return jsonify({"error": "Account expired"}), 403
 
-        # Track last login
-        admin.last_login = datetime.utcnow()
+        # Update last login
+        admin.last_login = datetime.now(timezone.utc)
         db.session.commit()
 
         token = create_access_token(
             identity=str(admin.id),
+            expires_delta=timedelta(days=1),
             additional_claims={"role": "admin"}
         )
 
@@ -194,28 +183,31 @@ def create_user():
             return jsonify({"error": "name, email and password are required"}), 400
 
         if not validate_email(email):
-            return jsonify({"error": "Invalid email address"}), 400
+            return jsonify({"error": "Invalid email format"}), 400
 
-        # user limit check
-        total_users = User.query.filter_by(admin_id=admin.id).count()
-        if getattr(admin, "user_limit", None) is not None and total_users >= admin.user_limit:
-            return jsonify({"error": "User limit reached"}), 400
+        # Check limits
+        current_count = User.query.filter_by(admin_id=admin.id).count()
+        limit = getattr(admin, "user_limit", 10)
+        if current_count >= limit:
+            return jsonify({"error": f"User limit reached ({limit})"}), 403
 
-        if User.query.filter(func.lower(User.email) == email).first():
-            return jsonify({"error": "Email already taken"}), 400
+        # Check existing
+        existing = User.query.filter(func.lower(User.email) == email).first()
+        if existing:
+            return jsonify({"error": "Email already registered"}), 409
 
         user = User(
+            admin_id=admin.id,
             name=name,
             email=email,
             phone=phone,
-            admin_id=admin.id,
-            created_at=datetime.utcnow()
+            is_active=True
         )
         user.set_password(password)
 
-        # Activity log
+        # Audit Log
         log = ActivityLog(
-            actor_role=UserRole.ADMIN,
+            admin_id=admin.id,
             actor_id=admin.id,
             action=f"Created user {email}",
             target_type="user"
@@ -477,12 +469,138 @@ def user_analytics(user_id):
 
 
 # -------------------------
-# ADMIN CALL HISTORY (ALL)
+# DASHBOARD STATS
 # -------------------------
+@bp.route("/dashboard-stats", methods=["GET"])
+@jwt_required()
+def dashboard_stats():
+    if not admin_required():
+        return jsonify({"error": "Admin access only"}), 403
+
+    admin_id = int(get_jwt_identity())
+    admin = Admin.query.get(admin_id)
+
+    if not admin:
+        return jsonify({"error": "Admin not found"}), 404
+
+    # 1. Total Users
+    total_users = User.query.filter_by(admin_id=admin_id).count()
+
+    # 2. Active Users
+    active_users = User.query.filter_by(admin_id=admin_id, is_active=True).count()
+
+    # 3. Users with Sync Data (last_sync is not None)
+    synced_users = User.query.filter(User.admin_id == admin_id, User.last_sync.isnot(None)).count()
+
+    # 4. Remaining Slots (assuming user_limit exists on Admin model)
+    limit = getattr(admin, "user_limit", 10) # Default to 10 if not set
+    remaining_slots = max(0, limit - total_users)
+
+    # 5. Average Performance Score
+    # We can average the 'performance_score' column if it exists and is populated
+    avg_perf = db.session.query(func.avg(User.performance_score)).filter(User.admin_id == admin_id).scalar()
+    avg_perf = round(avg_perf, 1) if avg_perf else 0.0
+
+    # 6. Call Volume Trend (Last 7 Days)
+    # Group by date of CallHistory
+    today = datetime.now(timezone.utc).date()
+    seven_days_ago = today - timedelta(days=6)
+    
+    # We need to join User to filter by admin_id
+    daily_calls = db.session.query(
+        func.date(CallHistory.timestamp).label('date'),
+        func.count(CallHistory.id)
+    ).join(User).filter(
+        User.admin_id == admin_id,
+        CallHistory.timestamp >= seven_days_ago
+    ).group_by(func.date(CallHistory.timestamp)).all()
+
+    # Format for chart: labels (Mon, Tue) and data (counts)
+    # Initialize dict with 0 for last 7 days
+    trend_data = {}
+    for i in range(7):
+        d = seven_days_ago + timedelta(days=i)
+        trend_data[d.isoformat()] = 0
+
+    for date_obj, count in daily_calls:
+        # date_obj might be a string or date object depending on DB driver
+        d_str = str(date_obj)
+        if d_str in trend_data:
+            trend_data[d_str] = count
+            
+    # Sort by date
+    sorted_dates = sorted(trend_data.keys())
+    chart_labels = [datetime.fromisoformat(d).strftime('%a') for d in sorted_dates] # Mon, Tue...
+    chart_data = [trend_data[d] for d in sorted_dates]
+
+    return jsonify({
+        "stats": {
+            "total_users": total_users,
+            "active_users": active_users,
+            "synced_users": synced_users,
+            "remaining_slots": remaining_slots,
+            "average_performance": avg_perf,
+            "call_trend": {
+                "labels": chart_labels,
+                "data": chart_data
+            }
+        }
+    }), 200
+
 # -------------------------
-# ALL CALL HISTORY (Moved to admin_call_history.py)
+# RECENT SYNC ACTIVITY
 # -------------------------
-# @bp.route("/all-call-history", methods=["GET"])
-# @jwt_required()
-# def all_call_history():
-#     return jsonify({"error": "Use admin_call_history blueprint"}), 404
+@bp.route("/recent-sync", methods=["GET"])
+@jwt_required()
+def recent_sync():
+    if not admin_required():
+        return jsonify({"error": "Admin access only"}), 403
+
+    admin_id = int(get_jwt_identity())
+    
+    # Get users with most recent last_sync
+    recent_users = User.query.filter(
+        User.admin_id == admin_id,
+        User.last_sync.isnot(None)
+    ).order_by(User.last_sync.desc()).limit(5).all()
+
+    data = []
+    for u in recent_users:
+        data.append({
+            "id": u.id,
+            "name": u.name,
+            "email": u.email,
+            "last_sync": iso(u.last_sync),
+            "time_ago": "Just now" # simplified, frontend can calc relative time
+        })
+
+    return jsonify({"recent_sync": data}), 200
+
+# -------------------------
+# USER LOGS (Recent Activity)
+# -------------------------
+@bp.route("/user-logs", methods=["GET"])
+@jwt_required()
+def user_logs():
+    if not admin_required():
+        return jsonify({"error": "Admin access only"}), 403
+
+    admin_id = int(get_jwt_identity())
+
+    # Fetch recent attendance events as "logs"
+    # Join User to filter by admin_id
+    logs = db.session.query(Attendance, User).join(User).filter(
+        User.admin_id == admin_id
+    ).order_by(Attendance.created_at.desc()).limit(10).all()
+
+    data = []
+    for att, user in logs:
+        data.append({
+            "id": att.id,
+            "user": user.name,
+            "action": f"Checked {att.status}", # "Checked in" or "Checked out"
+            "time": iso(att.created_at),
+            "type": "attendance"
+        })
+
+    return jsonify({"logs": data}), 200
