@@ -398,13 +398,13 @@
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h3 class="text-lg font-bold text-gray-900">Attendance Records</h3>
-              <div class="flex gap-2 bg-gray-100 p-1 rounded-lg">
-                <button id="attendanceToday"
-                  class="px-4 py-1.5 rounded-md text-sm font-medium bg-white text-gray-900 shadow-sm transition-all">Today</button>
-                <button id="attendanceWeek"
-                  class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-gray-900 transition-all">Week</button>
-                <button id="attendanceMonth"
-                  class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-gray-900 transition-all">Month</button>
+              <div class="flex gap-2 bg-gray-100 p-1 rounded-lg items-center">
+                <input type="date" id="attendanceDateFilter"
+                  class="px-3 py-1.5 rounded-md text-sm border-gray-200 focus:ring-blue-500 focus:border-blue-500">
+                <button id="btnExportAttendance"
+                  class="px-3 py-1.5 rounded-md text-sm font-medium bg-white text-gray-700 hover:text-blue-600 shadow-sm transition-all flex items-center gap-2">
+                  <i class="fas fa-download"></i> Export CSV
+                </button>
               </div>
             </div>
             <div class="overflow-x-auto">
@@ -430,7 +430,7 @@
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <h3 class="text-lg font-bold text-gray-900">Call Logs</h3>
-              <div class="flex gap-3">
+              <div class="flex gap-3 items-center">
                 <div class="relative">
                   <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                   <input id="callSearchInput" type="text" placeholder="Search logs..."
@@ -443,6 +443,10 @@
                   <option value="outgoing">Outgoing</option>
                   <option value="missed">Missed</option>
                 </select>
+                <button id="btnExportCalls"
+                  class="px-3 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center gap-2">
+                  <i class="fas fa-download"></i> Export
+                </button>
               </div>
             </div>
             <div id="call-history-container" class="space-y-2">
@@ -818,252 +822,35 @@
     </div>
   </div>
 
-  <div id="notificationArea" class="fixed top-4 right-4 z-50 space-y-2"></div>
+  <div id="imagePreviewModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div class="fixed inset-0 bg-gray-900 bg-opacity-90 transition-opacity" aria-hidden="true"
+        onclick="document.getElementById('imagePreviewModal').classList.add('hidden')"></div>
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+      <div
+        class="inline-block align-bottom bg-transparent rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
+        <div class="relative">
+          <button onclick="document.getElementById('imagePreviewModal').classList.add('hidden')"
+            class="absolute -top-10 right-0 text-white hover:text-gray-300 focus:outline-none">
+            <i class="fas fa-times text-2xl"></i>
+          </button>
+          <img id="previewImage" src="" alt="Attendance Image" class="w-full h-auto rounded-lg shadow-2xl">
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="/admin/js/auth.js"></script>
-  <script src="/admin/js/dashboard.js"></script>
-  <script src="/admin/js/users.js"></script>
-  <script src="/admin/js/create_user.js"></script>
-  <script src="/admin/js/attendance.js"></script>
-  <script src="/admin/js/call_history.js"></script>
-  <script src="/admin/js/call_analytics.js"></script>
-  <script src="/admin/js/performance.js"></script>
-  <script src="/admin/js/admin.js"></script>
-
-  <script>
-    // Debounce Utility
-    function debounce(func, wait) {
-      let timeout;
-      return function (...args) {
-        const context = this;
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(context, args), wait);
-      };
-    }
-
-    // Populate Sidebar Profile
-    function updateSidebarProfile() {
-      const user = auth.getCurrentUser();
-      if (user) {
-        const nameEl = document.getElementById('sidebarUserName');
-        const emailEl = document.getElementById('sidebarUserEmail');
-        const initialsEl = document.getElementById('sidebarUserInitials');
-
-        if (nameEl) nameEl.textContent = user.name || 'Admin User';
-        if (emailEl) emailEl.textContent = user.email || auth.getRememberedEmail() || 'admin@example.com';
-
-        if (initialsEl) {
-          const name = user.name || 'Admin';
-          const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-          initialsEl.textContent = initials;
-        }
-      }
-    }
-
-    // Set current date
-    const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', dateOptions);
-
-    // Initialize Managers
-    window.dashboard = window.dashboard || new DashboardManager();
-    window.usersManager = window.usersManager || new UsersManager();
-    window.attendanceManager = window.attendanceManager || new AttendanceManager();
-    window.callHistoryManager = window.callHistoryManager || new CallHistoryManager();
-    window.callAnalyticsManager = window.callAnalyticsManager || new CallAnalyticsManager();
-    window.performanceManager = window.performanceManager || new PerformanceManager();
-
-    // DOM Elements
-    const menuItems = {
-      dashboard: document.getElementById('menuDashboard'),
-      users: document.getElementById('menuUsers'),
-      createUser: document.getElementById('menuCreateUser'),
-      attendance: document.getElementById('menuAttendance'),
-      callHistory: document.getElementById('menuCallHistory'),
-      callAnalytics: document.getElementById('menuCallAnalytics'),
-      performance: document.getElementById('menuPerformance'),
-    };
-
-    const sections = {
-      dashboard: document.getElementById('sectionDashboard'),
-      users: document.getElementById('sectionUsers'),
-      createUser: document.getElementById('sectionCreateUser'),
-      attendance: document.getElementById('sectionAttendance'),
-      callHistory: document.getElementById('sectionCallHistory'),
-      callAnalytics: document.getElementById('sectionCallAnalytics'),
-      performance: document.getElementById('sectionPerformance'),
-    };
-
-    const pageTitle = document.getElementById('pageTitle');
-    const pageSubtitle = document.getElementById('pageSubtitle');
-
-    // Helper to hide all sections
-    function hideAll() {
-      Object.values(sections).forEach(el => el?.classList.add('hidden-section'));
-      Object.values(menuItems).forEach(el => {
-        el?.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
-        el?.classList.add('text-gray-300', 'hover:bg-gray-800', 'hover:text-white');
-        // Reset icon colors
-        const icon = el?.querySelector('i');
-        if (icon) {
-          icon.classList.remove('text-blue-200');
-          icon.classList.add('text-gray-400');
-        }
-      });
-    }
-
-    // Helper to activate menu item
-    function activateMenu(key, title, subtitle) {
-      hideAll();
-      sections[key]?.classList.remove('hidden-section');
-
-      const btn = menuItems[key];
-      if (btn) {
-        btn.classList.remove('text-gray-300', 'hover:bg-gray-800', 'hover:text-white');
-        btn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
-
-        const icon = btn.querySelector('i');
-        if (icon) {
-          icon.classList.remove('text-gray-400');
-          icon.classList.add('text-blue-200');
-        }
-      }
-
-      if (pageTitle) pageTitle.textContent = title;
-      if (pageSubtitle) pageSubtitle.textContent = subtitle;
-
-      // Close sidebar on mobile
-      if (window.innerWidth < 1024) {
-        document.getElementById('sidebar')?.classList.remove('active');
-        document.getElementById('overlay')?.classList.remove('active');
-      }
-    }
-
-    // Event Listeners
-    menuItems.dashboard.onclick = () => {
-      activateMenu('dashboard', 'Dashboard', 'Real-time overview & insights');
-      if (dashboard?.loadStats) dashboard.loadStats();
-    };
-
-    menuItems.users.onclick = () => {
-      activateMenu('users', 'User Management', 'Manage team members & accounts');
-      if (usersManager?.loadUsers) usersManager.loadUsers();
-    };
-
-    menuItems.createUser.onclick = () => {
-      activateMenu('createUser', 'Create User', 'Add a new member to the team');
-    };
-
-    menuItems.attendance.onclick = () => {
-      activateMenu('attendance', 'Attendance', 'Track team check-ins & check-outs');
-      if (attendanceManager?.loadAttendance) attendanceManager.loadAttendance();
-    };
-
-    menuItems.callHistory.onclick = () => {
-      activateMenu('callHistory', 'Call History', 'Detailed logs of all calls');
-      if (callHistoryManager?.loadCalls) callHistoryManager.loadCalls();
-    };
-
-    menuItems.callAnalytics.onclick = () => {
-      activateMenu('callAnalytics', 'Call Analytics', 'Deep dive into call metrics');
-      if (callAnalyticsManager?.loadAnalytics) callAnalyticsManager.loadAnalytics();
-    };
-
-    menuItems.performance.onclick = () => {
-      activateMenu('performance', 'Performance', 'Team efficiency rankings');
-      if (performanceManager?.loadPerformance) performanceManager.loadPerformance();
-    };
-
-    // Sidebar Toggles
-    document.getElementById('openSidebar')?.addEventListener('click', () => {
-      document.getElementById('sidebar')?.classList.add('active');
-      document.getElementById('overlay')?.classList.add('active');
-    });
-    document.getElementById('closeSidebar')?.addEventListener('click', () => {
-      document.getElementById('sidebar')?.classList.remove('active');
-      document.getElementById('overlay')?.classList.remove('active');
-    });
-    document.getElementById('overlay')?.addEventListener('click', () => {
-      document.getElementById('sidebar')?.classList.remove('active');
-      document.getElementById('overlay')?.classList.remove('active');
-    });
-
-    // Logout
-    document.getElementById('logoutBtn')?.addEventListener('click', () => auth.logout());
-
-    // Init
-    document.addEventListener('DOMContentLoaded', () => {
-      if (!auth.getToken()) {
-        window.location.href = "/admin/login.html";
-        return;
-      }
-      // Trigger default load
-      menuItems.dashboard.click();
-
-      // Initialize filters (keep existing logic)
-      initializeFilters();
-      updateSidebarProfile();
-    });
-
-    // Keep existing filter logic...
-    function initializeFilters() {
-      // Users
-      const userSearch = document.getElementById('userSearchInput');
-      const userStatus = document.getElementById('userStatusFilter');
-      if (userSearch) userSearch.addEventListener('input', debounce(() => filterUsers(), 300));
-      if (userStatus) userStatus.addEventListener('change', filterUsers);
-
-      // Calls
-      const callSearch = document.getElementById('callSearchInput');
-      const callType = document.getElementById('callTypeFilter');
-      if (callSearch) callSearch.addEventListener('input', debounce(() => filterCalls(), 300));
-      if (callType) callType.addEventListener('change', filterCalls);
-
-      // Attendance Buttons
-      const attToday = document.getElementById('attendanceToday');
-      const attWeek = document.getElementById('attendanceWeek');
-      const attMonth = document.getElementById('attendanceMonth');
-
-      if (attToday) attToday.onclick = function () { setAttFilter(this, 'today'); };
-      if (attWeek) attWeek.onclick = function () { setAttFilter(this, 'week'); };
-      if (attMonth) attMonth.onclick = function () { setAttFilter(this, 'month'); };
-    }
-
-    function setAttFilter(btn, range) {
-      // Reset all
-      [document.getElementById('attendanceToday'), document.getElementById('attendanceWeek'), document.getElementById('attendanceMonth')].forEach(b => {
-        b.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
-        b.classList.add('text-gray-500', 'hover:text-gray-900');
-      });
-      // Set active
-      btn.classList.remove('text-gray-500', 'hover:text-gray-900');
-      btn.classList.add('bg-white', 'text-gray-900', 'shadow-sm');
-
-      if (attendanceManager?.loadAttendance) attendanceManager.loadAttendance(range);
-    }
-
-    function filterUsers() {
-      const search = document.getElementById('userSearchInput').value.toLowerCase();
-      const status = document.getElementById('userStatusFilter').value;
-      if (usersManager?.loadUsers) usersManager.loadUsers({ search, status });
-    }
-
-    function filterCalls() {
-      const search = document.getElementById('callSearchInput').value;
-      const type = document.getElementById('callTypeFilter').value;
-      if (callHistoryManager?.loadCalls) {
-        callHistoryManager.loadCalls(null, 1, 50, "", "", search, type === 'all' ? '' : type);
-      }
-    }
-
-    // Form Submit
-    document.getElementById('createUserForm')?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      if (usersManager?.createUser) usersManager.createUser();
-    });
-
-  </script>
+  <script src="js/auth.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/users.js"></script>
+  <script src="js/attendance.js"></script>
+  <script src="js/call_history.js"></script>
+  <script src="js/call_analytics.js"></script>
+  <script src="js/performance.js"></script>
+  <script src="js/main.js"></script>
 </body>
 
 </html>

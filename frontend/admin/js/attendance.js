@@ -1,6 +1,27 @@
 /* admin/js/attendance.js */
 class AttendanceManager {
 
+  constructor() {
+    this.initEventListeners();
+  }
+
+  initEventListeners() {
+    const dateFilter = document.getElementById("attendanceDateFilter");
+    const btnExport = document.getElementById("btnExportAttendance");
+
+    if (dateFilter) {
+      dateFilter.addEventListener("change", () => {
+        this.loadAttendance(dateFilter.value);
+      });
+    }
+
+    if (btnExport) {
+      btnExport.addEventListener("click", () => {
+        this.exportAttendance();
+      });
+    }
+  }
+
   async loadAttendance(date = null, page = 1, per_page = 25) {
     console.log("loadAttendance called with date:", date);
     try {
@@ -105,6 +126,58 @@ class AttendanceManager {
       modal.classList.remove('hidden');
     } else {
       window.open(fullPath, "_blank");
+    }
+  }
+
+  async exportAttendance() {
+    const dateFilter = document.getElementById("attendanceDateFilter");
+    const date = dateFilter ? dateFilter.value : null;
+
+    try {
+      let url = `/api/admin/attendance?per_page=10000`; // Fetch large number for export
+      if (date) {
+        url += `&date=${date}`;
+      }
+
+      const resp = await auth.makeAuthenticatedRequest(url);
+      if (!resp || !resp.ok) {
+        auth.showNotification("Failed to fetch data for export", "error");
+        return;
+      }
+
+      const data = await resp.json();
+      const items = data.attendance || [];
+
+      if (items.length === 0) {
+        auth.showNotification("No records to export", "info");
+        return;
+      }
+
+      // Convert to CSV
+      const headers = ["User", "Check In", "Check Out", "Status", "Address"];
+      const rows = items.map(a => [
+        a.user_name || "Unknown",
+        a.check_in ? new Date(a.check_in).toLocaleString() : "-",
+        a.check_out ? new Date(a.check_out).toLocaleString() : "-",
+        a.status,
+        (a.address || "").replace(/,/g, " ") // Escape commas
+      ]);
+
+      let csvContent = "data:text/csv;charset=utf-8,"
+        + headers.join(",") + "\n"
+        + rows.map(e => e.join(",")).join("\n");
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `attendance_export_${date || "all"}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+    } catch (e) {
+      console.error("Export failed", e);
+      auth.showNotification("Export failed", "error");
     }
   }
 }

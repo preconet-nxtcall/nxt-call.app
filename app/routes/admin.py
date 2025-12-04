@@ -397,11 +397,39 @@ def admin_attendance():
 
     try:
         # Join Attendance with User limited to this admin
-        query = db.session.query(Attendance, User).join(User, Attendance.user_id == User.id).filter(User.admin_id == admin.id).order_by(Attendance.created_at.desc())
+        query = db.session.query(Attendance, User).join(User, Attendance.user_id == User.id).filter(User.admin_id == admin.id)
+
+        # Date filter
+        date_str = request.args.get("date")
+        if date_str:
+            try:
+                # Assuming date_str is YYYY-MM-DD
+                # Filter by range [date 00:00:00, date 23:59:59]
+                start_dt = datetime.strptime(date_str, "%Y-%m-%d")
+                end_dt = start_dt.replace(hour=23, minute=59, second=59)
+                query = query.filter(Attendance.created_at >= start_dt, Attendance.created_at <= end_dt)
+            except ValueError:
+                pass # Ignore invalid date format
+
+        query = query.order_by(Attendance.created_at.desc())
 
         # We will paginate by Attendance.id grouping - but for simplicity we paginate on the ORM result with flask_sqlalchemy paginate helper:
         # convert to subquery of Attendance IDs matching admin's users
-        att_q = Attendance.query.join(User, Attendance.user_id == User.id).filter(User.admin_id == admin.id).order_by(Attendance.created_at.desc())
+        # NOTE: The pagination helper expects a query object that returns model instances, but the join above returns tuples.
+        # So we need to construct the query on Attendance model directly with join for filtering.
+        
+        att_q = Attendance.query.join(User, Attendance.user_id == User.id).filter(User.admin_id == admin.id)
+        
+        if date_str:
+             try:
+                start_dt = datetime.strptime(date_str, "%Y-%m-%d")
+                end_dt = start_dt.replace(hour=23, minute=59, second=59)
+                att_q = att_q.filter(Attendance.created_at >= start_dt, Attendance.created_at <= end_dt)
+             except ValueError:
+                pass
+
+        att_q = att_q.order_by(Attendance.created_at.desc())
+
         def serialize(a):
             return {
                 "id": a.id,

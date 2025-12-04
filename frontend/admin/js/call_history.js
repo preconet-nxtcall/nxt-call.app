@@ -9,9 +9,10 @@ class CallHistoryManager {
 
   initEventListeners() {
     const userFilter = document.getElementById('callUserFilter');
-    const dateFilter = document.getElementById('callDateFilter');
+    const dateFilter = document.getElementById('callDateFilter'); // Not currently in HTML but good to keep if added later
     const searchInput = document.getElementById('callSearchInput');
     const typeFilter = document.getElementById('callTypeFilter');
+    const btnExport = document.getElementById('btnExportCalls');
 
     const refresh = () => {
       this.loadCalls(
@@ -32,6 +33,12 @@ class CallHistoryManager {
       searchInput.addEventListener('input', window.debounce(refresh, 500));
     } else if (searchInput) {
       searchInput.addEventListener('change', refresh);
+    }
+
+    if (btnExport) {
+      btnExport.addEventListener('click', () => {
+        this.exportCalls();
+      });
     }
   }
 
@@ -89,7 +96,7 @@ class CallHistoryManager {
       if (filter) url += `&filter=${filter}`;          // today / week / month
       if (date) url += `&date=${date}`;                // custom date (YYYY-MM-DD)
       if (search) url += `&search=${encodeURIComponent(search)}`; // phone search
-      if (call_type) url += `&call_type=${call_type}`; // incoming/outgoing/missed
+      if (call_type && call_type !== 'all') url += `&call_type=${call_type}`; // incoming/outgoing/missed
 
       // Make authenticated request
       const resp = await auth.makeAuthenticatedRequest(url);
@@ -107,9 +114,6 @@ class CallHistoryManager {
 
       if (!container) return;
 
-      // ================================
-      // Render Table
-      // ================================
       // ================================
       // Render Table
       // ================================
@@ -161,7 +165,6 @@ class CallHistoryManager {
         }
           </tbody>
         </table>
-        <div id="call-history-pagination"></div>
       `;
 
       // ================================
@@ -204,6 +207,64 @@ class CallHistoryManager {
         </button>
       </div>
     `;
+  }
+
+  async exportCalls() {
+    const userFilter = document.getElementById('callUserFilter');
+    const searchInput = document.getElementById('callSearchInput');
+    const typeFilter = document.getElementById('callTypeFilter');
+
+    const user_id = userFilter?.value === 'all' ? null : userFilter?.value;
+    const search = searchInput?.value || "";
+    const call_type = typeFilter?.value === 'all' ? "" : typeFilter?.value;
+
+    try {
+      let url = `/api/admin/all-call-history?per_page=10000`; // Fetch large number for export
+      if (user_id) url += `&user_id=${user_id}`;
+      if (search) url += `&search=${encodeURIComponent(search)}`;
+      if (call_type) url += `&call_type=${call_type}`;
+
+      const resp = await auth.makeAuthenticatedRequest(url);
+      if (!resp || !resp.ok) {
+        auth.showNotification("Failed to fetch data for export", "error");
+        return;
+      }
+
+      const data = await resp.json();
+      const items = data.call_history || [];
+
+      if (items.length === 0) {
+        auth.showNotification("No records to export", "info");
+        return;
+      }
+
+      // Convert to CSV
+      const headers = ["User", "Number", "Contact Name", "Type", "Duration (s)", "Timestamp"];
+      const rows = items.map(r => [
+        r.user_name || r.user_id || '-',
+        r.phone_number || '-',
+        (r.contact_name || '-').replace(/,/g, " "),
+        r.call_type || '-',
+        r.duration || 0,
+        r.timestamp ? new Date(r.timestamp).toLocaleString() : '-'
+      ]);
+
+      let csvContent = "data:text/csv;charset=utf-8,"
+        + headers.join(",") + "\n"
+        + rows.map(e => e.join(",")).join("\n");
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `call_history_export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+    } catch (e) {
+      console.error("Export failed", e);
+      auth.showNotification("Export failed", "error");
+    }
   }
 }
 
