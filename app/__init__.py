@@ -166,4 +166,10 @@ def create_app(config_class=Config):
     def super_admin_static(filename):
         return send_from_directory(os.path.join(FRONTEND, "super_admin"), filename)
 
+    # -------- UPLOADS (IMAGES) --------
+    @app.route("/uploads/<path:filename>")
+    def uploaded_files(filename):
+        uploads_dir = os.path.join(os.getcwd(), "uploads")
+        return send_from_directory(uploads_dir, filename)
+
     return app
