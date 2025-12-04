@@ -399,6 +399,10 @@
             <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h3 class="text-lg font-bold text-gray-900">Attendance Records</h3>
               <div class="flex gap-2 bg-gray-100 p-1 rounded-lg items-center">
+                <select id="attendanceUserFilter"
+                  class="px-3 py-1.5 rounded-md text-sm border-gray-200 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                  <option value="all">All Users</option>
+                </select>
                 <input type="date" id="attendanceDateFilter"
                   class="px-3 py-1.5 rounded-md text-sm border-gray-200 focus:ring-blue-500 focus:border-blue-500">
                 <button id="btnExportAttendance"
