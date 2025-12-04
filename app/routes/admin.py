@@ -207,7 +207,7 @@ def create_user():
 
         # Audit Log
         log = ActivityLog(
-            admin_id=admin.id,
+            actor_role=UserRole.ADMIN,
             actor_id=admin.id,
             action=f"Created user {email}",
             target_type="user"
@@ -498,40 +498,45 @@ def dashboard_stats():
 
     # 5. Average Performance Score
     # We can average the 'performance_score' column if it exists and is populated
-    avg_perf = db.session.query(func.avg(User.performance_score)).filter(User.admin_id == admin_id).scalar()
-    avg_perf = round(avg_perf, 1) if avg_perf else 0.0
+    try:
+        avg_perf = db.session.query(func.avg(User.performance_score)).filter(User.admin_id == admin_id).scalar()
+        avg_perf = round(avg_perf, 1) if avg_perf else 0.0
+    except Exception:
+        avg_perf = 0.0
 
     # 6. Call Volume Trend (Last 7 Days)
     # Group by date of CallHistory
     today = datetime.now(timezone.utc).date()
     seven_days_ago = today - timedelta(days=6)
     
-    # We need to join User to filter by admin_id
-    daily_calls = db.session.query(
-        func.date(CallHistory.timestamp).label('date'),
-        func.count(CallHistory.id)
-    ).join(User).filter(
-        User.admin_id == admin_id,
-        CallHistory.timestamp >= seven_days_ago
-    ).group_by(func.date(CallHistory.timestamp)).all()
+    # Python-side grouping to avoid DB-specific SQL functions
+    try:
+        raw_calls = db.session.query(CallHistory.timestamp).join(User).filter(
+            User.admin_id == admin_id,
+            CallHistory.timestamp >= seven_days_ago
+        ).all()
 
-    # Format for chart: labels (Mon, Tue) and data (counts)
-    # Initialize dict with 0 for last 7 days
-    trend_data = {}
-    for i in range(7):
-        d = seven_days_ago + timedelta(days=i)
-        trend_data[d.isoformat()] = 0
+        # Initialize dict with 0 for last 7 days
+        trend_data = {}
+        for i in range(7):
+            d = seven_days_ago + timedelta(days=i)
+            trend_data[d.isoformat()] = 0
 
-    for date_obj, count in daily_calls:
-        # date_obj might be a string or date object depending on DB driver
-        d_str = str(date_obj)
-        if d_str in trend_data:
-            trend_data[d_str] = count
-            
-    # Sort by date
-    sorted_dates = sorted(trend_data.keys())
-    chart_labels = [datetime.fromisoformat(d).strftime('%a') for d in sorted_dates] # Mon, Tue...
-    chart_data = [trend_data[d] for d in sorted_dates]
+        for (ts,) in raw_calls:
+            if ts:
+                # Convert to date string
+                d_str = ts.date().isoformat()
+                if d_str in trend_data:
+                    trend_data[d_str] += 1
+                
+        # Sort by date
+        sorted_dates = sorted(trend_data.keys())
+        chart_labels = [datetime.fromisoformat(d).strftime('%a') for d in sorted_dates] # Mon, Tue...
+        chart_data = [trend_data[d] for d in sorted_dates]
+    except Exception as e:
+        current_app.logger.error(f"Dashboard trend error: {e}")
+        chart_labels = []
+        chart_data = []
 
     return jsonify({
         "stats": {
