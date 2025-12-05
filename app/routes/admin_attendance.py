@@ -45,8 +45,6 @@ def get_admin_attendance():
         except Exception as e:
             current_app.logger.warning(f"Invalid date format: {date_str} - {e}")
             return jsonify({"error": "Invalid date format"}), 400
-            current_app.logger.warning(f"Invalid date format: {date_str} - {e}")
-            return jsonify({"error": "Invalid date format"}), 400
     
     # Month Filter (YYYY-MM)
     month_param = request.args.get("month")
@@ -61,6 +59,10 @@ def get_admin_attendance():
         except ValueError:
             return jsonify({"error": "Invalid month format. Use YYYY-MM"}), 400
 
+    # Pagination
+    try:
+        page = int(request.args.get("page", 1))
+        per_page = int(request.args.get("per_page", 25))
     except ValueError:
         page = 1
         per_page = 25
