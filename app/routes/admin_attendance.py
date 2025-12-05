@@ -45,11 +45,22 @@ def get_admin_attendance():
         except Exception as e:
             current_app.logger.warning(f"Invalid date format: {date_str} - {e}")
             return jsonify({"error": "Invalid date format"}), 400
+            current_app.logger.warning(f"Invalid date format: {date_str} - {e}")
+            return jsonify({"error": "Invalid date format"}), 400
     
-    # Pagination
-    try:
-        page = int(request.args.get("page", 1))
-        per_page = int(request.args.get("per_page", 25))
+    # Month Filter (YYYY-MM)
+    month_param = request.args.get("month")
+    if month_param:
+        try:
+            part_year, part_month = map(int, month_param.split('-'))
+            start_time = datetime(part_year, part_month, 1)
+            if part_month == 12:
+                end_time = datetime(part_year + 1, 1, 1)
+            else:
+                end_time = datetime(part_year, part_month + 1, 1)
+        except ValueError:
+            return jsonify({"error": "Invalid month format. Use YYYY-MM"}), 400
+
     except ValueError:
         page = 1
         per_page = 25
@@ -68,7 +79,17 @@ def get_admin_attendance():
                 pass
 
         if start_time and end_time:
-            base_query = base_query.filter(Attendance.check_in >= start_time, Attendance.check_in <= end_time)
+            # Note: For strict day filter we used inclusive end_time (23:59:59).
+            # For month filter we calculated start of NEXT month, so use < for end_time.
+            # But wait, date filter set end_time to 23:59:59.
+            # Let's standardize.
+            
+            if month_param:
+                 base_query = base_query.filter(Attendance.check_in >= start_time, Attendance.check_in < end_time)
+            else:
+                 # Standard date filter
+                 base_query = base_query.filter(Attendance.check_in >= start_time, Attendance.check_in <= end_time)
+
 
         paginated = base_query.order_by(Attendance.check_in.desc()).paginate(page=page, per_page=per_page, error_out=False)
 

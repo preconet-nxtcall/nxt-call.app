@@ -9,17 +9,22 @@ class AttendanceManager {
   initEventListeners() {
     const userFilter = document.getElementById("attendanceUserFilter");
     const dateFilter = document.getElementById("attendanceDateFilter");
+    const monthFilter = document.getElementById("attendanceMonthFilter");
     const btnExport = document.getElementById("btnExportAttendance");
 
     const refresh = () => {
       this.loadAttendance(
         dateFilter?.value,
-        userFilter?.value === 'all' ? null : userFilter?.value
+        userFilter?.value === 'all' ? null : userFilter?.value,
+        1,
+        25,
+        monthFilter?.value
       );
     };
 
     if (userFilter) userFilter.addEventListener("change", refresh);
     if (dateFilter) dateFilter.addEventListener("change", refresh);
+    if (monthFilter) monthFilter.addEventListener("change", refresh);
 
     if (btnExport) {
       btnExport.addEventListener("click", () => {
@@ -32,9 +37,11 @@ class AttendanceManager {
   load() {
     const userFilter = document.getElementById("attendanceUserFilter");
     const dateFilter = document.getElementById("attendanceDateFilter");
+    const monthFilter = document.getElementById("attendanceMonthFilter");
 
     if (userFilter) userFilter.value = "all";
     if (dateFilter) dateFilter.value = "";
+    if (monthFilter) monthFilter.value = "";
 
     this.loadAttendance();
   }
@@ -62,12 +69,15 @@ class AttendanceManager {
     }
   }
 
-  async loadAttendance(date = null, user_id = null, page = 1, per_page = 25) {
-    console.log("loadAttendance called with date:", date, "user:", user_id);
+  async loadAttendance(date = null, user_id = null, page = 1, per_page = 25, month = null) {
+    console.log("loadAttendance called with date:", date, "month:", month, "user:", user_id);
     try {
       let url = `/api/admin/attendance?page=${page}&per_page=${per_page}`;
       if (date) {
         url += `&date=${date}`;
+      }
+      if (month) {
+        url += `&month=${month}`;
       }
       if (user_id && user_id !== 'all') {
         url += `&user_id=${user_id}`;
@@ -173,14 +183,17 @@ class AttendanceManager {
 
   async exportAttendance() {
     const dateFilter = document.getElementById("attendanceDateFilter");
+    const monthFilter = document.getElementById("attendanceMonthFilter");
     const userFilter = document.getElementById("attendanceUserFilter");
 
     const date = dateFilter ? dateFilter.value : null;
+    const month = monthFilter ? monthFilter.value : null;
     const user_id = userFilter?.value === 'all' ? null : userFilter?.value;
 
     try {
       let url = `/api/admin/attendance?per_page=10000`; // Fetch large number for export
       if (date) url += `&date=${date}`;
+      if (month) url += `&month=${month}`;
       if (user_id) url += `&user_id=${user_id}`;
 
       const resp = await auth.makeAuthenticatedRequest(url);
@@ -214,7 +227,7 @@ class AttendanceManager {
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `attendance_export_${date || "all"}.csv`);
+      link.setAttribute("download", `attendance_export_${date || month || "all"}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
