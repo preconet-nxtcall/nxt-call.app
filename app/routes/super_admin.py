@@ -183,13 +183,13 @@ def dashboard_stats():
 @jwt_required()
 def activity_logs():
     try:
-        # Filter for admin-related activities only
-        # We fetch a bit more than 10 to ensure we have enough after filtering by action text
+        # Filter for any activity with "Admin" in the action text
+        # This is safer than relying on target_type which might haven't been set in older logs
         logs = (
             ActivityLog.query
-            .filter(ActivityLog.target_type == "admin")
+            .filter(ActivityLog.action.ilike("%Admin%"))
             .order_by(ActivityLog.timestamp.desc())
-            .limit(50) 
+            .limit(100)  # Fetch more to allow for filtering
             .all()
         )
 
@@ -198,33 +198,42 @@ def activity_logs():
             if len(formatted) >= 10:
                 break
                 
+            action_lower = log.action.lower()
             action_type = None
             admin_name = "Unknown"
             
+            # Helper to extract name
+            def extract_name(prefix):
+                try:
+                    parts = log.action.split(":", 1)
+                    if len(parts) > 1:
+                        return parts[1].strip()
+                    # Fallback: try splitting by the prefix words
+                    # e.g. "Created Admin John Doe" -> split by "Admin"
+                    import re
+                    # Split by "Admin" or "Admin:" case insensitive
+                    split = re.split(r"admin[:\s]", log.action, flags=re.IGNORECASE)
+                    if len(split) > 1:
+                        return split[-1].strip()
+                except:
+                    pass
+                return "Unknown"
+
             # Parse action string
-            # Expected formats: 
-            # "Created Admin: Name"
-            # "Blocked Admin: Name"
-            # "Unblocked Admin: Name"
-            # "Deleted Admin: Name" (We explicitly skip this one based on requirements)
-            
-            if "Created Admin:" in log.action:
+            if "created admin" in action_lower:
                 action_type = "Admin Created"
-                parts = log.action.split("Created Admin:")
-                if len(parts) > 1:
-                    admin_name = parts[1].strip()
+                admin_name = extract_name("Created Admin")
                     
-            elif "Blocked Admin:" in log.action or "Unblocked Admin:" in log.action:
+            elif "blocked admin" in action_lower or "unblocked admin" in action_lower:
                 action_type = "Admin Updated"
-                if "Blocked Admin:" in log.action:
-                    parts = log.action.split("Blocked Admin:")
-                else:
-                    parts = log.action.split("Unblocked Admin:")
-                    
-                if len(parts) > 1:
-                    admin_name = parts[1].strip()
+                admin_name = extract_name("Blocked Admin") # Prefix doesn't matter much for our extraction logic
+                
+            elif "updated admin" in action_lower: # Future proofing
+                action_type = "Admin Updated"
+                admin_name = extract_name("Updated Admin")
 
             # Skip if it's not one of our target actions
+            # (e.g. we skip "Deleted Admin" as requested)
             if not action_type:
                 continue
 
@@ -238,6 +247,7 @@ def activity_logs():
         return jsonify({"logs": formatted}), 200
 
     except Exception as e:
+        print(f"Error fetching logs: {e}")
         return jsonify({"error": str(e)}), 500
 
 
