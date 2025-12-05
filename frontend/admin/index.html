@@ -402,10 +402,10 @@
                 <h3 class="text-xl font-bold text-gray-900 tracking-tight">Attendance Records</h3>
                 <p class="text-sm text-gray-500 mt-1">Track daily check-ins and performance</p>
               </div>
-              <div class="flex flex-wrap items-center gap-3">
+              <div class="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar">
 
                 <!-- Use custom chevron wrapper for selects -->
-                <div class="relative group">
+                <div class="relative group shrink-0">
                   <select id="attendanceUserFilter"
                     class="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white transition-all cursor-pointer hover:border-blue-300 text-gray-700 font-medium">
                     <option value="all">All Users</option>
@@ -415,13 +415,13 @@
                 </div>
 
                 <input type="month" id="attendanceMonthFilter"
-                  class="px-3 py-2 text-sm border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all hover:border-blue-300 text-gray-700 font-medium bg-white">
+                  class="shrink-0 px-3 py-2 text-sm border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all hover:border-blue-300 text-gray-700 font-medium bg-white">
 
                 <input type="date" id="attendanceDateFilter"
-                  class="px-3 py-2 text-sm border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all hover:border-blue-300 text-gray-700 font-medium bg-white">
+                  class="shrink-0 px-3 py-2 text-sm border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all hover:border-blue-300 text-gray-700 font-medium bg-white">
 
                 <button id="btnExportAttendance"
-                  class="px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg shadow-lg shadow-gray-200 hover:bg-gray-800 hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-2">
+                  class="shrink-0 px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg shadow-lg shadow-gray-200 hover:bg-gray-800 hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-2">
                   <i class="fas fa-download text-xs"></i> <span>Export CSV</span>
                 </button>
               </div>
@@ -455,16 +455,16 @@
                 <p class="text-sm text-gray-500 mt-1">Detailed log of team communications</p>
               </div>
 
-              <div class="flex flex-wrap items-center gap-3">
+              <div class="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar">
                 <!-- Search -->
-                <div class="relative w-full sm:w-auto">
+                <div class="relative w-full sm:w-auto shrink-0">
                   <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                   <input id="callSearchInput" type="text" placeholder="Search logs..."
                     class="pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-gray-700 w-full sm:w-64 transition-all hover:border-blue-300 bg-white">
                 </div>
 
                 <!-- User Filter -->
-                <div class="relative group">
+                <div class="relative group shrink-0">
                   <select id="callUserFilter"
                     class="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white transition-all cursor-pointer hover:border-blue-300 text-gray-700 font-medium">
                     <option value="all">All Users</option>
@@ -475,10 +475,10 @@
 
                 <!-- Month Filter -->
                 <input type="month" id="callMonthFilter"
-                  class="px-3 py-2 text-sm border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all hover:border-blue-300 text-gray-700 font-medium bg-white">
+                  class="shrink-0 px-3 py-2 text-sm border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all hover:border-blue-300 text-gray-700 font-medium bg-white">
 
                 <!-- Type Filter -->
-                <div class="relative group">
+                <div class="relative group shrink-0">
                   <select id="callTypeFilter"
                     class="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white transition-all cursor-pointer hover:border-blue-300 text-gray-700 font-medium">
                     <option value="all">All Types</option>
@@ -491,7 +491,7 @@
                 </div>
 
                 <button id="btnExportCalls"
-                  class="px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg shadow-lg shadow-gray-200 hover:bg-gray-800 hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-2">
+                  class="shrink-0 px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg shadow-lg shadow-gray-200 hover:bg-gray-800 hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-2">
                   <i class="fas fa-download text-xs"></i> <span>Export</span>
                 </button>
               </div>
