@@ -42,9 +42,8 @@ def all_call_history():
             start_time = now - timedelta(days=7)
         elif filter_type == "month":
             start_time = now - timedelta(days=30)
-        elif not filter_type and not custom_date:
-            # DEFAULT: If no filter provided, default to last 7 days (for performance modal)
-            start_time = now - timedelta(days=7)
+        # Removed automatic 7-day default to show all available data
+        # Users can explicitly apply filters if needed
 
         # ============================
         # 2️⃣ PHONE SEARCH FILTER

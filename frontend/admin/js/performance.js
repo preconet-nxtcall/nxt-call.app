@@ -235,7 +235,7 @@ class PerformanceManager {
       const meta = data.meta || {};
 
       if (calls.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No call records found (last 7 days)</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No call records found</td></tr>';
         if (paginationContainer) paginationContainer.innerHTML = '';
         return;
       }
@@ -300,7 +300,7 @@ class PerformanceManager {
       <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-200">
         <div class="text-sm text-gray-700">
           Showing page <span class="font-medium">${currentPage}</span> of <span class="font-medium">${totalPages}</span>
-          <span class="text-gray-500">(${meta.total} total records, last 7 days)</span>
+          <span class="text-gray-500">(${meta.total} total records)</span>
         </div>
         <div class="flex gap-1">
           <button 
