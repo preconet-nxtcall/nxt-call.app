@@ -49,19 +49,72 @@ def performance():
             return jsonify({"error": "Unauthorized"}), 401
 
         # Load filter
+```python
+# app/routes/admin_performance.py
+
+from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy import func, and_, or_, case
+from datetime import datetime, timedelta
+
+from app.models import db, CallHistory, User, Admin
+
+bp = Blueprint("admin_performance", __name__, url_prefix="/api/admin")
+
+
+# ---------------------------
+# Helper: Date Range Filter
+# ---------------------------
+def get_date_range(filter_type):
+    now = datetime.utcnow()
+
+    if filter_type == "today":
+        start = datetime(now.year, now.month, now.day)
+        end = start + timedelta(days=1)
+
+    elif filter_type == "week":
+        start = now - timedelta(days=7)
+        end = now
+
+    elif filter_type == "month":
+        start = now - timedelta(days=30)
+        end = now
+
+    else:
+        start = datetime(2000, 1, 1)
+        end = now
+
+    return start, end
+
+
+# ---------------------------
+# GET /api/admin/performance
+# ---------------------------
+@bp.route("/performance", methods=["GET"])
+@jwt_required()
+def performance():
+    try:
+        admin_id = int(get_jwt_identity())
+        admin = Admin.query.get(admin_id)
+
+        if not admin:
+            return jsonify({"error": "Unauthorized"}), 401
+
+        # Load filter
         filter_type = request.args.get("filter", "today")
         start_dt, end_dt = get_date_range(filter_type)
         
         # User Filter
         user_id_param = request.args.get("user_id", "all")
 
-        # CASE expressions
-        incoming_case = case((func.lower(CallHistory.call_type) == "incoming", 1), else_=0)
-        outgoing_case = case((func.lower(CallHistory.call_type) == "outgoing", 1), else_=0)
-        missed_case = case((func.lower(CallHistory.call_type) == "missed", 1), else_=0)
-        rejected_case = case((func.lower(CallHistory.call_type) == "rejected", 1), else_=0)
+        # CASE expressions (Standardized List Syntax)
+        incoming_case = case([(func.lower(CallHistory.call_type) == "incoming", 1)], else_=0)
+        outgoing_case = case([(func.lower(CallHistory.call_type) == "outgoing", 1)], else_=0)
+        missed_case = case([(func.lower(CallHistory.call_type) == "missed", 1)], else_=0)
+        rejected_case = case([(func.lower(CallHistory.call_type) == "rejected", 1)], else_=0)
 
-        # Base query
+        # Base query with Date Filter in OUTER JOIN
+        # This ensures we keep users even if they have no calls in the date range
         query = db.session.query(
             User.id,
             User.name,
@@ -71,24 +124,17 @@ def performance():
             func.sum(outgoing_case).label("outgoing"),
             func.sum(missed_case).label("missed"),
             func.sum(rejected_case).label("rejected"),
-        ).outerjoin(CallHistory, CallHistory.user_id == User.id)
+        ).outerjoin(
+            CallHistory, 
+            and_(
+                CallHistory.user_id == User.id,
+                CallHistory.timestamp >= start_dt,
+                CallHistory.timestamp < end_dt
+            )
+        )
 
         # Apply Admin Filter
         filters = [User.admin_id == admin_id]
-
-        # Apply Date Filter (on CallHistory)
-        # We need to be careful: if we filter CallHistory by date, we might exclude users who have no calls in that range
-        # but we still want to show them with 0 calls if they exist.
-        # The outerjoin handles this, but the WHERE clause on CallHistory fields needs to be part of the join condition OR handled carefully.
-        # Actually, the original query had:
-        # or_(CallHistory.id == None, and_(CallHistory.timestamp >= start_dt, ...))
-        # This preserves users with no calls.
-
-        date_condition = or_(
-            CallHistory.id == None,
-            and_(CallHistory.timestamp >= start_dt, CallHistory.timestamp < end_dt)
-        )
-        filters.append(date_condition)
 
         # Apply User Filter
         if user_id_param and user_id_param != "all":
@@ -149,4 +195,6 @@ def performance():
         }), 200
 
     except Exception as e:
+        print(f"Performance error: {e}") # Log to console
         return jsonify({"error": str(e)}), 400
+```
