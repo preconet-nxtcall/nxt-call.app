@@ -183,20 +183,57 @@ def dashboard_stats():
 @jwt_required()
 def activity_logs():
     try:
-        logs = ActivityLog.query.order_by(ActivityLog.timestamp.desc()).limit(50).all()
+        # Filter for admin-related activities only
+        # We fetch a bit more than 10 to ensure we have enough after filtering by action text
+        logs = (
+            ActivityLog.query
+            .filter(ActivityLog.target_type == "admin")
+            .order_by(ActivityLog.timestamp.desc())
+            .limit(50) 
+            .all()
+        )
 
-        formatted = [
-            {
+        formatted = []
+        for log in logs:
+            if len(formatted) >= 10:
+                break
+                
+            action_type = None
+            admin_name = "Unknown"
+            
+            # Parse action string
+            # Expected formats: 
+            # "Created Admin: Name"
+            # "Blocked Admin: Name"
+            # "Unblocked Admin: Name"
+            # "Deleted Admin: Name" (We explicitly skip this one based on requirements)
+            
+            if "Created Admin:" in log.action:
+                action_type = "Admin Created"
+                parts = log.action.split("Created Admin:")
+                if len(parts) > 1:
+                    admin_name = parts[1].strip()
+                    
+            elif "Blocked Admin:" in log.action or "Unblocked Admin:" in log.action:
+                action_type = "Admin Updated"
+                if "Blocked Admin:" in log.action:
+                    parts = log.action.split("Blocked Admin:")
+                else:
+                    parts = log.action.split("Unblocked Admin:")
+                    
+                if len(parts) > 1:
+                    admin_name = parts[1].strip()
+
+            # Skip if it's not one of our target actions
+            if not action_type:
+                continue
+
+            formatted.append({
                 "id": log.id,
-                "action": log.action,
-                "actor_role": _safe_enum_value(log.actor_role),
-                "actor_id": log.actor_id,
-                "target_type": log.target_type,
-                "target_id": log.target_id,
+                "admin_name": admin_name,
+                "action_type": action_type,
                 "timestamp": log.timestamp.isoformat(),
-            }
-            for log in logs
-        ]
+            })
 
         return jsonify({"logs": formatted}), 200
 

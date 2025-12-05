@@ -133,19 +133,21 @@ class DashboardManager {
             return;
         }
 
-        container.innerHTML = logs.slice(0, 10).map(log => `
+        container.innerHTML = logs.map(log => `
             <div class="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition border-b border-gray-50 last:border-0">
                 <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center
-                    ${log.actor_role === "super_admin" ? "bg-purple-100 text-purple-600" :
-                log.actor_role === "admin" ? "bg-blue-100 text-blue-600" :
-                    "bg-green-100 text-green-600"
-            }">
-                    <i class="fas fa-${this.getIcon(log.action)} text-xs"></i>
+                    ${log.action_type === 'Admin Created' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}">
+                    <i class="fas fa-${log.action_type === 'Admin Created' ? 'plus' : 'user-edit'} text-xs"></i>
                 </div>
 
                 <div class="min-w-0 flex-1">
-                    <p class="text-sm font-medium text-gray-900 truncate">${log.action}</p>
-                    <p class="text-xs text-gray-500">${this.formatTime(log.timestamp)}</p>
+                    <div class="flex justify-between items-start">
+                        <p class="text-sm font-medium text-gray-900 truncate">${log.action_type}</p>
+                        <span class="text-[10px] text-gray-400 whitespace-nowrap ml-2">${this.formatTime(log.timestamp)}</span>
+                    </div>
+                    <p class="text-xs text-gray-600 mt-0.5">
+                        Admin: <span class="font-medium text-gray-800">${log.admin_name}</span>
+                    </p>
                 </div>
             </div>
         `).join("");

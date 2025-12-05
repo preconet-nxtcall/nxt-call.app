@@ -57,9 +57,9 @@ class ActivityManager {
         if (logs.length === 0) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="4" class="text-center py-10 text-gray-500">
+                    <td colspan="3" class="text-center py-10 text-gray-500">
                         <i class="fas fa-history text-3xl mb-3 text-gray-300"></i>
-                        <p>No logs found</p>
+                        <p>No recent activity</p>
                     </td>
                 </tr>
             `;
@@ -70,24 +70,17 @@ class ActivityManager {
             <tr class="hover:bg-gray-50 transition">
 
                 <td class="px-6 py-4 text-gray-800 font-medium">
-                    ${log.action}
+                    ${log.admin_name}
                 </td>
 
                 <td class="px-6 py-4">
-                    <span class="px-3 py-1 rounded-full text-xs font-medium
-                        ${log.actor_role === "super_admin"
-                ? "bg-purple-100 text-purple-800"
-                : log.actor_role === "admin"
-                    ? "bg-blue-100 text-blue-800"
-                    : "bg-green-100 text-green-800"
+                    <span class="px-3 py-1 rounded-full text-xs font-medium 
+                        ${log.action_type === 'Admin Created'
+                ? 'bg-green-100 text-green-800'
+                : 'bg-blue-100 text-blue-800'
             }">
-                        ${log.actor_role ? log.actor_role.replace("_", " ").toUpperCase() : "UNKNOWN"}
+                        ${log.action_type}
                     </span>
-                </td>
-
-                <td class="px-6 py-4 text-sm text-gray-700">
-                    ${log.target_type || "N/A"}
-                    <span class="text-xs text-gray-400 ml-1">(ID: ${log.target_id || "N/A"})</span>
                 </td>
 
                 <td class="px-6 py-4 text-sm text-gray-500">
