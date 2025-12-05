@@ -247,34 +247,64 @@ class UsersManager {
   async createUser() {
     const name = document.getElementById('userName').value.trim();
     const email = document.getElementById('userEmail').value.trim();
-    const phone = document.getElementById('userPhone').value.trim();
+    const phoneInput = document.getElementById('userPhone').value.trim();
+    const countryCode = document.getElementById('countryCodeSelect').value;
     const password = document.getElementById('userPassword').value;
+    const confirmPassword = document.getElementById('userConfirmPassword').value;
 
-    if (!name || !email || !password) {
-      auth.showNotification('Name, Email, Password are required', 'error');
+    if (!name || !email || !password || !confirmPassword) {
+      auth.showNotification('Please fill in all required fields', 'error');
       return;
     }
+
+    if (password !== confirmPassword) {
+      auth.showNotification('Passwords do not match.', 'error');
+      return;
+    }
+
+    // Prepend country code to phone if phone is provided
+    let fullPhone = null;
+    if (phoneInput) {
+      // Remove leading + or 0 from phoneInput to avoid duplication if user typed it
+      const cleanPhone = phoneInput.replace(/^(\+|0)+/, '');
+      fullPhone = `${countryCode}${cleanPhone}`;
+    }
+
+    // Disable button to prevent double submit
+    const submitBtn = document.querySelector('#createUserForm button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
 
     try {
       const resp = await auth.makeAuthenticatedRequest('/api/admin/create-user', {
         method: 'POST',
-        body: JSON.stringify({ name, email, phone, password })
+        body: JSON.stringify({
+          name,
+          email,
+          phone: fullPhone,
+          password
+        })
       });
 
-      if (!resp) return;
+      if (!resp) throw new Error("Network error");
       const data = await resp.json();
 
       if (resp.ok) {
-        auth.showNotification('User created successfully', 'success');
+        auth.showNotification('Account created successfully.', 'success'); // Exact message requested
         document.getElementById('createUserForm').reset();
         this.loadUsers();
       } else {
+        // Show specific backend error
         auth.showNotification(data.error || 'Failed to create user', 'error');
       }
 
     } catch (e) {
       console.error(e);
-      auth.showNotification('Failed to create user', 'error');
+      auth.showNotification('Failed to create user: ' + (e.message || 'Server error'), 'error');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalText;
     }
   }
 }

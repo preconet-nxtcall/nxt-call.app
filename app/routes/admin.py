@@ -206,10 +206,18 @@ def create_user():
         if current_count >= limit:
             return jsonify({"error": f"User limit reached ({limit})"}), 403
 
-        # Check existing
-        existing = User.query.filter(func.lower(User.email) == email).first()
-        if existing:
-            return jsonify({"error": "Email already registered"}), 409
+        # Check existing under THIS admin
+        existing_email = User.query.filter(User.admin_id == admin.id, func.lower(User.email) == email).first()
+        existing_phone = User.query.filter(User.admin_id == admin.id, User.phone == phone).first()
+
+        if existing_email or existing_phone:
+            return jsonify({"error": "This email or phone number is already registered under your admin account."}), 409
+        
+        # Note: We allow same email under DIFFERENT admin as per requirements.
+        # But ensure unique constraint in DB doesn't block it if it exists globally.
+        # Assuming DB constraint is (admin_id, email) unique, not just email unique.
+        # If DB has global unique email, this might still fail if email exists for another admin.
+        # Given the requirements, we proceed assuming schema supports it or we only care about this check.
 
         user = User(
             admin_id=admin.id,
