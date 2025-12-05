@@ -135,7 +135,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     name = db.Column(db.String(150), nullable=False)
-    email = db.Column(db.String(150), unique=True, nullable=False)
+    email = db.Column(db.String(150), nullable=False) # Removed unique=True (Global uniqueness not required)
     password_hash = db.Column(db.String(255), nullable=False)
 
     phone = db.Column(db.String(20))
