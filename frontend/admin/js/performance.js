@@ -80,7 +80,14 @@ class PerformanceManager {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
 
-    if (this.chart) this.chart.destroy();
+    if (this.chart) {
+      this.chart.destroy();
+    } else {
+      // Fallback: Check if Chart.js has an instance associated with this canvas
+      // This happens if the component was re-initialized but the canvas persisted
+      const existingChart = Chart.getChart(canvas);
+      if (existingChart) existingChart.destroy();
+    }
 
     // Custom plugin to draw values on top of bars
     const dataLabelPlugin = {
