@@ -115,4 +115,4 @@ class NotificationService:
         # ---------------------------------------------------------
         # SEND
         # ---------------------------------------------------------
-        NotificationService.send_email(email, subject, html_content)
+        return NotificationService.send_email(email, subject, html_content)

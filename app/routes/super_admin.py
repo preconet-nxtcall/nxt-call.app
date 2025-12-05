@@ -118,27 +118,23 @@ def create_admin():
 
     # Automatic Notification
     from ..services.notification_service import NotificationService
+    import logging
     try:
-        # For Admin, use email as username. Phone might not be stored in Admin model?
-        # Checked model: Admin has name, email, user_limit, expiry_date. Phone is NOT in Admin model based on create_admin code.
-        # So we only send email if phone is missing.
-        # Wait, if Admin doesn't have phone, we can't send SMS.
-        # The user req said "Super Admin creates Admin -> send email + SMS".
-        # But `create_admin` function (Step 817) DOES NOT accept 'phone'.
-        # I will check if 'phone' is in the request data but ignored, or not in model.
-        # If not in model, I can't store it, so I can't send SMS unless I pass it just for notification (but user said "store only hashed...").
-        # I will assume Admin might use Email as username.
-        
-        NotificationService.send_welcome_notification(
+        logging.info(f"Attempting to send welcome email to {email}")
+        result = NotificationService.send_welcome_notification(
             name=name,
             username=email,
             password=password,
             expiry_date=expiry_date,
-            phone=None, # Admin model seems to lack phone
+            phone=None,
             email=email
         )
+        if result:
+            logging.info(f"Welcome email sent successfully to {email}")
+        else:
+            logging.warning(f"Welcome email failed to send to {email} - check ZEPTOMAIL credentials")
     except Exception as e:
-        print(f"Failed to send notification: {e}")
+        logging.error(f"Exception sending notification to {email}: {str(e)}", exc_info=True)
 
     return jsonify({"message": "Admin created successfully"}), 201
 
