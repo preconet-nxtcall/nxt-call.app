@@ -49,58 +49,6 @@ def performance():
             return jsonify({"error": "Unauthorized"}), 401
 
         # Load filter
-```python
-# app/routes/admin_performance.py
-
-from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from sqlalchemy import func, and_, or_, case
-from datetime import datetime, timedelta
-
-from app.models import db, CallHistory, User, Admin
-
-bp = Blueprint("admin_performance", __name__, url_prefix="/api/admin")
-
-
-# ---------------------------
-# Helper: Date Range Filter
-# ---------------------------
-def get_date_range(filter_type):
-    now = datetime.utcnow()
-
-    if filter_type == "today":
-        start = datetime(now.year, now.month, now.day)
-        end = start + timedelta(days=1)
-
-    elif filter_type == "week":
-        start = now - timedelta(days=7)
-        end = now
-
-    elif filter_type == "month":
-        start = now - timedelta(days=30)
-        end = now
-
-    else:
-        start = datetime(2000, 1, 1)
-        end = now
-
-    return start, end
-
-
-# ---------------------------
-# GET /api/admin/performance
-# ---------------------------
-@bp.route("/performance", methods=["GET"])
-@jwt_required()
-def performance():
-    try:
-        admin_id = int(get_jwt_identity())
-        admin = Admin.query.get(admin_id)
-
-        if not admin:
-            return jsonify({"error": "Unauthorized"}), 401
-
-        # Load filter
         filter_type = request.args.get("filter", "today")
         start_dt, end_dt = get_date_range(filter_type)
         
@@ -197,4 +145,3 @@ def performance():
     except Exception as e:
         print(f"Performance error: {e}") # Log to console
         return jsonify({"error": str(e)}), 400
-```
