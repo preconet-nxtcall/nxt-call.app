@@ -206,11 +206,12 @@ class PerformanceManager {
     `).join('');
   }
 
-  async viewUserCallHistory(userId, userName) {
+  async viewUserCallHistory(userId, userName, page = 1) {
     try {
       const modal = document.getElementById('userCallHistoryModal');
       const title = document.getElementById('modalUserTitle');
       const tbody = document.getElementById('modalCallHistoryBody');
+      const paginationContainer = document.getElementById('modalCallHistoryPagination');
 
       if (!modal || !tbody) return;
 
@@ -219,8 +220,11 @@ class PerformanceManager {
 
       modal.classList.remove('hidden');
 
-      // Fetch recent calls (limit 20)
-      const resp = await auth.makeAuthenticatedRequest(`/api/admin/all-call-history?user_id=${userId}&per_page=20`);
+      // Store current user for pagination
+      this.currentModalUser = { userId, userName };
+
+      // Fetch calls with pagination (defaults to last 7 days)
+      const resp = await auth.makeAuthenticatedRequest(`/api/admin/all-call-history?user_id=${userId}&page=${page}&per_page=20`);
       if (!resp || !resp.ok) {
         tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Failed to load history</td></tr>';
         return;
@@ -228,9 +232,11 @@ class PerformanceManager {
 
       const data = await resp.json();
       const calls = data.call_history || [];
+      const meta = data.meta || {};
 
       if (calls.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No call records found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No call records found (last 7 days)</td></tr>';
+        if (paginationContainer) paginationContainer.innerHTML = '';
         return;
       }
 
@@ -256,10 +262,63 @@ class PerformanceManager {
         </tr>
       `).join('');
 
+      // Render pagination
+      this.renderModalPagination(meta, paginationContainer);
+
     } catch (e) {
       console.error("Error viewing user call history", e);
       auth.showNotification("Error opening call history", "error");
     }
+  }
+
+  renderModalPagination(meta, container) {
+    if (!container || !meta || meta.pages <= 1) {
+      if (container) container.innerHTML = '';
+      return;
+    }
+
+    const currentPage = meta.page;
+    const totalPages = meta.pages;
+
+    let pagesHtml = '';
+
+    // Show max 5 page numbers
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
+
+    for (let i = startPage; i <= endPage; i++) {
+      pagesHtml += `
+        <button 
+          onclick="performanceManager.viewUserCallHistory(${this.currentModalUser.userId}, '${this.currentModalUser.userName}', ${i})"
+          class="px-3 py-1 rounded ${i === currentPage ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border border-gray-300 text-sm font-medium">
+          ${i}
+        </button>
+      `;
+    }
+
+    container.innerHTML = `
+      <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-200">
+        <div class="text-sm text-gray-700">
+          Showing page <span class="font-medium">${currentPage}</span> of <span class="font-medium">${totalPages}</span>
+          <span class="text-gray-500">(${meta.total} total records, last 7 days)</span>
+        </div>
+        <div class="flex gap-1">
+          <button 
+            onclick="performanceManager.viewUserCallHistory(${this.currentModalUser.userId}, '${this.currentModalUser.userName}', ${currentPage - 1})"
+            ${!meta.has_prev ? 'disabled' : ''}
+            class="px-3 py-1 rounded bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+            Previous
+          </button>
+          ${pagesHtml}
+          <button 
+            onclick="performanceManager.viewUserCallHistory(${this.currentModalUser.userId}, '${this.currentModalUser.userName}', ${currentPage + 1})"
+            ${!meta.has_next ? 'disabled' : ''}
+            class="px-3 py-1 rounded bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+            Next
+          </button>
+        </div>
+      </div>
+    `;
   }
 
   formatDuration(seconds) {
