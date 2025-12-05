@@ -14,11 +14,17 @@ class AdminsManager {
         const name = document.getElementById("adminName").value.trim();
         const email = document.getElementById("adminEmail").value.trim();
         const password = document.getElementById("adminPassword").value.trim();
+        const confirmPassword = document.getElementById("adminConfirmPassword").value.trim();
         const userLimit = Number(document.getElementById("userLimit").value || 10);
         const expiryRaw = document.getElementById("expiryDate").value;
 
         if (!name || !email || !password || !expiryRaw) {
             auth.showNotification("Please fill all fields", "error");
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            auth.showNotification("Passwords do not match", "error");
             return;
         }
 
