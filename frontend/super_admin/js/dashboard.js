@@ -135,13 +135,14 @@ class DashboardManager {
 
         container.innerHTML = logs.map(log => `
             <div class="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition border-b border-gray-50 last:border-0">
-                <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-green-100 text-green-600">
-                    <i class="fas fa-plus text-xs"></i>
+                <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center
+                    ${log.action_type === 'Admin Created' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}">
+                    <i class="fas fa-${log.action_type === 'Admin Created' ? 'plus' : 'user-edit'} text-xs"></i>
                 </div>
 
                 <div class="min-w-0 flex-1">
                     <div class="flex justify-between items-start">
-                        <p class="text-sm font-medium text-gray-900 truncate">Admin Created</p>
+                        <p class="text-sm font-medium text-gray-900 truncate">${log.action_type}</p>
                         <span class="text-[10px] text-gray-400 whitespace-nowrap ml-2">${this.formatTime(log.timestamp)}</span>
                     </div>
                     <p class="text-xs text-gray-600 mt-0.5">

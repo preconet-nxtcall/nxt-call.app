@@ -183,35 +183,61 @@ def dashboard_stats():
 @jwt_required()
 def activity_logs():
     try:
-        # STRICT FILTER: Only show "Admin Created" activities
+        # Revert: Show "Admin Created" AND "Admin Updated"
+        # We search for "Admin" to catch Created, Blocked, Unblocked, etc.
         logs = (
             ActivityLog.query
-            .filter(ActivityLog.action.ilike("%Created Admin%"))
+            .filter(ActivityLog.action.ilike("%Admin%"))
             .order_by(ActivityLog.timestamp.desc())
-            .limit(10)
+            .limit(100) # Fetch more to allow for filtering
             .all()
         )
 
         formatted = []
         for log in logs:
+            if len(formatted) >= 10:
+                break
+
+            action_lower = log.action.lower()
+            action_type = None
             admin_name = "Unknown"
             
-            # Extract name from "Created Admin: Name" or "Created Admin Name"
-            # Try splitting by colon first which is the standard format
-            parts = log.action.split(":", 1)
-            if len(parts) > 1:
-                admin_name = parts[1].strip()
-            else:
-                # Fallback: Split by "Admin" case insensitive
-                import re
-                split = re.split(r"admin[:\s]", log.action, flags=re.IGNORECASE)
-                if len(split) > 1:
-                    admin_name = split[-1].strip()
+            # Helper to extract name
+            def extract_name(prefix):
+                try:
+                    parts = log.action.split(":", 1)
+                    if len(parts) > 1:
+                        return parts[1].strip()
+                    import re
+                    # Split by "Admin" or "Admin:" case insensitive
+                    split = re.split(r"admin[:\s]", log.action, flags=re.IGNORECASE)
+                    if len(split) > 1:
+                        return split[-1].strip()
+                except:
+                    pass
+                return "Unknown"
+
+            # Parse action string
+            if "created admin" in action_lower:
+                action_type = "Admin Created"
+                admin_name = extract_name("Created Admin")
+                    
+            elif "blocked admin" in action_lower or "unblocked admin" in action_lower:
+                action_type = "Admin Updated"
+                admin_name = extract_name("Blocked Admin")
+                
+            elif "updated admin" in action_lower:
+                action_type = "Admin Updated"
+                admin_name = extract_name("Updated Admin")
+
+            # Skip if match found not found (e.g. Deleted Admin) or if it's irrelevant
+            if not action_type:
+                continue
 
             formatted.append({
                 "id": log.id,
                 "admin_name": admin_name,
-                "action_type": "Admin Created",
+                "action_type": action_type,
                 "timestamp": log.timestamp.isoformat(),
             })
 
