@@ -9,5 +9,3 @@ class Config:
     # Notification Config
     ZEPTOMAIL_USER = os.environ.get("ZEPTOMAIL_USER", "")
     ZEPTOMAIL_PASSWORD = os.environ.get("ZEPTOMAIL_PASSWORD", "")
-    SMS_API_URL = os.environ.get("SMS_API_URL", "") # Placeholder for user to fill
-    SMS_API_KEY = os.environ.get("SMS_API_KEY", "")
