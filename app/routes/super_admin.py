@@ -118,7 +118,7 @@ def create_admin():
 
     # Automatic Notification
     try:
-        from ..services.notification_service import NotificationService
+        from app.services.notification_service import NotificationService
         import logging
         
         logging.info(f"Attempting to send welcome email to {email}")
