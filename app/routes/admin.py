@@ -241,7 +241,23 @@ def create_user():
         db.session.flush()
         log.target_id = user.id
         db.session.add(log)
+        db.session.add(log)
         db.session.commit()
+
+        # Automatic Notification
+        from ..services.notification_service import NotificationService
+        try:
+            # User expiry is tied to Admin expiry
+            NotificationService.send_welcome_notification(
+                name=name,
+                username=email, # User always has email
+                password=password,
+                expiry_date=admin.expiry_date, # Use admin's expiry
+                phone=phone,
+                email=email
+            )
+        except Exception as e:
+            current_app.logger.error(f"Failed to send notification: {e}")
 
         return jsonify({"message": "User created", "user_id": user.id}), 201
 
