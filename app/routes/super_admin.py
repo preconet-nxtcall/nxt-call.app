@@ -211,62 +211,42 @@ def dashboard_stats():
 @jwt_required()
 def activity_logs():
     try:
-        # Revert: Show "Admin Created" AND "Admin Updated"
-        # We search for "Admin" to catch Created, Blocked, Unblocked, etc.
-        logs = (
-            ActivityLog.query
-            .filter(ActivityLog.action.ilike("%Admin%"))
+        # Verify super admin
+        super_admin_id = get_jwt_identity()
+        if not SuperAdmin.query.get(super_admin_id):
+            return jsonify({"error": "Unauthorized"}), 401
+            
+        # Optimize: Join with Admin table to get names directly
+        # We want to show WHO did WHAT.
+        # If actor_role is ADMIN, we join with Admin table.
+        # If actor_role is SUPER_ADMIN, we just say "Super Admin".
+        
+        logs_query = (
+            db.session.query(ActivityLog, Admin.name)
+            .outerjoin(Admin, (ActivityLog.actor_id == Admin.id) & (ActivityLog.actor_role == UserRole.ADMIN))
             .order_by(ActivityLog.timestamp.desc())
-            .limit(100) # Fetch more to allow for filtering
+            .limit(50)
             .all()
         )
 
         formatted = []
-        for log in logs:
-            if len(formatted) >= 10:
-                break
-
-            action_lower = log.action.lower()
-            action_type = None
-            admin_name = "Unknown"
+        for log, admin_name in logs_query:
             
-            # Helper to extract name
-            def extract_name(prefix):
-                try:
-                    parts = log.action.split(":", 1)
-                    if len(parts) > 1:
-                        return parts[1].strip()
-                    import re
-                    # Split by "Admin" or "Admin:" case insensitive
-                    split = re.split(r"admin[:\s]", log.action, flags=re.IGNORECASE)
-                    if len(split) > 1:
-                        return split[-1].strip()
-                except:
-                    pass
-                return "Unknown"
-
-            # Parse action string
-            if "created admin" in action_lower:
-                action_type = "Admin Created"
-                admin_name = extract_name("Created Admin")
-                    
-            elif "blocked admin" in action_lower or "unblocked admin" in action_lower:
-                action_type = "Admin Updated"
-                admin_name = extract_name("Blocked Admin")
-                
-            elif "updated admin" in action_lower:
-                action_type = "Admin Updated"
-                admin_name = extract_name("Updated Admin")
-
-            # Skip if match found not found (e.g. Deleted Admin) or if it's irrelevant
-            if not action_type:
-                continue
+            display_name = "Unknown"
+            
+            if log.actor_role == UserRole.SUPER_ADMIN:
+                display_name = "Super Admin"
+            elif log.actor_role == UserRole.ADMIN:
+                display_name = admin_name if admin_name else f"Admin #{log.actor_id} (Deleted)"
+            elif log.actor_role == UserRole.USER:
+                display_name = f"User #{log.actor_id}"
 
             formatted.append({
                 "id": log.id,
-                "admin_name": admin_name,
-                "action_type": action_type,
+                "admin_name": display_name, # Frontend expects this key
+                "action_type": log.action,  # We send the full action string
                 "timestamp": log.timestamp.isoformat(),
+                "role": log.actor_role.value
             })
 
         return jsonify({"logs": formatted}), 200

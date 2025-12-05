@@ -133,24 +133,49 @@ class DashboardManager {
             return;
         }
 
-        container.innerHTML = logs.map(log => `
+        container.innerHTML = logs.map(log => {
+            // Determine styles based on Role and Action
+            let icon = 'history';
+            let bgClass = 'bg-gray-100 text-gray-600';
+
+            const actionLower = log.action_type.toLowerCase();
+            const isSuperAdmin = log.role === 'super_admin';
+
+            if (isSuperAdmin) {
+                bgClass = 'bg-purple-100 text-purple-600';
+                icon = 'shield-alt';
+            } else if (actionLower.includes('create')) {
+                bgClass = 'bg-green-100 text-green-600';
+                icon = 'user-plus';
+            } else if (actionLower.includes('delete')) {
+                bgClass = 'bg-red-100 text-red-600';
+                icon = 'trash-alt';
+            } else if (actionLower.includes('update') || actionLower.includes('block')) {
+                bgClass = 'bg-blue-100 text-blue-600';
+                icon = 'edit';
+            } else {
+                bgClass = 'bg-blue-50 text-blue-600';
+                icon = 'clipboard-list';
+            }
+
+            return `
             <div class="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition border-b border-gray-50 last:border-0">
-                <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center
-                    ${log.action_type === 'Admin Created' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}">
-                    <i class="fas fa-${log.action_type === 'Admin Created' ? 'plus' : 'user-edit'} text-xs"></i>
+                <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${bgClass}">
+                    <i class="fas fa-${icon} text-xs"></i>
                 </div>
 
                 <div class="min-w-0 flex-1">
                     <div class="flex justify-between items-start">
-                        <p class="text-sm font-medium text-gray-900 truncate">${log.action_type}</p>
+                        <p class="text-sm font-bold text-gray-900 truncate">${log.admin_name}</p>
                         <span class="text-[10px] text-gray-400 whitespace-nowrap ml-2">${this.formatTime(log.timestamp)}</span>
                     </div>
-                    <p class="text-xs text-gray-600 mt-0.5">
-                        <span class="font-medium text-gray-800">${log.admin_name}</span>
+                    <p class="text-xs text-gray-600 mt-0.5 break-words">
+                        ${log.action_type}
                     </p>
                 </div>
             </div>
-        `).join("");
+            `;
+        }).join("");
     }
 
     getIcon(action) {
