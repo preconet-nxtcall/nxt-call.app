@@ -353,6 +353,56 @@ def toggle_admin_status(admin_id):
         return jsonify({"error": str(e)}), 500
 
 
+
+# =========================================================
+# UPDATE ADMIN (Limit & Expiry)
+# =========================================================
+@bp.route("/admin/<int:admin_id>", methods=["PUT"])
+@jwt_required()
+def update_admin(admin_id):
+    try:
+        # Verify super admin
+        super_admin_id = get_jwt_identity()
+        if not SuperAdmin.query.get(super_admin_id):
+            return jsonify({"error": "Unauthorized"}), 401
+
+        admin = Admin.query.get(admin_id)
+        if not admin:
+            return jsonify({"error": "Admin not found"}), 404
+
+        data = request.get_json()
+
+        # Update fields if present
+        if "user_limit" in data:
+            admin.user_limit = int(data["user_limit"])
+
+        if "expiry_date" in data:
+            try:
+                from datetime import datetime
+                admin.expiry_date = datetime.strptime(data["expiry_date"], "%Y-%m-%d").date()
+            except ValueError:
+                return jsonify({"error": "Invalid date format (YYYY-MM-DD required)"}), 400
+
+        db.session.commit()
+
+        # Log activity
+        log = ActivityLog(
+            actor_role=UserRole.SUPER_ADMIN,
+            actor_id=super_admin_id,
+            action=f"Updated Admin: {admin.name}",
+            target_type="admin",
+            target_id=admin_id
+        )
+        db.session.add(log)
+        db.session.commit()
+
+        return jsonify({"message": "Admin updated successfully"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
 # =========================================================
 # DELETE ADMIN
 # =========================================================

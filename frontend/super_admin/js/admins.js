@@ -144,6 +144,55 @@ class AdminsManager {
     }
 
     /************************************************************
+     * EDIT ADMIN
+     ************************************************************/
+    openEditModal(id, limit, expiry) {
+        document.getElementById("editAdminId").value = id;
+        document.getElementById("editUserLimit").value = limit;
+        if (expiry && expiry !== 'undefined') {
+            document.getElementById("editExpiryDate").value = expiry;
+        }
+        document.getElementById("editAdminModal").classList.remove("hidden");
+    }
+
+    async updateAdmin() {
+        const id = document.getElementById("editAdminId").value;
+        const limit = document.getElementById("editUserLimit").value;
+        const expiry = document.getElementById("editExpiryDate").value;
+
+        if (!limit || !expiry) {
+            auth.showNotification("Please fill all fields", "error");
+            return;
+        }
+
+        try {
+            const response = await auth.makeAuthenticatedRequest(
+                `/api/superadmin/admin/${id}`,
+                {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        user_limit: limit,
+                        expiry_date: expiry
+                    })
+                }
+            );
+            const data = await response.json();
+
+            if (response.ok) {
+                auth.showNotification("Admin updated successfully", "success");
+                document.getElementById("editAdminModal").classList.add("hidden");
+                this.loadAdmins();
+            } else {
+                auth.showNotification(data.error || "Failed to update admin", "error");
+            }
+
+        } catch (error) {
+            console.error("UPDATE ADMIN ERROR:", error);
+            auth.showNotification("Server error", "error");
+        }
+    }
+
+    /************************************************************
      * RENDER ADMIN TABLE
      ************************************************************/
     renderAdmins() {
@@ -222,6 +271,13 @@ class AdminsManager {
                                 class="p-2 rounded hover:bg-gray-100 text-gray-600 transition"
                                 title="${admin.is_active ? 'Block Admin' : 'Unblock Admin'}">
                                 <i class="fas ${admin.is_active ? 'fa-ban text-orange-500' : 'fa-check-circle text-green-500'}"></i>
+                            </button>
+
+                            <!-- Edit Button -->
+                            <button onclick="adminsManager.openEditModal(${admin.id}, '${admin.user_limit}', '${expiryStr !== 'N/A' ? admin.expiry_date.split('T')[0] : ''}')"
+                                class="p-2 rounded hover:bg-blue-50 text-blue-600 transition"
+                                title="Edit Admin">
+                                <i class="fas fa-edit"></i>
                             </button>
 
                             <!-- Delete Button -->
