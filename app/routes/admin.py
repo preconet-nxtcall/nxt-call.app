@@ -245,9 +245,10 @@ def create_user():
         db.session.commit()
 
         # Automatic Notification
-        from ..services.notification_service import NotificationService
-        import logging
         try:
+            from ..services.notification_service import NotificationService
+            import logging
+            
             logging.info(f"Attempting to send welcome email to {email}")
             result = NotificationService.send_welcome_notification(
                 name=name,
@@ -262,7 +263,13 @@ def create_user():
             else:
                 logging.warning(f"Welcome email failed to send to {email} - check ZEPTOMAIL credentials")
         except Exception as e:
-            logging.error(f"Exception sending notification to {email}: {str(e)}", exc_info=True)
+            # Catch ALL errors so we never fail the request after DB commit
+            import traceback
+            traceback.print_exc()
+            try:
+                logging.error(f"CRITICAL: Failed to send notification to {email}: {e}", exc_info=True)
+            except:
+                print(f"CRITICAL: Failed to send notification to {email}: {e}")
 
         return jsonify({"message": "User created", "user_id": user.id}), 201
 
