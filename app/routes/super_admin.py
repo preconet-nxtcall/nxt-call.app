@@ -183,61 +183,35 @@ def dashboard_stats():
 @jwt_required()
 def activity_logs():
     try:
-        # DB DEBUG: Fetch ALL logs to see what's going on
+        # STRICT FILTER: Only show "Admin Created" activities
         logs = (
             ActivityLog.query
-            # .filter(ActivityLog.action.ilike("%Admin%")) # Commented out for debug
+            .filter(ActivityLog.action.ilike("%Created Admin%"))
             .order_by(ActivityLog.timestamp.desc())
-            .limit(100)
+            .limit(10)
             .all()
         )
 
         formatted = []
         for log in logs:
-            if len(formatted) >= 10:
-                break
-                
-            action_lower = log.action.lower()
-            action_type = None
             admin_name = "Unknown"
             
-            # Helper to extract name
-            def extract_name(prefix):
-                try:
-                    parts = log.action.split(":", 1)
-                    if len(parts) > 1:
-                        return parts[1].strip()
-                    import re
-                    split = re.split(r"admin[:\s]", log.action, flags=re.IGNORECASE)
-                    if len(split) > 1:
-                        return split[-1].strip()
-                except:
-                    pass
-                return "Unknown"
-
-            # Parse action string
-            if "created admin" in action_lower:
-                action_type = "Admin Created"
-                admin_name = extract_name("Created Admin")
-                    
-            elif "blocked admin" in action_lower or "unblocked admin" in action_lower:
-                action_type = "Admin Updated"
-                admin_name = extract_name("Blocked Admin")
-                
-            elif "updated admin" in action_lower:
-                action_type = "Admin Updated"
-                admin_name = extract_name("Updated Admin")
-
-            # FAILSAFE DEBUG: If we can't identify it, show it anyway!
-            if not action_type:
-                action_type = "Other"
-                admin_name = log.action # Show raw action as name so we can read it in UI
-                # continue # Don't skip during debug
+            # Extract name from "Created Admin: Name" or "Created Admin Name"
+            # Try splitting by colon first which is the standard format
+            parts = log.action.split(":", 1)
+            if len(parts) > 1:
+                admin_name = parts[1].strip()
+            else:
+                # Fallback: Split by "Admin" case insensitive
+                import re
+                split = re.split(r"admin[:\s]", log.action, flags=re.IGNORECASE)
+                if len(split) > 1:
+                    admin_name = split[-1].strip()
 
             formatted.append({
                 "id": log.id,
                 "admin_name": admin_name,
-                "action_type": action_type,
+                "action_type": "Admin Created",
                 "timestamp": log.timestamp.isoformat(),
             })
 
