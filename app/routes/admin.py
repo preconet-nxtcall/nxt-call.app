@@ -246,18 +246,23 @@ def create_user():
 
         # Automatic Notification
         from ..services.notification_service import NotificationService
+        import logging
         try:
-            # User expiry is tied to Admin expiry
-            NotificationService.send_welcome_notification(
+            logging.info(f"Attempting to send welcome email to {email}")
+            result = NotificationService.send_welcome_notification(
                 name=name,
-                username=email, # User always has email
+                username=email,
                 password=password,
-                expiry_date=admin.expiry_date, # Use admin's expiry
+                expiry_date=admin.expiry_date,
                 phone=phone,
                 email=email
             )
+            if result:
+                logging.info(f"Welcome email sent successfully to {email}")
+            else:
+                logging.warning(f"Welcome email failed to send to {email} - check ZEPTOMAIL credentials")
         except Exception as e:
-            current_app.logger.error(f"Failed to send notification: {e}")
+            logging.error(f"Exception sending notification to {email}: {str(e)}", exc_info=True)
 
         return jsonify({"message": "User created", "user_id": user.id}), 201
 
