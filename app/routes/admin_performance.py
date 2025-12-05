@@ -55,11 +55,11 @@ def performance():
         # User Filter
         user_id_param = request.args.get("user_id", "all")
 
-        # CASE expressions (Standardized List Syntax)
-        incoming_case = case([(func.lower(CallHistory.call_type) == "incoming", 1)], else_=0)
-        outgoing_case = case([(func.lower(CallHistory.call_type) == "outgoing", 1)], else_=0)
-        missed_case = case([(func.lower(CallHistory.call_type) == "missed", 1)], else_=0)
-        rejected_case = case([(func.lower(CallHistory.call_type) == "rejected", 1)], else_=0)
+        # CASE expressions (Standardized Syntax: Positional Args)
+        incoming_case = case((func.lower(CallHistory.call_type) == "incoming", 1), else_=0)
+        outgoing_case = case((func.lower(CallHistory.call_type) == "outgoing", 1), else_=0)
+        missed_case = case((func.lower(CallHistory.call_type) == "missed", 1), else_=0)
+        rejected_case = case((func.lower(CallHistory.call_type) == "rejected", 1), else_=0)
 
         # Base query with Date Filter in OUTER JOIN
         # This ensures we keep users even if they have no calls in the date range
