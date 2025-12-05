@@ -241,7 +241,6 @@ def create_user():
         db.session.flush()
         log.target_id = user.id
         db.session.add(log)
-        db.session.add(log)
         db.session.commit()
 
         # Automatic Notification
