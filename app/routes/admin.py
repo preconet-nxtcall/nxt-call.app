@@ -274,8 +274,13 @@ def create_user():
 
     except Exception as e:
         db.session.rollback()
+        err_msg = str(e).lower()
+        if "integrityerror" in err_msg and "email" in err_msg:
+             return jsonify({"error": "Email globally exists. Run the Database Fix Tool (Super Admin) to allow duplicates."}), 409
+        
         current_app.logger.exception("Create user failed")
-        return jsonify({"error": "Internal server error"}), 500
+        # Return actual error for debugging purposes instead of generic message
+        return jsonify({"error": f"Server Error: {str(e)}"}), 500
 
 
 # -------------------------
