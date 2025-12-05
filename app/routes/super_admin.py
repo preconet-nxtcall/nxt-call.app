@@ -183,13 +183,12 @@ def dashboard_stats():
 @jwt_required()
 def activity_logs():
     try:
-        # Filter for any activity with "Admin" in the action text
-        # This is safer than relying on target_type which might haven't been set in older logs
+        # DB DEBUG: Fetch ALL logs to see what's going on
         logs = (
             ActivityLog.query
-            .filter(ActivityLog.action.ilike("%Admin%"))
+            # .filter(ActivityLog.action.ilike("%Admin%")) # Commented out for debug
             .order_by(ActivityLog.timestamp.desc())
-            .limit(100)  # Fetch more to allow for filtering
+            .limit(100)
             .all()
         )
 
@@ -208,10 +207,7 @@ def activity_logs():
                     parts = log.action.split(":", 1)
                     if len(parts) > 1:
                         return parts[1].strip()
-                    # Fallback: try splitting by the prefix words
-                    # e.g. "Created Admin John Doe" -> split by "Admin"
                     import re
-                    # Split by "Admin" or "Admin:" case insensitive
                     split = re.split(r"admin[:\s]", log.action, flags=re.IGNORECASE)
                     if len(split) > 1:
                         return split[-1].strip()
@@ -226,16 +222,17 @@ def activity_logs():
                     
             elif "blocked admin" in action_lower or "unblocked admin" in action_lower:
                 action_type = "Admin Updated"
-                admin_name = extract_name("Blocked Admin") # Prefix doesn't matter much for our extraction logic
+                admin_name = extract_name("Blocked Admin")
                 
-            elif "updated admin" in action_lower: # Future proofing
+            elif "updated admin" in action_lower:
                 action_type = "Admin Updated"
                 admin_name = extract_name("Updated Admin")
 
-            # Skip if it's not one of our target actions
-            # (e.g. we skip "Deleted Admin" as requested)
+            # FAILSAFE DEBUG: If we can't identify it, show it anyway!
             if not action_type:
-                continue
+                action_type = "Other"
+                admin_name = log.action # Show raw action as name so we can read it in UI
+                # continue # Don't skip during debug
 
             formatted.append({
                 "id": log.id,
