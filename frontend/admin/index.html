@@ -396,20 +396,33 @@
         <!-- ATTENDANCE SECTION -->
         <section id="sectionAttendance" class="hidden-section space-y-6">
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <h3 class="text-lg font-bold text-gray-900">Attendance Records</h3>
-              <div class="flex gap-2 bg-gray-100 p-1 rounded-lg items-center">
-                <select id="attendanceUserFilter"
-                  class="px-3 py-1.5 rounded-md text-sm border-gray-200 focus:ring-blue-500 focus:border-blue-500 bg-white">
-                  <option value="all">All Users</option>
-                </select>
+            <div
+              class="px-6 py-5 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/50 backdrop-blur-sm">
+              <div>
+                <h3 class="text-xl font-bold text-gray-900 tracking-tight">Attendance Records</h3>
+                <p class="text-sm text-gray-500 mt-1">Track daily check-ins and performance</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-3">
+
+                <!-- Use custom chevron wrapper for selects -->
+                <div class="relative group">
+                  <select id="attendanceUserFilter"
+                    class="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white transition-all cursor-pointer hover:border-blue-300 text-gray-700 font-medium">
+                    <option value="all">All Users</option>
+                  </select>
+                  <i
+                    class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs"></i>
+                </div>
+
                 <input type="month" id="attendanceMonthFilter"
-                  class="px-3 py-1.5 rounded-md text-sm border-gray-200 focus:ring-blue-500 focus:border-blue-500">
+                  class="px-3 py-2 text-sm border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all hover:border-blue-300 text-gray-700 font-medium bg-white">
+
                 <input type="date" id="attendanceDateFilter"
-                  class="px-3 py-1.5 rounded-md text-sm border-gray-200 focus:ring-blue-500 focus:border-blue-500">
+                  class="px-3 py-2 text-sm border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all hover:border-blue-300 text-gray-700 font-medium bg-white">
+
                 <button id="btnExportAttendance"
-                  class="px-3 py-1.5 rounded-md text-sm font-medium bg-white text-gray-700 hover:text-blue-600 shadow-sm transition-all flex items-center gap-2">
-                  <i class="fas fa-download"></i> Export CSV
+                  class="px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg shadow-lg shadow-gray-200 hover:bg-gray-800 hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-2">
+                  <i class="fas fa-download text-xs"></i> <span>Export CSV</span>
                 </button>
               </div>
             </div>
@@ -434,37 +447,63 @@
         <!-- CALL HISTORY SECTION -->
         <section id="sectionCallHistory" class="hidden-section space-y-6">
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-              <h3 class="text-lg font-bold text-gray-900">Call Logs</h3>
-              <div class="flex gap-3 items-center">
-                <div class="relative">
+            <!-- Header -->
+            <div
+              class="px-6 py-5 border-b border-gray-100 flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-gray-50/50">
+              <div>
+                <h3 class="text-xl font-bold text-gray-900 tracking-tight">Call History</h3>
+                <p class="text-sm text-gray-500 mt-1">Detailed log of team communications</p>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-3">
+                <!-- Search -->
+                <div class="relative w-full sm:w-auto">
                   <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                   <input id="callSearchInput" type="text" placeholder="Search logs..."
-                    class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64">
+                    class="pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-gray-700 w-full sm:w-64 transition-all hover:border-blue-300 bg-white">
                 </div>
-                <select id="callUserFilter"
-                  class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="all">All Users</option>
-                </select>
+
+                <!-- User Filter -->
+                <div class="relative group">
+                  <select id="callUserFilter"
+                    class="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white transition-all cursor-pointer hover:border-blue-300 text-gray-700 font-medium">
+                    <option value="all">All Users</option>
+                  </select>
+                  <i
+                    class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs"></i>
+                </div>
+
+                <!-- Month Filter -->
                 <input type="month" id="callMonthFilter"
-                  class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <select id="callTypeFilter"
-                  class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="all">All Types</option>
-                  <option value="incoming">Incoming</option>
-                  <option value="outgoing">Outgoing</option>
-                  <option value="missed">Missed</option>
-                </select>
+                  class="px-3 py-2 text-sm border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all hover:border-blue-300 text-gray-700 font-medium bg-white">
+
+                <!-- Type Filter -->
+                <div class="relative group">
+                  <select id="callTypeFilter"
+                    class="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white transition-all cursor-pointer hover:border-blue-300 text-gray-700 font-medium">
+                    <option value="all">All Types</option>
+                    <option value="incoming">Incoming</option>
+                    <option value="outgoing">Outgoing</option>
+                    <option value="missed">Missed</option>
+                  </select>
+                  <i
+                    class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs"></i>
+                </div>
+
                 <button id="btnExportCalls"
-                  class="px-3 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center gap-2">
-                  <i class="fas fa-download"></i> Export
+                  class="px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg shadow-lg shadow-gray-200 hover:bg-gray-800 hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-2">
+                  <i class="fas fa-download text-xs"></i> <span>Export</span>
                 </button>
               </div>
             </div>
-            <div id="call-history-container" class="space-y-2">
-              <!-- Content injected by JS -->
+
+            <!-- Content -->
+            <div class="p-6">
+              <div id="call-history-container" class="space-y-3">
+                <!-- Content injected by JS -->
+              </div>
+              <div id="call-history-pagination" class="mt-6"></div>
             </div>
-            <div id="call-history-pagination"></div>
           </div>
         </section>
 
