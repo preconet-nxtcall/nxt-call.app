@@ -65,12 +65,13 @@ class PerformanceManager {
       const total_calls = data.total_calls || [];
 
       // Render both chart + table
+      // Render both chart + table
       this.renderChart(labels, values);
-      this.renderTable(labels, values, user_ids, incoming, outgoing, total_calls);
+      this.renderTable(labels, values, user_ids);
 
     } catch (e) {
       console.error(e);
-      auth.showNotification("Error loading performance", "error");
+      auth.showNotification("Error loading performance: " + (e.message || e), "error");
     }
   }
 
@@ -159,12 +160,12 @@ class PerformanceManager {
     });
   }
 
-  renderTable(labels, values, ids, incoming, outgoing, total) {
+  renderTable(labels, values, ids) {
     const body = document.getElementById("performanceTableBody");
     if (!body) return;
 
     if (labels.length === 0) {
-      body.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-gray-500">No performance data found</td></tr>`;
+      body.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-500">No performance data found</td></tr>`;
       return;
     }
 
@@ -172,19 +173,6 @@ class PerformanceManager {
       <tr class="border-t hover:bg-gray-50 transition-colors">
         <td class="px-6 py-4 text-gray-900 font-medium">#${i + 1}</td>
         <td class="px-6 py-4 text-gray-700 font-medium">${name}</td>
-        <td class="px-6 py-4 text-center">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                ${incoming[i] || 0}
-            </span>
-        </td>
-        <td class="px-6 py-4 text-center">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                ${outgoing[i] || 0}
-            </span>
-        </td>
-        <td class="px-6 py-4 text-center font-bold text-gray-900">
-            ${total[i] || 0}
-        </td>
         <td class="px-6 py-4 text-center">
           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${values[i] >= 80 ? 'bg-green-100 text-green-800' :
         values[i] >= 60 ? 'bg-blue-100 text-blue-800' :
@@ -197,7 +185,7 @@ class PerformanceManager {
         <td class="px-6 py-4">
           <button 
             class="text-blue-600 hover:text-blue-900 font-medium text-sm transition-colors"
-            onclick="performanceManager.viewUserCallHistory(${ids[i]}, '${name}')"
+            onclick="performanceManager.viewUserCallHistory(${ids[i]}, '${name.replace(/'/g, "\\'")}')"
           >
             View Details
           </button>
