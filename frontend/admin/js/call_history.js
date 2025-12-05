@@ -284,7 +284,7 @@ class CallHistoryManager {
       const headers = ["User", "Number", "Contact Name", "Type", "Duration (s)", "Timestamp"];
       const rows = items.map(r => [
         r.user_name || r.user_id || '-',
-        r.phone_number || '-',
+        r.phone_number ? `="${r.phone_number}"` : '-',
         (r.contact_name || '-').replace(/,/g, " "),
         r.call_type || '-',
         r.duration || 0,
