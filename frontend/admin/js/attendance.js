@@ -105,16 +105,18 @@ class AttendanceManager {
             </td>
           </tr>
         `;
+        // Clear pagination if no items
+        const pagContainer = document.getElementById("attendance-pagination");
+        if (pagContainer) pagContainer.innerHTML = "";
         return;
       }
 
       tableBody.innerHTML = items.map(a => `
         <tr class="table-row-hover">
 
-          <!-- USER -->
+          <!-- USER (Only Name) -->
           <td class="p-3 font-medium text-gray-900">
             ${a.user_name || "Unknown"}
-            <div class="text-xs text-gray-500">${a.external_id || ""}</div>
           </td>
 
           <!-- CHECK IN -->
@@ -161,9 +163,56 @@ class AttendanceManager {
         </tr>
       `).join("");
 
+      // Render Pagination
+      this.renderPagination(data.meta, date, user_id, month);
+
     } catch (e) {
       console.error(e);
       auth.showNotification("Failed to load attendance", "error");
+    }
+  }
+
+  renderPagination(meta, date, user_id, month) {
+    const container = document.getElementById("attendance-pagination");
+    if (!container) return;
+    if (!meta || meta.total <= meta.per_page) {
+      container.innerHTML = "";
+      return;
+    }
+
+    const currentPage = meta.page;
+    const hasNext = meta.has_next;
+    const hasPrev = meta.has_prev;
+
+    container.innerHTML = `
+      <div class="text-sm text-gray-600">
+        Page ${currentPage} of ${meta.pages} (${meta.total} records)
+      </div>
+      <div class="flex gap-2">
+        <button id="btnAttPrev" class="px-3 py-1 text-sm border rounded hover:bg-gray-100 disabled:opacity-50" 
+          ${!hasPrev ? "disabled" : ""}>
+          Previous
+        </button>
+        <button id="btnAttNext" class="px-3 py-1 text-sm border rounded hover:bg-gray-100 disabled:opacity-50"
+          ${!hasNext ? "disabled" : ""}>
+          Next
+        </button>
+      </div>
+    `;
+
+    const btnPrev = document.getElementById("btnAttPrev");
+    const btnNext = document.getElementById("btnAttNext");
+
+    if (btnPrev && hasPrev) {
+      btnPrev.addEventListener("click", () => {
+        this.loadAttendance(date, user_id, currentPage - 1, 25, month);
+      });
+    }
+
+    if (btnNext && hasNext) {
+      btnNext.addEventListener("click", () => {
+        this.loadAttendance(date, user_id, currentPage + 1, 25, month);
+      });
     }
   }
 
@@ -179,6 +228,16 @@ class AttendanceManager {
     } else {
       window.open(fullPath, "_blank");
     }
+  }
+
+  // Helper: Escape CSV values
+  escapeCsv(val) {
+    if (val === null || val === undefined) return "";
+    const str = String(val);
+    if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
   }
 
   async exportAttendance() {
@@ -213,11 +272,11 @@ class AttendanceManager {
       // Convert to CSV
       const headers = ["User", "Check In", "Check Out", "Status", "Address"];
       const rows = items.map(a => [
-        a.user_name || "Unknown",
-        window.formatDateTime(a.check_in),
-        window.formatDateTime(a.check_out),
-        a.status,
-        (a.address || "").replace(/,/g, " ") // Escape commas
+        this.escapeCsv(a.user_name || "Unknown"),
+        this.escapeCsv(window.formatDateTime(a.check_in)),
+        this.escapeCsv(window.formatDateTime(a.check_out)),
+        this.escapeCsv(a.status),
+        this.escapeCsv(a.address || "")
       ]);
 
       let csvContent = "data:text/csv;charset=utf-8,"
