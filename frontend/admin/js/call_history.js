@@ -28,6 +28,9 @@ class CallHistoryManager {
 
     if (userFilter) userFilter.addEventListener('change', refresh);
     if (dateFilter) dateFilter.addEventListener('change', refresh);
+    const monthFilter = document.getElementById('callMonthFilter');
+    if (monthFilter) monthFilter.addEventListener('change', refresh);
+
     if (typeFilter) typeFilter.addEventListener('change', refresh);
     if (searchInput && window.debounce) {
       searchInput.addEventListener('input', window.debounce(refresh, 500));
@@ -45,12 +48,12 @@ class CallHistoryManager {
   // Standard interface for main.js
   load() {
     const userFilter = document.getElementById('callUserFilter');
-    const dateFilter = document.getElementById('callDateFilter');
+    const monthFilter = document.getElementById('callMonthFilter');
     const typeFilter = document.getElementById('callTypeFilter');
     const searchInput = document.getElementById('callSearchInput');
 
     if (userFilter) userFilter.value = 'all';
-    if (dateFilter) dateFilter.value = '';
+    if (monthFilter) monthFilter.value = '';
     if (typeFilter) typeFilter.value = 'all';
     if (searchInput) searchInput.value = '';
 
@@ -113,6 +116,12 @@ class CallHistoryManager {
       if (search) url += `&search=${encodeURIComponent(search)}`; // phone search
       if (call_type && call_type !== 'all') url += `&call_type=${call_type}`; // incoming/outgoing/missed
 
+      // Month filter (UI driven)
+      const monthFilter = document.getElementById('callMonthFilter');
+      if (monthFilter && monthFilter.value) {
+        url += `&month=${monthFilter.value}`;
+      }
+
       // Make authenticated request
       const resp = await auth.makeAuthenticatedRequest(url);
       if (!resp) return;
@@ -163,18 +172,33 @@ class CallHistoryManager {
           <tbody>
             ${list
           .map(
-            (r) => `
-              <tr class="border-t hover:bg-gray-50">
-                <td class="p-3">${r.user_name || r.user_id || '-'}</td>
-                <td class="p-3">${r.phone_number || '-'}</td>
-                <td class="p-3">${r.contact_name || '-'}</td>
-                <td class="p-3">${r.call_type || '-'}</td>
-                <td class="p-3">${r.duration ? r.duration + "s" : "-"}</td>
-                <td class="p-3 text-sm text-gray-600">
-                  ${window.formatDateTime(r.timestamp)}
-                </td>
-              </tr>
-            `
+            (r) => {
+              // Color badges for types
+              let typeBadge = "";
+              const cType = (r.call_type || "").toLowerCase();
+              if (cType === "incoming") {
+                typeBadge = `<span class="px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700">Incoming</span>`;
+              } else if (cType === "outgoing") {
+                typeBadge = `<span class="px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700">Outgoing</span>`;
+              } else if (cType === "missed") {
+                typeBadge = `<span class="px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700">Missed</span>`;
+              } else {
+                typeBadge = `<span class="px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-700">${r.call_type}</span>`;
+              }
+
+              return `
+                <tr class="border-t hover:bg-gray-50">
+                  <td class="p-3">${r.user_name || r.user_id || '-'}</td>
+                  <td class="p-3">${r.phone_number || '-'}</td>
+                  <td class="p-3">${r.contact_name || '-'}</td>
+                  <td class="p-3">${typeBadge}</td>
+                  <td class="p-3">${r.duration ? r.duration + "s" : "-"}</td>
+                  <td class="p-3 text-sm text-gray-600">
+                    ${window.formatDateTime(r.timestamp)}
+                  </td>
+                </tr>
+              `;
+            }
           )
           .join("")
         }
@@ -228,16 +252,19 @@ class CallHistoryManager {
     const userFilter = document.getElementById('callUserFilter');
     const searchInput = document.getElementById('callSearchInput');
     const typeFilter = document.getElementById('callTypeFilter');
+    const monthFilter = document.getElementById('callMonthFilter');
 
     const user_id = userFilter?.value === 'all' ? null : userFilter?.value;
     const search = searchInput?.value || "";
     const call_type = typeFilter?.value === 'all' ? "" : typeFilter?.value;
+    const month = monthFilter?.value || "";
 
     try {
       let url = `/api/admin/all-call-history?per_page=10000`; // Fetch large number for export
       if (user_id) url += `&user_id=${user_id}`;
       if (search) url += `&search=${encodeURIComponent(search)}`;
       if (call_type) url += `&call_type=${call_type}`;
+      if (month) url += `&month=${month}`;
 
       const resp = await auth.makeAuthenticatedRequest(url);
       if (!resp || !resp.ok) {

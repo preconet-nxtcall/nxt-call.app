@@ -86,6 +86,27 @@ def all_call_history():
                 query = query.filter(CallHistory.timestamp >= start_date_str, CallHistory.timestamp <= end_date_str)
             except Exception:
                 return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+        
+        # New Month Filter (YYYY-MM)
+        month_param = request.args.get("month")
+        if month_param:
+            try:
+                # Parse YYYY-MM
+                part_year, part_month = map(int, month_param.split('-'))
+                
+                # Start of month
+                start_dt = datetime(part_year, part_month, 1)
+                
+                # End of month (start of next month)
+                if part_month == 12:
+                    end_dt = datetime(part_year + 1, 1, 1)
+                else:
+                    end_dt = datetime(part_year, part_month + 1, 1)
+                
+                query = query.filter(CallHistory.timestamp >= start_dt, CallHistory.timestamp < end_dt)
+            except ValueError:
+                return jsonify({"error": "Invalid month format. Use YYYY-MM"}), 400
+
         elif start_time:
             query = query.filter(CallHistory.timestamp >= start_time)
 
