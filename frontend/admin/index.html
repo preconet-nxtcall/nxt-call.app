@@ -153,87 +153,39 @@
             <i class="fas fa-phone-alt text-white text-sm"></i>
           </div>
           <div>
-            <h1 class="text-lg font-bold tracking-tight">CallManager<span class="text-blue-500">Pro</span></h1>
+            <h1 class="text-lg font-bold tracking-tight">Next Call<span class="text-blue-500">.app</span></h1>
           </div>
         </div>
         <button id="closeSidebar" class="lg:hidden ml-auto text-gray-400 hover:text-white">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
+          </a>
 
-      <!-- Navigation -->
-      <nav class="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
-        <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Analytics</p>
+          <!-- CRM -->
+          <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2">CRM</p>
 
-        <a id="menuDashboard"
-          class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg bg-blue-600 text-white shadow-md cursor-pointer">
-          <i class="fas fa-chart-pie w-6 text-center text-blue-200 group-hover:text-white transition-colors"></i>
-          <span class="ml-2">Dashboard</span>
-        </a>
+          <a id="menuFollowup"
+            class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer">
+            <i class="fas fa-bell w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i>
+            <span class="ml-2">Follow-ups</span>
+          </a>
+          </nav>
 
-        <a id="menuCallAnalytics"
-          class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer">
-          <i class="fas fa-chart-bar w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i>
-          <span class="ml-2">Call Analytics</span>
-        </a>
-
-        <a id="menuPerformance"
-          class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer">
-          <i class="fas fa-chart-line w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i>
-          <span class="ml-2">Performance</span>
-        </a>
-
-        <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-2">Management</p>
-
-        <a id="menuUsers"
-          class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer">
-          <i class="fas fa-users w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i>
-          <span class="ml-2">Users</span>
-        </a>
-
-        <a id="menuCreateUser"
-          class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer">
-          <i class="fas fa-user-plus w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i>
-          <span class="ml-2">Create User</span>
-        </a>
-
-        <a id="menuAttendance"
-          class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer">
-          <i class="fas fa-calendar-check w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i>
-          <span class="ml-2">Attendance</span>
-        </a>
-
-        <a id="menuCallHistory"
-          class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer">
-          <i class="fas fa-history w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i>
-          <span class="ml-2">Call History</span>
-        </a>
-
-        <a id="menuFollowup"
-          class="menu-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all cursor-pointer">
-          <i class="fas fa-bell w-6 text-center text-gray-400 group-hover:text-white transition-colors"></i>
-          <span class="ml-2">Follow-ups</span>
-        </a>
-
-      </nav>
-
-      <!-- User Profile / Logout -->
-      <div class="p-4 border-t border-gray-800 bg-gray-900">
-        <div class="flex items-center gap-3 mb-3">
-          <div id="sidebarUserInitials"
-            class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-md">
-            AD
+          <!-- User Profile / Logout -->
+          <div class="p-4 border-t border-gray-800 bg-gray-900">
+            <div class="flex items-center gap-3 mb-3">
+              <div id="sidebarUserInitials"
+                class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-md">
+                AD
+              </div>
+              <div class="flex-1 min-w-0">
+                <p id="sidebarUserName" class="text-sm font-medium text-white truncate">Admin User</p>
+                <p id="sidebarUserEmail" class="text-xs text-gray-500 truncate">admin@example.com</p>
+              </div>
+            </div>
+            <button id="logoutBtn"
+              class="w-full flex items-center justify-center px-4 py-2 border border-gray-700 rounded-lg shadow-sm text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700 hover:text-white transition-colors">
+              <i class="fas fa-sign-out-alt mr-2"></i> Sign out
+            </button>
           </div>
-          <div class="flex-1 min-w-0">
-            <p id="sidebarUserName" class="text-sm font-medium text-white truncate">Admin User</p>
-            <p id="sidebarUserEmail" class="text-xs text-gray-500 truncate">admin@example.com</p>
-          </div>
-        </div>
-        <button id="logoutBtn"
-          class="w-full flex items-center justify-center px-4 py-2 border border-gray-700 rounded-lg shadow-sm text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700 hover:text-white transition-colors">
-          <i class="fas fa-sign-out-alt mr-2"></i> Sign out
-        </button>
-      </div>
     </aside>
 
     <!-- MAIN CONTENT -->
