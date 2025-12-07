@@ -144,6 +144,9 @@ def login():
             return jsonify({"error": "Invalid password"}), 401
 
         if not user.is_active:
+            return jsonify({"error": "Your account is inactive. Contact admin."}), 403
+
+        if not user.is_active:
             return jsonify({"error": "Account deactivated"}), 403
 
         # Validate admin
