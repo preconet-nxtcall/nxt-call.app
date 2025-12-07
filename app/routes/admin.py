@@ -17,6 +17,69 @@ EMAIL_PATTERN = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
 def validate_email(email: str) -> bool:
     return bool(email and EMAIL_PATTERN.match(email))
 
+# =========================================================
+# DEBUG EMAIL (Temporary)
+# =========================================================
+@bp.route("/debug-email", methods=["POST"])
+@jwt_required()
+def debug_email():
+    """
+    Test email sending and return RAW error if it fails.
+    """
+    if not admin_required():
+        return jsonify({"error": "Admin role required"}), 403
+
+    data = request.get_json() or {}
+    to_email = data.get("email")
+    
+    if not to_email:
+        return jsonify({"error": "email required"}), 400
+
+    try:
+        # Import here to avoid circulars if any
+        import smtplib
+        import ssl
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+
+        user = current_app.config.get("ZEPTOMAIL_USER")
+        password = current_app.config.get("ZEPTOMAIL_PASSWORD")
+        host = "smtp.zeptomail.in"
+        port = 587
+        
+        if not user or not password:
+            return jsonify({"error": "Missing ZEPTOMAIL credentials in .env"}), 500
+
+        sender_email = user
+        subject = "Test Email from Call Manager Debugger"
+        html_content = "<h1>It Works!</h1><p>Your email configuration is correct.</p>"
+
+        message = MIMEMultipart("alternative")
+        message["Subject"] = subject
+        message["From"] = f"Call Manager <{sender_email}>"
+        message["To"] = to_email
+        message.attach(MIMEText(html_content, "html"))
+
+        context = ssl.create_default_context()
+        
+        # Capture stdout/connection steps if possible? No, just try/except.
+        with smtplib.SMTP(host, port, timeout=15) as server:
+            # server.set_debuglevel(1) # prints to stderr, not useful for API response
+            server.starttls(context=context)
+            server.login(user, password)
+            server.sendmail(sender_email, to_email, message.as_string())
+
+        return jsonify({"message": f"Email successfully sent to {to_email}"}), 200
+
+    except Exception as e:
+        import traceback
+        return jsonify({
+            "error": "Email Failed",
+            "details": str(e),
+            "type": type(e).__name__,
+            "trace": traceback.format_exc()
+        }), 500
+
 def iso(dt):
     if dt is None:
         return None
