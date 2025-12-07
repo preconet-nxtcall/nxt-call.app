@@ -137,8 +137,11 @@ def login():
             return jsonify({"error": "Email & password required"}), 400
 
         user = User.query.filter(func.lower(User.email) == email).first()
-        if not user or not user.check_password(password):
-            return jsonify({"error": "Invalid credentials"}), 401
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+            
+        if not user.check_password(password):
+            return jsonify({"error": "Invalid password"}), 401
 
         if not user.is_active:
             return jsonify({"error": "Account deactivated"}), 403

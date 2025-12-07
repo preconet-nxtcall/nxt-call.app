@@ -34,7 +34,7 @@ class NotificationService:
             message.attach(part)
 
             context = ssl.create_default_context()
-            with smtplib.SMTP_SSL(host, port, context=context) as server:
+            with smtplib.SMTP_SSL(host, port, context=context, timeout=10) as server:
                 server.login(user, password)
                 server.sendmail(sender_email, to_email, message.as_string())
             

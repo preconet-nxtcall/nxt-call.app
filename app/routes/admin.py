@@ -210,8 +210,10 @@ def create_user():
         existing_email = User.query.filter(User.admin_id == admin.id, func.lower(User.email) == email).first()
         existing_phone = User.query.filter(User.admin_id == admin.id, User.phone == phone).first()
 
-        if existing_email or existing_phone:
-            return jsonify({"error": "This email or phone number is already registered under your admin account."}), 409
+        if existing_email:
+             return jsonify({"error": "This email is already registered under your admin account."}), 409
+        if existing_phone:
+             return jsonify({"error": "This phone number is already registered under your admin account."}), 409
         
         # Note: We allow same email under DIFFERENT admin as per requirements.
         # But ensure unique constraint in DB doesn't block it if it exists globally.
@@ -666,3 +668,106 @@ def user_logs():
         })
 
     return jsonify({"logs": data}), 200
+
+
+# =========================================================
+# UPDATE USER (Full Edit including Password)
+# =========================================================
+@bp.route("/user/<int:user_id>", methods=["PUT"])
+@jwt_required()
+def update_user(user_id):
+    if not admin_required():
+        return jsonify({"error": "Admin role required"}), 403
+
+    admin, resp = get_admin_or_401()
+    if resp:
+        return resp
+
+    # Ownership Check
+    user = User.query.get(user_id)
+    if not user or user.admin_id != admin.id:
+        return jsonify({"error": "Unauthorized user access"}), 403
+
+    try:
+        data = request.get_json() or {}
+        
+        # Update Name
+        if "name" in data and data["name"].strip():
+            user.name = data["name"].strip()
+
+        # Update Phone
+        if "phone" in data:
+            user.phone = data["phone"].strip() or None
+
+        # Update Password (if provided)
+        if "password" in data and data["password"].strip():
+            user.set_password(data["password"].strip())
+            # Log password reset
+            log = ActivityLog(
+                actor_role=UserRole.ADMIN,
+                actor_id=admin.id,
+                action=f"Reset password for user {user.email}",
+                target_type="user",
+                target_id=user.id
+            )
+            db.session.add(log)
+
+        db.session.commit()
+
+        return jsonify({
+            "message": "User updated successfully",
+            "user": {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "phone": user.phone
+            }
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("Update user failed")
+        return jsonify({"error": "Internal server error", "detail": str(e)}), 500
+
+
+# =========================================================
+# DELETE USER
+# =========================================================
+@bp.route("/user/<int:user_id>", methods=["DELETE"])
+@jwt_required()
+def delete_user(user_id):
+    if not admin_required():
+        return jsonify({"error": "Admin role required"}), 403
+
+    admin, resp = get_admin_or_401()
+    if resp:
+        return resp
+
+    # Ownership Check
+    user = User.query.get(user_id)
+    if not user or user.admin_id != admin.id:
+        return jsonify({"error": "Unauthorized user access"}), 403
+
+    try:
+        user_email = user.email
+
+        # Delete User (Cascade should handle related data, but we can be explicit if needed)
+        db.session.delete(user)
+        
+        # Log deletion
+        log = ActivityLog(
+            actor_role=UserRole.ADMIN,
+            actor_id=admin.id,
+            action=f"Deleted user {user_email}",
+            target_type="user",
+            target_id=user_id
+        )
+        db.session.add(log)
+        db.session.commit()
+
+        return jsonify({"message": f"User {user_email} deleted successfully"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("Delete user failed")
+        return jsonify({"error": "Internal server error", "detail": str(e)}), 500
