@@ -5,18 +5,97 @@ class FollowupManager {
         this.followups = [];
         this.tbody = document.getElementById('followupsTableBody');
         this.emptyState = document.getElementById('followupsEmptyState');
+        this.userFilter = document.getElementById('followupUserFilter');
+        this.dateFilters = document.querySelectorAll('.followup-date-filter');
+        this.currentFilter = 'all';
+        this.currentUserId = 'all';
+
+        this.initFilters();
+    }
+
+    initFilters() {
+        // User Filter Change
+        if (this.userFilter) {
+            this.userFilter.addEventListener('change', (e) => {
+                this.currentUserId = e.target.value;
+                this.load();
+            });
+        }
+
+        // Date Filter Clicks
+        this.dateFilters.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Update active state
+                this.dateFilters.forEach(b => {
+                    b.classList.remove('bg-gray-100', 'active', 'text-gray-900', 'font-semibold');
+                    b.classList.add('text-gray-700', 'hover:bg-gray-50'); // Default inactive
+                });
+
+                // Active style
+                btn.classList.remove('text-gray-700', 'hover:bg-gray-50');
+                btn.classList.add('bg-gray-100', 'active', 'text-gray-900', 'font-semibold');
+
+                this.currentFilter = btn.dataset.filter;
+                this.load();
+            });
+        });
     }
 
     // Called by main.js when the section is activated
     async load() {
+        // Load users only once if empty
+        if (this.userFilter && this.userFilter.options.length <= 1) {
+            await this.loadUsers();
+        }
         await this.fetchFollowups();
         this.render();
     }
 
+    async loadUsers() {
+        try {
+            console.log('Fetching users for filter...');
+            // Request large page size to get all users for the dropdown
+            const response = await auth.makeAuthenticatedRequest('/api/admin/users?per_page=1000');
+            if (response && response.ok) {
+                const data = await response.json();
+                console.log('Users fetched:', data);
+                const users = data.users || [];
+
+                // Clear existing (except "All")
+                while (this.userFilter.options.length > 1) {
+                    this.userFilter.remove(1);
+                }
+
+                if (users.length === 0) {
+                    console.warn('No users returned from API');
+                }
+
+                users.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = user.name || user.email || `User ${user.id}`;
+                    this.userFilter.appendChild(option);
+                });
+
+                // Restore selection if reloaded
+                this.userFilter.value = this.currentUserId;
+            } else {
+                console.error('Failed to fetch users response not OK');
+            }
+        } catch (error) {
+            console.error('Failed to load users for filter', error);
+        }
+    }
+
     async fetchFollowups() {
         try {
-            // Assuming auth.makeAuthenticatedRequest exists and handles tokens
-            const response = await auth.makeAuthenticatedRequest('/api/admin/followups');
+            const params = new URLSearchParams();
+            if (this.currentUserId !== 'all') params.append('user_id', this.currentUserId);
+            if (this.currentFilter !== 'all') params.append('filter', this.currentFilter);
+
+            const url = `/api/admin/followups?${params.toString()}`;
+            const response = await auth.makeAuthenticatedRequest(url);
+
             if (response && response.ok) {
                 this.followups = await response.json();
             } else {
