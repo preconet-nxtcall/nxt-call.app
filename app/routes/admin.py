@@ -36,39 +36,48 @@ def debug_email():
         return jsonify({"error": "email required"}), 400
 
     try:
-        # Import here to avoid circulars if any
-        import smtplib
-        import ssl
-        from email.mime.text import MIMEText
-        from email.mime.multipart import MIMEMultipart
-
-        user = current_app.config.get("ZEPTOMAIL_USER")
-        password = current_app.config.get("ZEPTOMAIL_PASSWORD")
-        host = "smtp.zeptomail.in"
-        port = 465
+        import requests
         
-        if not user or not password:
+        api_token = current_app.config.get("ZEPTOMAIL_API_TOKEN")
+        sender_email = current_app.config.get("ZEPTOMAIL_USER")
+        
+        if not api_token or not sender_email:
             return jsonify({"error": "Missing ZEPTOMAIL credentials in .env"}), 500
 
-        sender_email = user
-        subject = "Test Email from Call Manager Debugger (SSL)"
-        html_content = "<h1>It Works!</h1><p>Your email configuration is correct using SSL/465.</p>"
-
-        message = MIMEMultipart("alternative")
-        message["Subject"] = subject
-        message["From"] = f"Call Manager <{sender_email}>"
-        message["To"] = to_email
-        message.attach(MIMEText(html_content, "html"))
-
-        context = ssl.create_default_context()
+        url = "https://api.zeptomail.in/v1.1/email"
+        subject = "Test Email from Call Manager Debugger (HTTP API)"
+        html_content = "<h1>It Works!</h1><p>Your email configuration is correct using ZeptoMail HTTP API.</p>"
         
-        # Capture stdout/connection steps if possible? No, just try/except.
-        with smtplib.SMTP_SSL(host, port, context=context, timeout=15) as server:
-            # server.set_debuglevel(1) # prints to stderr, not useful for API response
-            server.login(user, password)
-            server.sendmail(sender_email, to_email, message.as_string())
-
-        return jsonify({"message": f"Email successfully sent to {to_email}"}), 200
+        payload = {
+            "from": {
+                "address": sender_email
+            },
+            "to": [{
+                "email_address": {
+                    "address": to_email,
+                    "name": to_email.split('@')[0]
+                }
+            }],
+            "subject": subject,
+            "htmlbody": html_content
+        }
+        
+        headers = {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "authorization": api_token
+        }
+        
+        response = requests.post(url, json=payload, headers=headers, timeout=15)
+        
+        if response.status_code == 200:
+            return jsonify({"message": f"Email successfully sent to {to_email}"}), 200
+        else:
+            return jsonify({
+                "error": "Email Failed",
+                "details": response.text,
+                "status_code": response.status_code
+            }), 500
 
     except Exception as e:
         import traceback
