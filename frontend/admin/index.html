@@ -609,9 +609,39 @@
           <div class="bg-white rounded-lg shadow-sm p-6">
             <!-- Header -->
             <div class="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
-              <div>
-                <h3 class="text-xl font-bold text-gray-900 tracking-tight">Follow-up Reminders</h3>
-                <p class="text-sm text-gray-500 mt-1">View follow-up reminders created by users from the mobile app</p>
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <h3 class="text-xl font-bold text-gray-900 tracking-tight">Follow-up Reminders</h3>
+                  <p class="text-sm text-gray-500 mt-1">View follow-up reminders created by users from the mobile app
+                  </p>
+                </div>
+
+                <!-- Filters -->
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  <!-- User Filter -->
+                  <div class="relative">
+                    <select id="followupUserFilter"
+                      class="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer min-w-[150px]">
+                      <option value="all">All Users</option>
+                      <!-- Populated via JS -->
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                      <i class="fas fa-chevron-down text-xs"></i>
+                    </div>
+                  </div>
+
+                  <!-- Date Filter Tabs -->
+                  <div class="inline-flex rounded-lg border border-gray-200 bg-white p-1">
+                    <button data-filter="all"
+                      class="followup-date-filter px-3 py-1.5 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 active">All</button>
+                    <button data-filter="today"
+                      class="followup-date-filter px-3 py-1.5 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">Today</button>
+                    <button data-filter="tomorrow"
+                      class="followup-date-filter px-3 py-1.5 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">Tomorrow</button>
+                    <button data-filter="yesterday"
+                      class="followup-date-filter px-3 py-1.5 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">Yesterday</button>
+                  </div>
+                </div>
               </div>
             </div>
 

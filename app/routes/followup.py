@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from ..models import db, Followup, User
-from datetime import datetime
+from datetime import datetime, timedelta
 
 bp = Blueprint("followup", __name__, url_prefix="/api")
 
@@ -63,22 +63,46 @@ def create_followup():
         return jsonify({"error": str(e)}), 500
 
 @bp.route("/admin/followups", methods=["GET"])
+@bp.route("/admin/followups", methods=["GET"])
 def get_admin_followups():
     try:
-        # Fetch all followups, sorted by date_time ASC
-        followups = Followup.query.order_by(Followup.date_time.asc()).all()
+        user_id = request.args.get("user_id")
+        date_filter = request.args.get("filter") # today, tomorrow, yesterday, all
+
+        query = Followup.query
+
+        # Apply User Filter
+        if user_id and user_id.lower() != "all":
+            query = query.filter_by(user_id=user_id)
+
+        # Apply Date Filter
+        if date_filter and date_filter.lower() != "all":
+            now = datetime.now()
+            today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            
+            if date_filter == "today":
+                # Filter for today (00:00 to 23:59)
+                query = query.filter(Followup.date_time >= today_start, 
+                                     Followup.date_time < today_start + timedelta(days=1))
+            
+            elif date_filter == "tomorrow":
+                 # Filter for tomorrow
+                tomorrow_start = today_start + timedelta(days=1)
+                query = query.filter(Followup.date_time >= tomorrow_start, 
+                                     Followup.date_time < tomorrow_start + timedelta(days=1))
+            
+            elif date_filter == "yesterday":
+                # Filter for yesterday
+                yesterday_start = today_start - timedelta(days=1)
+                query = query.filter(Followup.date_time >= yesterday_start, 
+                                     Followup.date_time < today_start)
+
+        # Fetch and sort
+        followups = query.order_by(Followup.date_time.asc()).all()
         
         result = [f.to_dict() for f in followups]
         
-        return jsonify(result), 200 # Direct list as requested, or maybe object wrapper? 
-        # Prompt says: "Return JSON list with: ..." usually implies [ { ... }, { ... } ]
-        # But standard is often { "followups": [ ... ] }
-        # Let's stick to the prompt implication "Return JSON list" -> list directly? 
-        # Safer to return list if explicitly asked "JSON list", but usually APIs return object. 
-        # I will return a list to match "Return JSON list" strictly, OR 
-        # actually, for consistency with other endpoints (like users list), usually it's { users: [] }.
-        # Re-reading: "Return JSON list with: ..."
-        # I'll return a list.
+        return jsonify(result), 200
         
     except Exception as e:
         current_app.logger.exception("Fetch followups failed")
