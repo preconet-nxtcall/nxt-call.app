@@ -174,7 +174,13 @@ class FollowupManager {
             `;
         }).join('');
     }
+
+    // Method called by main.js when section is activated
+    load() {
+        this.loadFollowups();
+    }
 }
 
-// Initialize
+// Initialize and expose to window
 const followupManager = new FollowupManager();
+window.followupManager = followupManager;
