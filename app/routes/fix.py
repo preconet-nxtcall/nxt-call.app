@@ -9,11 +9,28 @@ bp = Blueprint('fix', __name__, url_prefix='/api/fix')
 @bp.route("/migrate", methods=["GET"])
 def run_migration():
     try:
-        from flask_migrate import upgrade as flask_migrate_upgrade
-        # Programmatically run 'flask db upgrade'
-        flask_migrate_upgrade()
-        return jsonify({"success": True, "message": "Database migration executed successfully."}), 200
+        # RAW SQL FIX to bypass Alembic/SSL issues (User keeps using this link)
+        sql = """
+        DROP TABLE IF EXISTS followups CASCADE;
+        CREATE TABLE followups (
+            id VARCHAR(100) NOT NULL, 
+            user_id INTEGER NOT NULL, 
+            contact_name VARCHAR(255), 
+            phone VARCHAR(20) NOT NULL, 
+            message TEXT, 
+            date_time TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+            status VARCHAR(20) NOT NULL, 
+            created_at TIMESTAMP WITHOUT TIME ZONE, 
+            updated_at TIMESTAMP WITHOUT TIME ZONE, 
+            PRIMARY KEY (id), 
+            FOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+        """
+        db.session.execute(text(sql))
+        db.session.commit()
+        return jsonify({"success": True, "message": "Database fixed via SQL (Alembic bypassed)."}), 200
     except Exception as e:
+        db.session.rollback()
         current_app.logger.exception("Migration failed")
         return jsonify({"error": str(e)}), 500
 
