@@ -45,14 +45,14 @@ def debug_email():
         user = current_app.config.get("ZEPTOMAIL_USER")
         password = current_app.config.get("ZEPTOMAIL_PASSWORD")
         host = "smtp.zeptomail.in"
-        port = 587
+        port = 465
         
         if not user or not password:
             return jsonify({"error": "Missing ZEPTOMAIL credentials in .env"}), 500
 
         sender_email = user
-        subject = "Test Email from Call Manager Debugger"
-        html_content = "<h1>It Works!</h1><p>Your email configuration is correct.</p>"
+        subject = "Test Email from Call Manager Debugger (SSL)"
+        html_content = "<h1>It Works!</h1><p>Your email configuration is correct using SSL/465.</p>"
 
         message = MIMEMultipart("alternative")
         message["Subject"] = subject
@@ -63,9 +63,8 @@ def debug_email():
         context = ssl.create_default_context()
         
         # Capture stdout/connection steps if possible? No, just try/except.
-        with smtplib.SMTP(host, port, timeout=15) as server:
+        with smtplib.SMTP_SSL(host, port, context=context, timeout=15) as server:
             # server.set_debuglevel(1) # prints to stderr, not useful for API response
-            server.starttls(context=context)
             server.login(user, password)
             server.sendmail(sender_email, to_email, message.as_string())
 
