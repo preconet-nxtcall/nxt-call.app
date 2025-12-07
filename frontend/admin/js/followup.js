@@ -139,9 +139,11 @@ class FollowupManager {
             tr.innerHTML = `
         <td class="px-6 py-4">
             <div class="font-medium text-gray-900">${f.contact_name || 'No Name'}</div>
-            ${f.message ? `<div class="text-sm text-gray-500 truncate max-w-xs" title="${f.message}">${f.message}</div>` : ''}
         </td>
         <td class="px-6 py-4 text-sm text-gray-900">${f.phone}</td>
+        <td class="px-6 py-4">
+            <div class="text-sm text-gray-500 max-w-xs truncate" title="${f.message || ''}">${f.message || '-'}</div>
+        </td>
         <td class="px-6 py-4 text-sm text-gray-900">${f.user_name || 'Unknown'}</td>
          <td class="px-6 py-4 text-sm text-gray-900">${dateTime}</td>
         <td class="px-6 py-4">
