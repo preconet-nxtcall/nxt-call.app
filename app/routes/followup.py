@@ -68,8 +68,6 @@ def get_admin_followups():
     try:
         user_id = request.args.get("user_id")
         date_filter = request.args.get("filter") # today, tomorrow, yesterday, all
-        page = request.args.get("page", 1, type=int)
-        per_page = request.args.get("per_page", 10, type=int)
 
         query = Followup.query
 
@@ -79,53 +77,33 @@ def get_admin_followups():
 
         # Apply Date Filter
         if date_filter and date_filter.lower() != "all":
-            now = datetime.utcnow() # Use UTC for consistency if stored as UTC
+            now = datetime.now()
             today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
             
             if date_filter == "today":
+                # Filter for today (00:00 to 23:59)
                 query = query.filter(Followup.date_time >= today_start, 
                                      Followup.date_time < today_start + timedelta(days=1))
+            
             elif date_filter == "tomorrow":
+                 # Filter for tomorrow
                 tomorrow_start = today_start + timedelta(days=1)
                 query = query.filter(Followup.date_time >= tomorrow_start, 
                                      Followup.date_time < tomorrow_start + timedelta(days=1))
+            
             elif date_filter == "yesterday":
+                # Filter for yesterday
                 yesterday_start = today_start - timedelta(days=1)
                 query = query.filter(Followup.date_time >= yesterday_start, 
                                      Followup.date_time < today_start)
 
-        # Sort
-        query = query.order_by(Followup.date_time.asc())
-        
-        # Pagination
-        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-        followups = pagination.items
+        # Fetch and sort
+        followups = query.order_by(Followup.date_time.asc()).all()
         
         result = [f.to_dict() for f in followups]
         
-        return jsonify({
-            "followups": result,
-            "total": pagination.total,
-            "pages": pagination.pages,
-            "current_page": pagination.page
-        }), 200
+        return jsonify(result), 200
         
     except Exception as e:
         current_app.logger.exception("Fetch followups failed")
-        return jsonify({"error": str(e)}), 500
-
-@bp.route("/admin/followup/<string:id>", methods=["DELETE"])
-def delete_followup(id):
-    try:
-        followup = Followup.query.get(id)
-        if not followup:
-            return jsonify({"error": "Reminder not found"}), 404
-            
-        db.session.delete(followup)
-        db.session.commit()
-        
-        return jsonify({"message": "Reminder deleted successfully"}), 200
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.exception("Delete followup failed")
         return jsonify({"error": str(e)}), 500
