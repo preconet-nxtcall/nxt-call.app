@@ -161,8 +161,14 @@ def list_followups():
                 )
             )
         
-        # Order by date_time descending (most recent first)
-        followups = query.order_by(Followup.date_time.desc()).all()
+        
+        # Pagination
+        page = int(request.args.get("page", 1))
+        per_page = int(request.args.get("per_page", 25))
+        total = query.count()
+        
+        # Apply pagination and order
+        followups = query.order_by(Followup.date_time.desc()).offset((page - 1) * per_page).limit(per_page).all()
         
         # Format response
         result = []
@@ -182,7 +188,16 @@ def list_followups():
                 "updated_at": f.updated_at.isoformat() if f.updated_at else None
             })
         
-        return jsonify({"followups": result}), 200
+        
+        return jsonify({
+            "followups": result,
+            "pagination": {
+                "page": page,
+                "per_page": per_page,
+                "total": total,
+                "pages": (total + per_page - 1) // per_page
+            }
+        }), 200
         
     except Exception as e:
         current_app.logger.exception("List followups failed")
