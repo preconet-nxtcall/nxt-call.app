@@ -17,6 +17,34 @@ def run_migration():
         current_app.logger.exception("Migration failed")
         return jsonify({"error": str(e)}), 500
 
+@bp.route("/manual-followup", methods=["GET"])
+def manual_followup_fix():
+    try:
+        # RAW SQL FIX to bypass Alembic/SSL issues
+        sql = """
+        DROP TABLE IF EXISTS followups CASCADE;
+        CREATE TABLE followups (
+            id VARCHAR(100) NOT NULL, 
+            user_id INTEGER NOT NULL, 
+            contact_name VARCHAR(255), 
+            phone VARCHAR(20) NOT NULL, 
+            message TEXT, 
+            date_time TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+            status VARCHAR(20) NOT NULL, 
+            created_at TIMESTAMP WITHOUT TIME ZONE, 
+            updated_at TIMESTAMP WITHOUT TIME ZONE, 
+            PRIMARY KEY (id), 
+            FOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+        """
+        db.session.execute(text(sql))
+        db.session.commit()
+        return jsonify({"success": True, "message": "Followup table reset successfully via SQL."}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("Manual SQL fix failed")
+        return jsonify({"error": str(e)}), 500
+
 # SECRET KEY REQUIRED TO RUN FIX (CHANGE & PUT IN .env)
 SUPER_ADMIN_SECRET = "MANNAN_DB_FIX_2025"
 
