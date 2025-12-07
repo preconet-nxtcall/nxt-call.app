@@ -6,6 +6,17 @@ from app.models import db
 
 bp = Blueprint('fix', __name__, url_prefix='/api/fix')
 
+@bp.route("/migrate", methods=["GET"])
+def run_migration():
+    try:
+        from flask_migrate import upgrade as flask_migrate_upgrade
+        # Programmatically run 'flask db upgrade'
+        flask_migrate_upgrade()
+        return jsonify({"success": True, "message": "Database migration executed successfully."}), 200
+    except Exception as e:
+        current_app.logger.exception("Migration failed")
+        return jsonify({"error": str(e)}), 500
+
 # SECRET KEY REQUIRED TO RUN FIX (CHANGE & PUT IN .env)
 SUPER_ADMIN_SECRET = "MANNAN_DB_FIX_2025"
 
