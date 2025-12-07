@@ -296,40 +296,38 @@ class ActivityLog(db.Model):
 class Followup(db.Model):
     __tablename__ = "followups"
 
-    id = db.Column(db.Integer, primary_key=True)
-    reminder_id = db.Column(db.String(100), nullable=True)
-    
-    # Foreign Keys
+    id = db.Column(db.String(100), primary_key=True) # UUID from app
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    admin_id = db.Column(db.Integer, db.ForeignKey("admins.id", ondelete="CASCADE"), nullable=False)
+    # Removing admin_id strict dependency for creation from app (app users might not know admin_id directly, or it's inferred. 
+    # But usually user belongs to an admin. 
+    # The prompt says "Save a new record... status='pending'". 
+    # It sends user_id. We can link to admin via user if needed, or just store user_id.
+    # Let's keep it simple based on the prompt.
     
-    # Contact Information
     contact_name = db.Column(db.String(255), nullable=True)
     phone = db.Column(db.String(20), nullable=False)
     message = db.Column(db.Text, nullable=True)
     
-    # Scheduling
     date_time = db.Column(db.DateTime, nullable=False)
+    status = db.Column(db.String(20), default="pending", nullable=False) # pending, completed, cancelled
     
-    # Status: pending, completed, cancelled
-    status = db.Column(db.String(20), default="pending", nullable=False)
-    
-    # Timestamps
     created_at = db.Column(db.DateTime, default=now)
     updated_at = db.Column(db.DateTime, default=now, onupdate=now)
     
     # Relationships
     user = db.relationship("User", backref="followups")
-    admin = db.relationship("Admin", backref="followups")
 
     def to_dict(self):
         return {
-            "id": self.id,
-            "actor_role": self.actor_role.value,
-            "actor_id": self.actor_id,
-            "action": self.action,
-            "target_type": self.target_type,
-            "target_id": self.target_id,
-            "extra_data": self.extra_data,
-            "timestamp": self.timestamp.isoformat() if self.timestamp else None
+            "reminder_id": self.id,
+            "user_id": self.user_id,
+            "user_name": self.user.name if self.user else "Unknown",
+            "contact_name": self.contact_name,
+            "phone": self.phone,
+            "message": self.message,
+            "date_time": self.date_time.isoformat() if self.date_time else None,
+            "status": self.status,
+            "created_at": self.created_at.isoformat() if self.created_at else None
         }
+
+
