@@ -42,7 +42,7 @@ class NotificationService:
             
             response = requests.post(url, json=payload, headers=headers, timeout=15)
             
-            if response.status_code == 200:
+            if response.status_code in [200, 201]:
                 logging.info(f"Email sent successfully to {to_email}")
                 return True
             else:

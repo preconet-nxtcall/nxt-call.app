@@ -70,8 +70,8 @@ def debug_email():
         
         response = requests.post(url, json=payload, headers=headers, timeout=15)
         
-        if response.status_code == 200:
-            return jsonify({"message": f"Email successfully sent to {to_email}"}), 200
+        if response.status_code in [200, 201]:
+            return jsonify({"message": f"Email successfully sent to {to_email}", "request_id": response.json().get("request_id")}), 200
         else:
             return jsonify({
                 "error": "Email Failed",
