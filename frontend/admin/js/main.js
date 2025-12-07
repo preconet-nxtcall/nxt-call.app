@@ -139,13 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Follow-up menu (separate page)
-    const followupMenu = document.getElementById("menuFollowup");
-    if (followupMenu) {
-        followupMenu.addEventListener("click", () => {
-            window.location.href = "followup.html";
-        });
-    }
+
 
 
 
