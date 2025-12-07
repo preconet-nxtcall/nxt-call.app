@@ -8,4 +8,4 @@ class Config:
     
     # Notification Config
     ZEPTOMAIL_USER = os.environ.get("ZEPTOMAIL_USER", "")
-    ZEPTOMAIL_PASSWORD = os.environ.get("ZEPTOMAIL_PASSWORD", "")
+    ZEPTOMAIL_API_TOKEN = os.environ.get("ZEPTOMAIL_API_TOKEN", "")

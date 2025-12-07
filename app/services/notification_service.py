@@ -1,48 +1,53 @@
 
-import smtplib
-import ssl
 import logging
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from flask import current_app
 
 class NotificationService:
     @staticmethod
     def send_email(to_email, subject, html_content):
         """
-        Sends an email using ZeptoMail SMTP.
+        Sends an email using ZeptoMail HTTP API.
         """
         try:
-            user = current_app.config.get("ZEPTOMAIL_USER")
-            password = current_app.config.get("ZEPTOMAIL_PASSWORD")
-            host = "smtp.zeptomail.in"
-            port = 587 # STARTTLS
+            import requests
             
-            # Since ZeptoMail user is the verified email, used that as From
-            sender_email = user if user else "noreply@brandmo.in"
-
-            if not user or not password:
+            api_token = current_app.config.get("ZEPTOMAIL_API_TOKEN")
+            sender_email = current_app.config.get("ZEPTOMAIL_USER")
+            
+            if not api_token or not sender_email:
                 logging.warning("Skipping Email: ZEPTOMAIL credentials not set.")
                 return False
 
-            message = MIMEMultipart("alternative")
-            message["Subject"] = subject
-            message["From"] = "Call Manager <" + sender_email + ">"
-            message["To"] = to_email
-
-            part = MIMEText(html_content, "html")
-            message.attach(part)
-
-            context = ssl.create_default_context()
+            url = "https://api.zeptomail.in/v1.1/email"
             
-            # Use SMTP (not SSL) for 587, then upgrade with starttls
-            with smtplib.SMTP(host, port, timeout=10) as server:
-                server.starttls(context=context) # Upgrade connection
-                server.login(user, password)
-                server.sendmail(sender_email, to_email, message.as_string())
+            payload = {
+                "from": {
+                    "address": sender_email
+                },
+                "to": [{
+                    "email_address": {
+                        "address": to_email,
+                        "name": to_email.split('@')[0]
+                    }
+                }],
+                "subject": subject,
+                "htmlbody": html_content
+            }
             
-            logging.info(f"Email sent successfully to {to_email}")
-            return True
+            headers = {
+                "accept": "application/json",
+                "content-type": "application/json",
+                "authorization": api_token
+            }
+            
+            response = requests.post(url, json=payload, headers=headers, timeout=15)
+            
+            if response.status_code == 200:
+                logging.info(f"Email sent successfully to {to_email}")
+                return True
+            else:
+                logging.error(f"Failed to send email to {to_email}: {response.status_code} - {response.text}")
+                return False
 
         except Exception as e:
             logging.error(f"Failed to send email to {to_email}: {e}")
