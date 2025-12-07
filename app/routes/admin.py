@@ -521,16 +521,12 @@ def user_analytics(user_id):
 
     try:
         # Calls
+        # Calls
         try:
-            call_stats = db.session.query(
-                func.count(CallHistory.id).label("total_calls"),
-                func.sum(func.case([(CallHistory.duration > 0, 1)], else_=0)).label("answered_calls"),
-                func.avg(CallHistory.duration).label("avg_duration")
-            ).filter(CallHistory.user_id == user_id).one()
-
-            total_calls = int(call_stats.total_calls or 0)
-            answered_calls = int(call_stats.answered_calls or 0)
-            avg_duration = float(call_stats.avg_duration or 0.0)
+            total_calls = CallHistory.query.filter_by(user_id=user_id).count()
+            answered_calls = CallHistory.query.filter(CallHistory.user_id == user_id, CallHistory.duration > 0).count()
+            avg_duration_res = db.session.query(func.avg(CallHistory.duration)).filter(CallHistory.user_id == user_id).scalar()
+            avg_duration = float(avg_duration_res or 0.0)
         except Exception as e:
             current_app.logger.error(f"Error calculating call stats for user {user_id}: {e}")
             total_calls = 0
@@ -539,13 +535,8 @@ def user_analytics(user_id):
 
         # Attendance
         try:
-            att_stats = db.session.query(
-                func.count(Attendance.id).label("total_att"),
-                func.sum(func.case([(Attendance.status == "on-time", 1)], else_=0)).label("on_time")
-            ).filter(Attendance.user_id == user_id).one()
-
-            total_att = int(att_stats.total_att or 0)
-            on_time = int(att_stats.on_time or 0)
+            total_att = Attendance.query.filter_by(user_id=user_id).count()
+            on_time = Attendance.query.filter_by(user_id=user_id, status="on-time").count()
             on_time_rate = round((on_time / total_att) * 100, 2) if total_att else 0.0
         except Exception as e:
             current_app.logger.error(f"Error calculating attendance stats for user {user_id}: {e}")
