@@ -67,7 +67,8 @@ document.addEventListener("DOMContentLoaded", () => {
         { id: "menuUsers", section: "sectionUsers", title: "User Management", manager: window.usersManager },
         { id: "menuCreateUser", section: "sectionCreateUser", title: "Create User", manager: null }, // No manager needed for form
         { id: "menuAttendance", section: "sectionAttendance", title: "Attendance Records", manager: window.attendanceManager },
-        { id: "menuCallHistory", section: "sectionCallHistory", title: "Call Logs", manager: window.callHistoryManager }
+        { id: "menuCallHistory", section: "sectionCallHistory", title: "Call Logs", manager: window.callHistoryManager },
+        { id: "menuFollowup", section: "sectionFollowup", title: "Follow-ups", manager: window.followupManager }
     ];
 
     const pageTitle = document.getElementById("pageTitle");
@@ -137,14 +138,6 @@ document.addEventListener("DOMContentLoaded", () => {
             el.addEventListener("click", () => activateSection(item));
         }
     });
-
-    // Follow-up menu (separate page)
-    const followupMenu = document.getElementById("menuFollowup");
-    if (followupMenu) {
-        followupMenu.addEventListener("click", () => {
-            window.location.href = "followup.html";
-        });
-    }
 
 
 
