@@ -16,7 +16,7 @@ class NotificationService:
             user = current_app.config.get("ZEPTOMAIL_USER")
             password = current_app.config.get("ZEPTOMAIL_PASSWORD")
             host = "smtp.zeptomail.in"
-            port = 465 # SSL
+            port = 587 # STARTTLS
             
             # Since ZeptoMail user is the verified email, used that as From
             sender_email = user if user else "noreply@brandmo.in"
@@ -34,7 +34,10 @@ class NotificationService:
             message.attach(part)
 
             context = ssl.create_default_context()
-            with smtplib.SMTP_SSL(host, port, context=context, timeout=10) as server:
+            
+            # Use SMTP (not SSL) for 587, then upgrade with starttls
+            with smtplib.SMTP(host, port, timeout=10) as server:
+                server.starttls(context=context) # Upgrade connection
                 server.login(user, password)
                 server.sendmail(sender_email, to_email, message.as_string())
             
