@@ -289,6 +289,39 @@ class ActivityLog(db.Model):
     extra_data = db.Column(JSONAuto())
     timestamp = db.Column(db.DateTime, default=now)
 
+
+# =========================================================
+# FOLLOWUP MODEL
+# =========================================================
+class Followup(db.Model):
+    __tablename__ = "followups"
+
+    id = db.Column(db.Integer, primary_key=True)
+    reminder_id = db.Column(db.String(100), nullable=True)
+    
+    # Foreign Keys
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    admin_id = db.Column(db.Integer, db.ForeignKey("admins.id", ondelete="CASCADE"), nullable=False)
+    
+    # Contact Information
+    contact_name = db.Column(db.String(255), nullable=True)
+    phone = db.Column(db.String(20), nullable=False)
+    message = db.Column(db.Text, nullable=True)
+    
+    # Scheduling
+    date_time = db.Column(db.DateTime, nullable=False)
+    
+    # Status: pending, completed, cancelled
+    status = db.Column(db.String(20), default="pending", nullable=False)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=now)
+    updated_at = db.Column(db.DateTime, default=now, onupdate=now)
+    
+    # Relationships
+    user = db.relationship("User", backref="followups")
+    admin = db.relationship("Admin", backref="followups")
+
     def to_dict(self):
         return {
             "id": self.id,
