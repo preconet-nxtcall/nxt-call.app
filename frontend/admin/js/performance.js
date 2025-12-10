@@ -483,13 +483,19 @@ class PerformanceManager {
   }
 
   formatDuration(seconds) {
-    if (!seconds || seconds === 0) return "0s";
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    if (h > 0) return `${h}h ${m}m ${s}s`;
-    if (m > 0) return `${m}m ${s}s`;
-    return `${s}s`;
+    if (seconds === undefined || seconds === null) return "0s";
+    const sec = parseInt(seconds, 10);
+    if (isNaN(sec) || sec === 0) return "0s";
+
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+
+    const parts = [];
+    if (h > 0) parts.push(`${h}h`);
+    if (m > 0) parts.push(`${m}m`);
+    if (s > 0 || parts.length === 0) parts.push(`${s}s`);
+    return parts.join(' ');
   }
 }
 
