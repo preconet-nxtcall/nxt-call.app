@@ -77,9 +77,9 @@ class PerformanceManager {
       this.renderChart(labels, values);
       this.renderTable(labels, values, user_ids, statuses);
 
-    } catch (e) {
-      console.error(e);
-      auth.showNotification("Error loading performance: " + (e.message || e), "error");
+    } catch (error) {
+      console.error(error);
+      auth.showNotification(`Error: ${error.message}`, 'error');
     }
   }
 
@@ -285,37 +285,37 @@ class PerformanceManager {
     }
   }
 
-changeModalFilter(type) {
-  this.currentModalFilter = type;
-  this.viewUserCallHistory(this.currentModalUser.userId, this.currentModalUser.userName, 1);
-}
+  changeModalFilter(type) {
+    this.currentModalFilter = type;
+    this.viewUserCallHistory(this.currentModalUser.userId, this.currentModalUser.userName, 1);
+  }
 
   async loadModalData(userId, userName, page = 1) {
-  const tbody = document.getElementById('modalCallHistoryBody');
-  const paginationContainer = document.getElementById('modalCallHistoryPagination');
+    const tbody = document.getElementById('modalCallHistoryBody');
+    const paginationContainer = document.getElementById('modalCallHistoryPagination');
 
-  let url = `/api/admin/all-call-history?user_id=${userId}&page=${page}&per_page=20`;
+    let url = `/api/admin/all-call-history?user_id=${userId}&page=${page}&per_page=20`;
 
-  if (this.currentModalFilter && this.currentModalFilter !== 'all') {
-    url += `&filter=${this.currentModalFilter}`;
-  }
+    if (this.currentModalFilter && this.currentModalFilter !== 'all') {
+      url += `&filter=${this.currentModalFilter}`;
+    }
 
-  const resp = await auth.makeAuthenticatedRequest(url);
-  if (!resp || !resp.ok) {
-    if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-4 text-center text-red-500 text-sm">Failed to load history</td></tr>';
-    return;
-  }
+    const resp = await auth.makeAuthenticatedRequest(url);
+    if (!resp || !resp.ok) {
+      if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-4 text-center text-red-500 text-sm">Failed to load history</td></tr>';
+      return;
+    }
 
-  const data = await resp.json();
-  const calls = data.call_history || [];
-  const meta = data.meta || {};
-  const stats = data.stats || null;
+    const data = await resp.json();
+    const calls = data.call_history || [];
+    const meta = data.meta || {};
+    const stats = data.stats || null;
 
-  if (stats) {
-    const statsContainer = document.getElementById('modalUserStats');
-    if (statsContainer) {
-      const d = stats.details || {};
-      statsContainer.innerHTML = `
+    if (stats) {
+      const statsContainer = document.getElementById('modalUserStats');
+      if (statsContainer) {
+        const d = stats.details || {};
+        statsContainer.innerHTML = `
                 <div>
                     <p class="text-[10px] text-gray-500 uppercase mb-0.5">Check In</p>
                     <p class="font-bold text-sm text-gray-900">${d.check_in || '-'}</p>
@@ -337,22 +337,22 @@ changeModalFilter(type) {
                     <p class="font-bold text-sm text-red-600">${d.inactive_time || '0s'}</p>
                 </div>
               `;
+      }
     }
-  }
 
-  if (calls.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-4 text-center text-gray-500 text-sm">No call records found</td></tr>';
-    if (paginationContainer) paginationContainer.innerHTML = '';
-    return;
-  }
+    if (calls.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-4 text-center text-gray-500 text-sm">No call records found</td></tr>';
+      if (paginationContainer) paginationContainer.innerHTML = '';
+      return;
+    }
 
-  tbody.innerHTML = calls.map(call => `
+    tbody.innerHTML = calls.map(call => `
       <tr>
         <td class="px-4 py-2 whitespace-nowrap">
           <span class="px-2 inline-flex text-[10px] leading-4 font-semibold rounded-full 
             ${call.call_type === 'incoming' ? 'bg-green-100 text-green-800' :
-      call.call_type === 'outgoing' ? 'bg-blue-100 text-blue-800' :
-        'bg-red-100 text-red-800'}">
+        call.call_type === 'outgoing' ? 'bg-blue-100 text-blue-800' :
+          'bg-red-100 text-red-800'}">
             ${call.call_type}
           </span>
         </td>
@@ -364,73 +364,73 @@ changeModalFilter(type) {
         </td>
         <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
           ${new Date(call.timestamp).toLocaleString(undefined, {
-          month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'
-        })}
+            month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'
+          })}
         </td>
       </tr>
     `).join('');
 
-  this.renderModalPagination(meta, paginationContainer);
-}
+    this.renderModalPagination(meta, paginationContainer);
+  }
 
   async downloadModalReport() {
-  try {
-    const userId = this.currentModalUser?.userId;
-    if (!userId) return;
+    try {
+      const userId = this.currentModalUser?.userId;
+      if (!userId) return;
 
-    const filter = this.currentModalFilter || 'all';
-    // auth.showNotification("Generating Report...", "info");
+      const filter = this.currentModalFilter || 'all';
+      // auth.showNotification("Generating Report...", "info");
 
-    const token = auth.getToken();
-    const response = await fetch(`/api/admin/download-user-history?user_id=${userId}&filter=${filter}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+      const token = auth.getToken();
+      const response = await fetch(`/api/admin/download-user-history?user_id=${userId}&filter=${filter}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
 
-    if (!response.ok) throw new Error("Failed to download");
+      if (!response.ok) throw new Error("Failed to download");
 
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = `CallHistory_Report_${filter}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    auth.showNotification("Report downloaded successfully", "success");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `CallHistory_Report_${filter}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      auth.showNotification("Report downloaded successfully", "success");
 
-  } catch (e) {
-    console.error(e);
-    auth.showNotification("Failed to download report", "error");
-  }
-}
-
-renderModalPagination(meta, container) {
-  if (!container || !meta || meta.pages <= 1) {
-    if (container) container.innerHTML = '';
-    return;
+    } catch (e) {
+      console.error(e);
+      auth.showNotification("Failed to download report", "error");
+    }
   }
 
-  const currentPage = meta.page;
-  const totalPages = meta.pages;
+  renderModalPagination(meta, container) {
+    if (!container || !meta || meta.pages <= 1) {
+      if (container) container.innerHTML = '';
+      return;
+    }
 
-  let pagesHtml = '';
+    const currentPage = meta.page;
+    const totalPages = meta.pages;
 
-  // Show max 5 page numbers
-  let startPage = Math.max(1, currentPage - 2);
-  let endPage = Math.min(totalPages, currentPage + 2);
+    let pagesHtml = '';
 
-  for (let i = startPage; i <= endPage; i++) {
-    pagesHtml += `
+    // Show max 5 page numbers
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
+
+    for (let i = startPage; i <= endPage; i++) {
+      pagesHtml += `
         <button 
           onclick="performanceManager.viewUserCallHistory(${this.currentModalUser.userId}, '${this.currentModalUser.userName}', ${i})"
           class="px-3 py-1 rounded ${i === currentPage ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border border-gray-300 text-sm font-medium">
           ${i}
         </button>
       `;
-  }
+    }
 
-  container.innerHTML = `
+    container.innerHTML = `
       <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-200">
         <div class="text-sm text-gray-700">
           Showing page <span class="font-medium">${currentPage}</span> of <span class="font-medium">${totalPages}</span>
@@ -453,23 +453,23 @@ renderModalPagination(meta, container) {
         </div>
       </div>
     `;
-}
+  }
 
-formatDuration(seconds) {
-  if (seconds === undefined || seconds === null) return "0s";
-  const sec = parseInt(seconds, 10);
-  if (isNaN(sec) || sec === 0) return "0s";
+  formatDuration(seconds) {
+    if (seconds === undefined || seconds === null) return "0s";
+    const sec = parseInt(seconds, 10);
+    if (isNaN(sec) || sec === 0) return "0s";
 
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  const s = sec % 60;
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
 
-  const parts = [];
-  if (h > 0) parts.push(`${h}h`);
-  if (m > 0) parts.push(`${m}m`);
-  if (s > 0 || parts.length === 0) parts.push(`${s}s`);
-  return parts.join(' ');
-}
+    const parts = [];
+    if (h > 0) parts.push(`${h}h`);
+    if (m > 0) parts.push(`${m}m`);
+    if (s > 0 || parts.length === 0) parts.push(`${s}s`);
+    return parts.join(' ');
+  }
 }
 
 const performanceManager = new PerformanceManager();
