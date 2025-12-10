@@ -215,8 +215,6 @@ class PerformanceManager {
 
       // Inject the new header controls and table structure
       modal.querySelector('.modal-content').innerHTML = `
-      // Inject the new header controls and table structure
-      modal.querySelector('.modal-content').innerHTML = `
         <!-- Top Header: Name & Stats -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-4 border-b border-gray-200 p-6">
           <h3 id="modalUserTitle" class="text-xl font-bold text-gray-900 mb-4 md:mb-0">${userName}</h3>
@@ -274,8 +272,8 @@ class PerformanceManager {
       // POPULATE STATS FROM CACHE INITIAL
       const statsContainer = document.getElementById('modalUserStats');
       if (statsContainer && this.userStats && this.userStats[userId] && this.userStats[userId].details) {
-          const d = this.userStats[userId].details;
-          statsContainer.innerHTML = `
+        const d = this.userStats[userId].details;
+        statsContainer.innerHTML = `
                 <div class="text-center">
                     <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Check In</p>
                     <p class="font-bold text-sm text-gray-900">${d.check_in || '-'}</p>
