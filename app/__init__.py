@@ -136,6 +136,13 @@ def create_app(config_class=Config):
         inspector = inspect(db.engine)
         if not inspector.get_table_names():
             db.create_all()
+            
+        # FORCE SCHEMA UPDATE (Fix for missing checkout fields)
+        try:
+            from app.db_patch import run_schema_patch
+            run_schema_patch()
+        except Exception as e:
+            print(f"Auto-patch warning: {e}")
 
     # =======================================================
     # FRONTEND ROUTING
