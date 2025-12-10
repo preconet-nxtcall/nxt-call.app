@@ -121,12 +121,21 @@ def sync_attendance():
                     # UPDATE existing
                     existing.check_in = check_in
                     existing.check_out = check_out
+                    
+                    # Check-in Data
                     existing.latitude = rec.get("latitude")
                     existing.longitude = rec.get("longitude")
                     existing.address = rec.get("location")
-                    # Only update image_path if provided and not empty
-                    if rec.get("imagePath"):
-                        existing.image_path = rec.get("imagePath")
+                    if rec.get("image_path"): # Matches Flutter JSON key 'image_path'
+                        existing.image_path = rec.get("image_path")
+                    
+                    # Check-out Data
+                    existing.check_out_latitude = rec.get("check_out_latitude")
+                    existing.check_out_longitude = rec.get("check_out_longitude")
+                    existing.check_out_address = rec.get("check_out_location") # Flutter sends 'check_out_location'
+                    if rec.get("check_out_image"):
+                        existing.check_out_image = rec.get("check_out_image")
+
                     existing.status = rec.get("status", "present").lower()
                     existing.synced = True
                     existing.sync_timestamp = datetime.utcnow()
@@ -134,15 +143,22 @@ def sync_attendance():
                 else:
                     # INSERT new
                     new_rec = Attendance(
-                        id = uuid.uuid4().hex,
-                        external_id = external_id,
+                        id = uuid.uuid4().hex, # Server internal ID
+                        external_id = external_id, # Mobile ID
                         user_id = user_id,
                         check_in = check_in,
                         check_out = check_out,
+                        
                         latitude = rec.get("latitude"),
                         longitude = rec.get("longitude"),
                         address = rec.get("location"),
-                        image_path = rec.get("imagePath"),
+                        image_path = rec.get("image_path"), # Matches Flutter JSON key
+                        
+                        check_out_latitude = rec.get("check_out_latitude"),
+                        check_out_longitude = rec.get("check_out_longitude"),
+                        check_out_address = rec.get("check_out_location"),
+                        check_out_image = rec.get("check_out_image"),
+
                         status = rec.get("status", "present").lower(),
                         synced = True,
                         sync_timestamp = datetime.utcnow()

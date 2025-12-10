@@ -184,7 +184,13 @@ class Attendance(db.Model):
     longitude = db.Column(db.Float)
     address = db.Column(db.String(500))
 
+    check_out_latitude = db.Column(db.Float)
+    check_out_longitude = db.Column(db.Float)
+    check_out_address = db.Column(db.String(500))
+
     image_path = db.Column(db.String(1024))
+    check_out_image = db.Column(db.String(1024))
+    
     status = db.Column(db.String(50), default="present", index=True)
 
     synced = db.Column(db.Boolean, default=False)
