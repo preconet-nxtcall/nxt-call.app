@@ -310,10 +310,8 @@ def performance():
                      c_out = datetime.utcnow()
                 
                 if c_out:
-                    # Work Time
+                    # Work Time for this specific day
                     session_dur = (c_out - c_in).total_seconds()
-                    # Minus lunch logic (approx 1h if overlaps 1-2pm)
-                    # The loop handled exact overlaps. Let's replicate exact overlap.
                     
                     # Gap calc for this day
                     l_active = 0
@@ -326,45 +324,70 @@ def performance():
                     
                     for call in day_calls:
                         ct = call.timestamp
-                        if ct < c_in or ct > c_out: continue
+                        
+                        # Safety Check: Ignore calls outside session (should be filtered but double check)
+                        if ct < c_in or ct > c_out: 
+                            continue
+
+                        # If CALL is during lunch, update last_sync but don't count gap
                         if is_lunch(ct):
                             last_sync = ct
                             continue
                         
-                        raw = (ct - last_sync).total_seconds()
+                        # Calculate Gap from Last Sync to Current Call
+                        raw_gap = (ct - last_sync).total_seconds()
                         
-                        # Overlap
-                        l_start = c_in.replace(hour=13, minute=0, second=0, microsecond=0)
-                        l_end = c_in.replace(hour=14, minute=0, second=0, microsecond=0)
-                        ov_s = max(last_sync, l_start)
-                        ov_e = min(ct, l_end)
-                        ov = max(0, (ov_e - ov_s).total_seconds())
+                        # Determine overlapping lunch window for this GAP
+                        # Lunch is fixed 13:00-14:00 on the day of the gap
+                        # We need to check if the gap interval [last_sync, ct] overlaps with [13:00, 14:00]
                         
-                        eff = max(0, raw - ov)
-                        if eff <= 600: l_active += eff
-                        else: l_inactive += eff
+                        # Assume single day session for simplicity (as per current design)
+                        # Construct lunch start/end for the day of last_sync
+                        current_lunch_start = last_sync.replace(hour=13, minute=0, second=0, microsecond=0)
+                        current_lunch_end = last_sync.replace(hour=14, minute=0, second=0, microsecond=0)
+                        
+                        # Calculate overlap
+                        ov_s = max(last_sync, current_lunch_start)
+                        ov_e = min(ct, current_lunch_end)
+                        overlap = max(0, (ov_e - ov_s).total_seconds())
+                        
+                        # Efficient Gap (Active) = Raw Gap - Lunch Overlap
+                        eff_gap = max(0, raw_gap - overlap)
+                        
+                        if eff_gap <= 600: # 10 mins
+                            l_active += eff_gap
+                        else:
+                            l_inactive += eff_gap
+                            
                         last_sync = ct
                         
-                    # Final gap
-                    raw = (c_out - last_sync).total_seconds()
+                    # Final gap (Last Call -> Check Out)
+                    raw_gap = (c_out - last_sync).total_seconds()
+                    
+                    current_lunch_start = last_sync.replace(hour=13, minute=0, second=0, microsecond=0)
+                    current_lunch_end = last_sync.replace(hour=14, minute=0, second=0, microsecond=0)
+                    
+                    ov_s = max(last_sync, current_lunch_start)
+                    ov_e = min(c_out, current_lunch_end)
+                    overlap = max(0, (ov_e - ov_s).total_seconds())
+                    
+                    eff_gap = max(0, raw_gap - overlap)
+                    
+                    if eff_gap <= 600:
+                        l_active += eff_gap
+                    else:
+                        l_inactive += eff_gap
+                    
+                    # Total work time (Session - Lunch Overlap of Session)
+                    # Construct lunch for the session day
                     l_start = c_in.replace(hour=13, minute=0, second=0, microsecond=0)
                     l_end = c_in.replace(hour=14, minute=0, second=0, microsecond=0)
-                    ov_s = max(last_sync, l_start)
-                    ov_e = min(c_out, l_end)
-                    ov = max(0, (ov_e - ov_s).total_seconds())
                     
-                    eff = max(0, raw - ov)
-                    if eff <= 600: l_active += eff
-                    else: l_inactive += eff
-                    
-                    # Total work time (Session - Lunch)
-                    session_total = (c_out - c_in).total_seconds()
-                    # Calc lunch overlap for full session
                     ov_s = max(c_in, l_start)
                     ov_e = min(c_out, l_end)
                     lunch_taken = max(0, (ov_e - ov_s).total_seconds())
                     
-                    last_day_stats["work"] = max(0, session_total - lunch_taken)
+                    last_day_stats["work"] = max(0, session_dur - lunch_taken)
                     last_day_stats["active"] = l_active
                     last_day_stats["inactive"] = l_inactive
                     last_day_stats["in"] = c_in
