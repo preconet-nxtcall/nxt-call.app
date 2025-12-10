@@ -203,7 +203,7 @@ class CallAnalyticsManager {
 
   async downloadReport() {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = auth.getToken();
       // Use fetch with blob to handle file download properly with auth headers if needed, 
       // or simple window.open if using cookie auth, but here we likely need the JWT header.
       // Since window.open doesn't support custom headers easily, we'll use fetch + blob.
