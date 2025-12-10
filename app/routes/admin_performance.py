@@ -429,13 +429,7 @@ def performance():
                 "inactive_sec": total_inactive_sec,
                 "score": percentage, # Overall Score
                 "status": status,    # Overall Status
-                "details": {
-                    "active_time": fmt_hms(last_day_stats['active']),
-                    "inactive_time": fmt_hms(last_day_stats['inactive']),
-                    "work_time": fmt_hms(last_day_stats['work']),
-                    "check_in": last_day_stats['in'].strftime('%I:%M %p') if last_day_stats['in'] else "-",
-                    "check_out": last_day_stats['out'].strftime('%I:%M %p') if last_day_stats['out'] else "-"
-                }
+                "details": formatted_stats
             })
 
         # Sort by Score (Ratio)

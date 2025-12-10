@@ -274,190 +274,255 @@ class PerformanceManager {
       auth.showNotification("Error opening call history", "error");
     }
   }
+  const modal = document.getElementById('userCallHistoryModal');
+  const title = document.getElementById('modalUserTitle');
 
-  setupModalControls(userId) {
-    const btnAll = document.getElementById('modal-history-filter-all');
-    const btnToday = document.getElementById('modal-history-filter-today');
-    const btnMonth = document.getElementById('modal-history-filter-month');
-    const btnDownload = document.getElementById('modal-history-download');
+  if(!modal) return;
 
-    // Reset UI active state based on current filter
-    [btnAll, btnToday, btnMonth].forEach(btn => {
-      if (btn) {
-        btn.classList.remove('bg-gray-100', 'active', 'ring-1', 'ring-transparent', 'focus:ring-blue-500');
-        // Reset to default simplistic style then add active if matches
-        // Simplified: just remove "active" logic class and re-add 
-        btn.className = "px-3 py-1 text-xs font-medium rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none";
-      }
-    });
+  if(title) title.textContent = userName;
 
-    const activeClass = "bg-gray-100";
+    // Inject the new header controls and table structure
+    modal.querySelector('.modal-content').innerHTML = `
+      <div class="flex justify-between items-center pb-4 border-b border-gray-200 mb-4">
+        <h3 id="modalUserTitle" class="text-lg font-semibold text-gray-900">${userName}</h3>
+        <button type="button" class="text-gray-400 hover:text-gray-500" onclick="document.getElementById('userCallHistoryModal').classList.add('hidden');">
+          <span class="sr-only">Close modal</span>
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
 
-    // Default filter state if not set
-    if (!this.currentModalFilter) this.currentModalFilter = 'all';
+      <!-- Header Controls -->
+      <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4 mt-2">
+        <!-- Filter Buttons -->
+        <div class="flex bg-gray-100 p-1 rounded-lg">
+          <button onclick="performanceManager.changeModalFilter('all')" class="modal-filter px-3 py-1.5 rounded-md text-xs font-medium ${this.currentModalFilter === 'all' ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-900'}">All</button>
+          <button onclick="performanceManager.changeModalFilter('today')" class="modal-filter px-3 py-1.5 rounded-md text-xs font-medium ${this.currentModalFilter === 'today' ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-900'}">Today</button>
+          <button onclick="performanceManager.changeModalFilter('month')" class="modal-filter px-3 py-1.5 rounded-md text-xs font-medium ${this.currentModalFilter === 'month' ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-900'}">Month</button>
+        </div>
 
-    if (this.currentModalFilter === 'all' && btnAll) btnAll.classList.add(activeClass);
-    if (this.currentModalFilter === 'today' && btnToday) btnToday.classList.add(activeClass);
-    if (this.currentModalFilter === 'month' && btnMonth) btnMonth.classList.add(activeClass);
+        <!-- Download Report Button -->
+        <button onclick="alert('Report Download feature coming soon')" class="flex items-center gap-2 px-3 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 text-xs font-medium transition-colors whitespace-nowrap">
+          <i class="fas fa-file-pdf"></i>
+          Download Report
+        </button>
+      </div>
 
-    // Attach listeners (remove old ones by cloning or just assigning onclick handling carefully)
-    // using onclick assignment for simplicity in this context to avoid stacking listeners on modal reopen
-    if (btnAll) btnAll.onclick = () => this.changeModalFilter('all');
-    if (btnToday) btnToday.onclick = () => this.changeModalFilter('today');
-    if (btnMonth) btnMonth.onclick = () => this.changeModalFilter('month');
+      <!-- Table Header -->
+      <div class="overflow-x-auto border rounded-lg">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Number</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+              </tr>
+            </thead>
+            <tbody id="modalCallHistoryBody" class="bg-white divide-y divide-gray-200">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+      </div>
+    `;
 
-    if (btnDownload) btnDownload.onclick = () => this.downloadModalReport();
+    // INJECT STATS SUMMARY
+    let statsContainer = document.getElementById('modalUserStats');
+if (!statsContainer) {
+  const header = modal.querySelector('h3');
+  if (header && header.parentNode) {
+    statsContainer = document.createElement('div');
+    statsContainer.id = 'modalUserStats';
+    statsContainer.className = "grid grid-cols-2 md:grid-cols-5 gap-4 mb-3 mt-2 p-3 bg-gray-50 rounded-lg text-center";
+    header.parentNode.insertBefore(statsContainer, header.nextSibling);
+  }
+}
+
+if (statsContainer && this.userStats && this.userStats[userId]) {
+  const s = this.userStats[userId];
+  const d = s.details || {};
+  statsContainer.innerHTML = `
+        <div>
+            <p class="text-[10px] text-gray-500 uppercase mb-0.5">Check In</p>
+            <p class="font-bold text-sm text-gray-900">${d.check_in || '-'}</p>
+        </div>
+        <div>
+            <p class="text-[10px] text-gray-500 uppercase mb-0.5">Check Out</p>
+            <p class="font-bold text-sm text-gray-900">${d.check_out || '-'}</p>
+        </div>
+         <div>
+            <p class="text-[10px] text-gray-500 uppercase mb-0.5">Work Time</p>
+            <p class="font-bold text-sm text-gray-900">${d.work_time || '0s'}</p>
+        </div>
+         <div>
+            <p class="text-[10px] text-gray-500 uppercase mb-0.5">Active</p>
+            <p class="font-bold text-sm text-green-600">${d.active_time || '0s'}</p>
+        </div>
+         <div>
+            <p class="text-[10px] text-gray-500 uppercase mb-0.5">Inactive</p>
+            <p class="font-bold text-sm text-red-600">${d.inactive_time || '0s'}</p>
+        </div>
+      `;
+} else if (statsContainer) {
+  statsContainer.innerHTML = '';
+}
+
+const tbody = document.getElementById('modalCallHistoryBody');
+if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-4 text-center text-sm text-gray-500">Loading...</td></tr>';
+
+modal.classList.remove('hidden');
+
+this.currentModalUser = { userId, userName };
+this.currentModalFilter = "all";
+
+await this.loadModalData(userId, userName, page);
   }
 
-  async changeModalFilter(filter) {
-    this.currentModalFilter = filter;
-    // Update UI immediately
-    this.setupModalControls(this.currentModalUser.userId);
-    // Reload data page 1
-    await this.loadModalData(this.currentModalUser.userId, this.currentModalUser.userName, 1);
-  }
+changeModalFilter(type) {
+  this.currentModalFilter = type;
+  this.viewUserCallHistory(this.currentModalUser.userId, this.currentModalUser.userName, 1);
+}
 
   async loadModalData(userId, userName, page = 1) {
-    const tbody = document.getElementById('modalCallHistoryBody');
-    const paginationContainer = document.getElementById('modalCallHistoryPagination');
+  const tbody = document.getElementById('modalCallHistoryBody');
+  const paginationContainer = document.getElementById('modalCallHistoryPagination');
 
-    let url = `/api/admin/all-call-history?user_id=${userId}&page=${page}&per_page=20`;
+  let url = `/api/admin/all-call-history?user_id=${userId}&page=${page}&per_page=20`;
 
-    // Append Filter
-    if (this.currentModalFilter && this.currentModalFilter !== 'all') {
-      url += `&filter=${this.currentModalFilter}`;
-    }
-
-    const resp = await auth.makeAuthenticatedRequest(url);
-    if (!resp || !resp.ok) {
-      tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Failed to load history</td></tr>';
-      return;
-    }
-
-    const data = await resp.json();
-    const calls = data.call_history || [];
-    const meta = data.meta || {};
-    const stats = data.stats || null;
-
-    // Update Stats Header if present
-    if (stats) {
-      const statsContainer = document.getElementById('modalUserStats');
-      if (statsContainer) {
-        statsContainer.innerHTML = `
-            <div>
-                <p class="text-xs text-gray-500 uppercase">Check In</p>
-                <p class="font-bold text-gray-900">${stats.check_in || '-'}</p>
-            </div>
-            <div>
-                <p class="text-xs text-gray-500 uppercase">Check Out</p>
-                <p class="font-bold text-gray-900">${stats.check_out || '-'}</p>
-            </div>
-            <div>
-                <p class="text-xs text-gray-500 uppercase">Work Time</p>
-                <p class="font-bold text-gray-900">${stats.work_time || '0h'}</p>
-            </div>
-            <div>
-                <p class="text-xs text-gray-500 uppercase">Active</p>
-                <p class="font-bold text-green-600">${stats.active_time || '0h'}</p>
-            </div>
-             <div>
-                <p class="text-xs text-gray-500 uppercase">Inactive</p>
-                <p class="font-bold text-red-600">${stats.inactive_time || '0h'}</p>
-            </div>
-          `;
-      }
-    }
-
-    if (calls.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No call records found</td></tr>';
-      if (paginationContainer) paginationContainer.innerHTML = '';
-      return;
-    }
-
-    tbody.innerHTML = calls.map(call => `
-        <tr>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-              ${call.call_type === 'incoming' ? 'bg-green-100 text-green-800' :
-        call.call_type === 'outgoing' ? 'bg-blue-100 text-blue-800' :
-          'bg-red-100 text-red-800'}">
-              ${call.call_type}
-            </span>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-            ${call.phone_number}
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-            ${this.formatDuration(call.duration)}
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-            ${new Date(call.timestamp).toLocaleString()}
-          </td>
-        </tr>
-      `).join('');
-
-    // Render pagination
-    this.renderModalPagination(meta, paginationContainer);
+  if (this.currentModalFilter && this.currentModalFilter !== 'all') {
+    url += `&filter=${this.currentModalFilter}`;
   }
+
+  const resp = await auth.makeAuthenticatedRequest(url);
+  if (!resp || !resp.ok) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-4 text-center text-red-500 text-sm">Failed to load history</td></tr>';
+    return;
+  }
+
+  const data = await resp.json();
+  const calls = data.call_history || [];
+  const meta = data.meta || {};
+  const stats = data.stats || null;
+
+  if (stats) {
+    const statsContainer = document.getElementById('modalUserStats');
+    if (statsContainer) {
+      const d = stats.details || {};
+      statsContainer.innerHTML = `
+                <div>
+                    <p class="text-[10px] text-gray-500 uppercase mb-0.5">Check In</p>
+                    <p class="font-bold text-sm text-gray-900">${d.check_in || '-'}</p>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-500 uppercase mb-0.5">Check Out</p>
+                    <p class="font-bold text-sm text-gray-900">${d.check_out || '-'}</p>
+                </div>
+                 <div>
+                    <p class="text-[10px] text-gray-500 uppercase mb-0.5">Work Time</p>
+                    <p class="font-bold text-sm text-gray-900">${d.work_time || '0s'}</p>
+                </div>
+                 <div>
+                    <p class="text-[10px] text-gray-500 uppercase mb-0.5">Active</p>
+                    <p class="font-bold text-sm text-green-600">${d.active_time || '0s'}</p>
+                </div>
+                 <div>
+                    <p class="text-[10px] text-gray-500 uppercase mb-0.5">Inactive</p>
+                    <p class="font-bold text-sm text-red-600">${d.inactive_time || '0s'}</p>
+                </div>
+              `;
+    }
+  }
+
+  if (calls.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-4 text-center text-gray-500 text-sm">No call records found</td></tr>';
+    if (paginationContainer) paginationContainer.innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = calls.map(call => `
+      <tr>
+        <td class="px-4 py-2 whitespace-nowrap">
+          <span class="px-2 inline-flex text-[10px] leading-4 font-semibold rounded-full 
+            ${call.call_type === 'incoming' ? 'bg-green-100 text-green-800' :
+      call.call_type === 'outgoing' ? 'bg-blue-100 text-blue-800' :
+        'bg-red-100 text-red-800'}">
+            ${call.call_type}
+          </span>
+        </td>
+        <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+          ${call.number || call.phone_number}
+        </td>
+        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+           ${this.formatDuration(call.duration)}
+        </td>
+        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+          ${new Date(call.timestamp).toLocaleString(undefined, {
+          month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        })}
+        </td>
+      </tr>
+    `).join('');
+
+  this.renderModalPagination(meta, paginationContainer);
+}
 
   async downloadModalReport() {
-    try {
-      const userId = this.currentModalUser?.userId;
-      if (!userId) return;
+  try {
+    const userId = this.currentModalUser?.userId;
+    if (!userId) return;
 
-      const filter = this.currentModalFilter || 'all';
-      // auth.showNotification("Generating Report...", "info");
+    const filter = this.currentModalFilter || 'all';
+    // auth.showNotification("Generating Report...", "info");
 
-      const token = auth.getToken();
-      const response = await fetch(`/api/admin/download-user-history?user_id=${userId}&filter=${filter}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+    const token = auth.getToken();
+    const response = await fetch(`/api/admin/download-user-history?user_id=${userId}&filter=${filter}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
 
-      if (!response.ok) throw new Error("Failed to download");
+    if (!response.ok) throw new Error("Failed to download");
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `CallHistory_Report_${filter}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      auth.showNotification("Report downloaded successfully", "success");
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = `CallHistory_Report_${filter}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    auth.showNotification("Report downloaded successfully", "success");
 
-    } catch (e) {
-      console.error(e);
-      auth.showNotification("Failed to download report", "error");
-    }
+  } catch (e) {
+    console.error(e);
+    auth.showNotification("Failed to download report", "error");
+  }
+}
+
+renderModalPagination(meta, container) {
+  if (!container || !meta || meta.pages <= 1) {
+    if (container) container.innerHTML = '';
+    return;
   }
 
-  renderModalPagination(meta, container) {
-    if (!container || !meta || meta.pages <= 1) {
-      if (container) container.innerHTML = '';
-      return;
-    }
+  const currentPage = meta.page;
+  const totalPages = meta.pages;
 
-    const currentPage = meta.page;
-    const totalPages = meta.pages;
+  let pagesHtml = '';
 
-    let pagesHtml = '';
+  // Show max 5 page numbers
+  let startPage = Math.max(1, currentPage - 2);
+  let endPage = Math.min(totalPages, currentPage + 2);
 
-    // Show max 5 page numbers
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, currentPage + 2);
-
-    for (let i = startPage; i <= endPage; i++) {
-      pagesHtml += `
+  for (let i = startPage; i <= endPage; i++) {
+    pagesHtml += `
         <button 
           onclick="performanceManager.viewUserCallHistory(${this.currentModalUser.userId}, '${this.currentModalUser.userName}', ${i})"
           class="px-3 py-1 rounded ${i === currentPage ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border border-gray-300 text-sm font-medium">
           ${i}
         </button>
       `;
-    }
+  }
 
-    container.innerHTML = `
+  container.innerHTML = `
       <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-200">
         <div class="text-sm text-gray-700">
           Showing page <span class="font-medium">${currentPage}</span> of <span class="font-medium">${totalPages}</span>
@@ -480,23 +545,23 @@ class PerformanceManager {
         </div>
       </div>
     `;
-  }
+}
 
-  formatDuration(seconds) {
-    if (seconds === undefined || seconds === null) return "0s";
-    const sec = parseInt(seconds, 10);
-    if (isNaN(sec) || sec === 0) return "0s";
+formatDuration(seconds) {
+  if (seconds === undefined || seconds === null) return "0s";
+  const sec = parseInt(seconds, 10);
+  if (isNaN(sec) || sec === 0) return "0s";
 
-    const h = Math.floor(sec / 3600);
-    const m = Math.floor((sec % 3600) / 60);
-    const s = sec % 60;
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
 
-    const parts = [];
-    if (h > 0) parts.push(`${h}h`);
-    if (m > 0) parts.push(`${m}m`);
-    if (s > 0 || parts.length === 0) parts.push(`${s}s`);
-    return parts.join(' ');
-  }
+  const parts = [];
+  if (h > 0) parts.push(`${h}h`);
+  if (m > 0) parts.push(`${m}m`);
+  if (s > 0 || parts.length === 0) parts.push(`${s}s`);
+  return parts.join(' ');
+}
 }
 
 const performanceManager = new PerformanceManager();
