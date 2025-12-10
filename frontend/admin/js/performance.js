@@ -88,11 +88,16 @@ class PerformanceManager {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
 
+    // Robustly destroy existing chart
     if (this.chart) {
       this.chart.destroy();
-    } else {
-      const existingChart = Chart.getChart(canvas);
-      if (existingChart) existingChart.destroy();
+      this.chart = null;
+    }
+
+    // Double check canvas for attached instance (Chart.js 3+)
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+      existingChart.destroy();
     }
 
     const dataLabelPlugin = {
