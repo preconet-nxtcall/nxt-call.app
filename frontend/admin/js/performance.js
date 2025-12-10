@@ -332,6 +332,36 @@ class PerformanceManager {
     const data = await resp.json();
     const calls = data.call_history || [];
     const meta = data.meta || {};
+    const stats = data.stats || null;
+
+    // Update Stats Header if present
+    if (stats) {
+      const statsContainer = document.getElementById('modalUserStats');
+      if (statsContainer) {
+        statsContainer.innerHTML = `
+            <div>
+                <p class="text-xs text-gray-500 uppercase">Check In</p>
+                <p class="font-bold text-gray-900">${stats.check_in || '-'}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase">Check Out</p>
+                <p class="font-bold text-gray-900">${stats.check_out || '-'}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase">Work Time</p>
+                <p class="font-bold text-gray-900">${stats.work_time || '0h'}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase">Active</p>
+                <p class="font-bold text-green-600">${stats.active_time || '0h'}</p>
+            </div>
+             <div>
+                <p class="text-xs text-gray-500 uppercase">Inactive</p>
+                <p class="font-bold text-red-600">${stats.inactive_time || '0h'}</p>
+            </div>
+          `;
+      }
+    }
 
     if (calls.length === 0) {
       tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No call records found</td></tr>';

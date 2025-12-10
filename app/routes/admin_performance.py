@@ -311,8 +311,8 @@ def performance():
                     "active_time": f"{round(total_active_sec/3600, 1)}h",
                     "inactive_time": f"{round(total_inactive_sec/3600, 1)}h",
                     "work_time": f"{round(total_work_sec/3600, 1)}h",
-                    "check_in": overall_check_in.strftime('%H:%M') if overall_check_in else "-",
-                    "check_out": overall_check_out.strftime('%H:%M') if overall_check_out else "-"
+                    "check_in": overall_check_in.strftime('%I:%M %p') if overall_check_in else "-",
+                    "check_out": overall_check_out.strftime('%I:%M %p') if overall_check_out else "-"
                 }
             })
 

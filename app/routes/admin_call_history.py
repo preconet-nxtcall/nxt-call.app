@@ -3,7 +3,7 @@
 from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime, timedelta
-from app.models import db, User, CallHistory
+from app.models import db, User, CallHistory, Attendance
 from sqlalchemy import or_, func, case
 import io
 
@@ -150,12 +150,172 @@ def all_call_history():
         # Pagination
         paginated = query.paginate(page=page, per_page=per_page, error_out=False)
 
+        # ============================
+        # 6️⃣ STATS CALCULATION (For Modal Header)
+        # ============================
+        # Re-using logic from admin_performance.py for consistency
+        # Calculate Work Time, Active, Inactive for the filtered period
+        
+        # Fetch Attendance for this User & Period
+        # We need the same start_time / end_time logic used for the query
+        stats_start = start_time
+        stats_end = None
+        
+        # If no specific start time (e.g. 'all'), we might want to bound it or fetch all.
+        # But 'query' (CallHistory) handles it. We need explicit range for Attendance query.
+        
+        attendances = []
+        if stats_start:
+             att_q = Attendance.query.filter(Attendance.user_id == user_id, Attendance.check_in >= stats_start)
+             # Handle end range if applicable (e.g. month end)
+             # The existing code for month filter logic (lines 106-123) sets query filter directly.
+             # We need to replicate or extract that date range.
+             
+             # Re-determining the effective date range from request params:
+             daterange_start = None
+             daterange_end = None
+             
+             if custom_date:
+                 daterange_start = datetime.strptime(custom_date, "%Y-%m-%d")
+                 daterange_end = daterange_start + timedelta(days=1)
+             elif month_param:
+                 y, m = map(int, month_param.split('-'))
+                 daterange_start = datetime(y, m, 1)
+                 if m == 12: daterange_end = datetime(y+1, 1, 1)
+                 else: daterange_end = datetime(y, m+1, 1)
+             elif filter_type == "today":
+                 now_ts = datetime.utcnow()
+                 daterange_start = datetime(now_ts.year, now_ts.month, now_ts.day)
+                 daterange_end = daterange_start + timedelta(days=1)
+             elif filter_type == "week":
+                 daterange_start = datetime.utcnow() - timedelta(days=7)
+                 daterange_end = datetime.utcnow()
+             elif filter_type == "month":
+                 daterange_start = datetime.utcnow() - timedelta(days=30)
+                 daterange_end = datetime.utcnow()
+                 
+             if daterange_start:
+                att_q = Attendance.query.filter(Attendance.user_id == user_id, Attendance.check_in >= daterange_start)
+                if daterange_end:
+                    att_q = att_q.filter(Attendance.check_in < daterange_end)
+                attendances = att_q.all()
+        elif user_id:
+             # All time for user
+             attendances = Attendance.query.filter_by(user_id=user_id).all()
+
+        # Calculate Stats
+        total_active_sec = 0.0
+        total_inactive_sec = 0.0
+        total_work_sec = 0.0
+        
+        if attendances:
+            # Group by day
+            daily_data = {}
+            for att in attendances:
+                d_str = att.check_in.date().isoformat()
+                if d_str not in daily_data:
+                    daily_data[d_str] = {"check_in": att.check_in, "check_out": att.check_out, "calls": []}
+                else:
+                    if att.check_in < daily_data[d_str]["check_in"]:
+                        daily_data[d_str]["check_in"] = att.check_in
+                    current_co = daily_data[d_str]["check_out"]
+                    if att.check_out:
+                         if current_co is None or att.check_out > current_co:
+                             daily_data[d_str]["check_out"] = att.check_out
+
+            # Fetch ALL calls for stats (not just paginated ones)
+            # Re-run a simplified query for stats
+            calls_q = CallHistory.query.filter_by(user_id=user_id)
+            if daterange_start:
+                calls_q = calls_q.filter(CallHistory.timestamp >= daterange_start)
+                if daterange_end:
+                    calls_q = calls_q.filter(CallHistory.timestamp < daterange_end)
+            
+            # Additional filters (phone/type) should arguably apply to call history list NOT work performance?
+            # Performance is usually about ALL activity. Let's ignore search/type filters for "Work Time" calc.
+            all_calls_for_stats = calls_q.order_by(CallHistory.timestamp.asc()).all()
+
+            for call in all_calls_for_stats:
+                d_str = call.timestamp.date().isoformat()
+                if d_str in daily_data:
+                    daily_data[d_str]["calls"].append(call)
+
+            def is_lunch_time(dt): return dt.hour == 13
+
+            for d_str, day_info in daily_data.items():
+                c_in = day_info["check_in"]
+                c_out = day_info["check_out"]
+                
+                if c_out is None:
+                    if d_str == datetime.utcnow().date().isoformat():
+                        c_out = datetime.utcnow()
+                    else: continue 
+
+                session_dur = (c_out - c_in).total_seconds()
+                work_dur = max(0, session_dur - 3600)
+                total_work_sec += work_dur
+
+                last_sync_time = c_in
+                day_calls = day_info["calls"]
+                
+                for call in day_calls:
+                    curr_time = call.timestamp
+                    if curr_time < c_in: continue
+                    if curr_time > c_out: continue
+                    if is_lunch_time(curr_time):
+                        last_sync_time = curr_time
+                        continue
+                    
+                    raw_gap = (curr_time - last_sync_time).total_seconds()
+                    
+                    # Lunch overlap calc
+                    lunch_start = c_in.replace(hour=13, minute=0, second=0, microsecond=0)
+                    lunch_end = c_in.replace(hour=14, minute=0, second=0, microsecond=0)
+                    overlap_start = max(last_sync_time, lunch_start)
+                    overlap_end = min(curr_time, lunch_end)
+                    overlap = max(0, (overlap_end - overlap_start).total_seconds())
+                    
+                    effective_gap = max(0, raw_gap - overlap)
+                    
+                    if effective_gap <= 600: total_active_sec += effective_gap
+                    else: total_inactive_sec += effective_gap
+                    last_sync_time = curr_time
+                
+                # Final Gap
+                final_gap_raw = (c_out - last_sync_time).total_seconds()
+                lunch_start = c_in.replace(hour=13, minute=0, second=0, microsecond=0)
+                lunch_end = c_in.replace(hour=14, minute=0, second=0, microsecond=0)
+                overlap_start = max(last_sync_time, lunch_start)
+                overlap_end = min(c_out, lunch_end)
+                overlap = max(0, (overlap_end - overlap_start).total_seconds())
+                final_gap = max(0, final_gap_raw - overlap)
+                
+                if final_gap <= 600: total_active_sec += final_gap
+                else: total_inactive_sec += final_gap
+
+        # Check-in/out display (Earliest/Latest)
+        overall_check_in = None
+        overall_check_out = None
+        if attendances:
+            overall_check_in = min([a.check_in for a in attendances if a.check_in])
+            outs = [a.check_out for a in attendances if a.check_out]
+            if outs: overall_check_out = max(outs)
+
+        stats = {
+            "work_time": f"{round(total_work_sec/3600, 1)}h",
+            "active_time": f"{round(total_active_sec/3600, 1)}h",
+            "inactive_time": f"{round(total_inactive_sec/3600, 1)}h",
+            "check_in": overall_check_in.strftime('%I:%M %p') if overall_check_in else "-",
+            "check_out": overall_check_out.strftime('%I:%M %p') if overall_check_out else "-"
+        }
+
+
         data = []
-        for rec, user in paginated.items:
+        for rec, user_obj in paginated.items:
             data.append({
                 "id": rec.id,
                 "user_id": rec.user_id,
-                "user_name": user.name,
+                "user_name": user_obj.name,
                 "phone_number": rec.phone_number,
                 "formatted_number": rec.formatted_number,
                 "contact_name": rec.contact_name,
@@ -167,6 +327,7 @@ def all_call_history():
 
         return jsonify({
             "call_history": data,
+            "stats": stats,
             "meta": {
                 "page": paginated.page,
                 "per_page": paginated.per_page,
