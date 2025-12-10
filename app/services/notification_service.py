@@ -73,7 +73,7 @@ class NotificationService:
         # ---------------------------------------------------------
         # EMAIL CONTENT (TEMPLATE)
         # ---------------------------------------------------------
-        subject = "Welcome to Call Manager"
+        subject = "Welcome to Nxt Call.app"
         
         # Using the exact template provided
         html_content = f"""
@@ -107,7 +107,7 @@ class NotificationService:
       <p>Account Expiry Date: {expiry_str}</p>
     </div>
 
-    <p>Please log in and change your password immediately for security.</p>
+    <p>Please download "NxtCall.app" from the Play Store, log in using your credentials, and connect your profile.</p>
 
     <p>Thank you,<br/>The Call Manager Team</p>
 
