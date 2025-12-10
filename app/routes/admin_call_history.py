@@ -194,10 +194,10 @@ def all_call_history():
             
             if target_date:
                 # Specific day
-                att_record = att_query.filter(func.date(Attendance.date) == target_date).first()
+                att_record = att_query.filter(func.date(Attendance.check_in) == target_date).first()
             else:
                 # Last active day (order by date desc)
-                att_record = att_query.order_by(Attendance.date.desc()).first()
+                att_record = att_query.order_by(Attendance.check_in.desc()).first()
 
             if att_record:
                 # Calculate Duration
