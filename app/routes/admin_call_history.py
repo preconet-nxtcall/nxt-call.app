@@ -21,7 +21,10 @@ except ImportError:
 bp = Blueprint("admin_all_call_history", __name__, url_prefix="/api/admin")
 
 
+from functools import wraps
+
 def admin_required(fn):
+    @wraps(fn)
     def wrapper(*args, **kwargs):
         if get_jwt().get("role") != "admin":
             return jsonify({"error": "Admin access required"}), 403
