@@ -314,19 +314,28 @@ def download_analytics_report():
             period_label = f"Monthly ({now.strftime('%B %Y')})"
             
         # Query User Summary
-        summary_query = db.session.query(
-                User.id,
-                User.name,
-                func.sum(case((func.lower(CallHistory.call_type) == "incoming", 1), else_=0)).label("incoming"),
-                func.sum(case((func.lower(CallHistory.call_type) == "outgoing", 1), else_=0)).label("outgoing"),
-                func.sum(case((func.lower(CallHistory.call_type) == "missed", 1), else_=0)).label("missed"),
-                func.sum(case((func.lower(CallHistory.call_type) == "rejected", 1), else_=0)).label("rejected"),
-                func.coalesce(func.sum(CallHistory.duration), 0).label("total_duration"),
-                User.last_sync
-            ).select_from(User).outerjoin(CallHistory, 
+        # Query User Summary
+        # Base columns
+        summary_cols = [
+            User.id,
+            User.name,
+            func.sum(case((func.lower(CallHistory.call_type) == "incoming", 1), else_=0)).label("incoming"),
+            func.sum(case((func.lower(CallHistory.call_type) == "outgoing", 1), else_=0)).label("outgoing"),
+            func.sum(case((func.lower(CallHistory.call_type) == "missed", 1), else_=0)).label("missed"),
+            func.sum(case((func.lower(CallHistory.call_type) == "rejected", 1), else_=0)).label("rejected"),
+            func.coalesce(func.sum(CallHistory.duration), 0).label("total_duration"),
+            User.last_sync
+        ]
+
+        if start_date:
+            summary_query = db.session.query(*summary_cols).select_from(User).outerjoin(CallHistory, 
                 (User.id == CallHistory.user_id) & 
-                (CallHistory.timestamp >= start_date if start_date else True) &
-                (CallHistory.timestamp < end_date if end_date else True)
+                (CallHistory.timestamp >= start_date) &
+                (CallHistory.timestamp < end_date)
+            )
+        else:
+            summary_query = db.session.query(*summary_cols).select_from(User).outerjoin(CallHistory, 
+                User.id == CallHistory.user_id
             )
 
         summary_rows = summary_query.filter(User.admin_id == admin_id)\
