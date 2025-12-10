@@ -1,10 +1,22 @@
 # app/routes/admin_call_history.py
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime, timedelta
 from app.models import db, User, CallHistory
-from sqlalchemy import or_, func
+from sqlalchemy import or_, func, case
+import io
+
+# Optional: ReportLab for PDF
+try:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER
+    HAS_REPORTLAB = True
+except ImportError:
+    HAS_REPORTLAB = False
 
 bp = Blueprint("admin_all_call_history", __name__, url_prefix="/api/admin")
 
@@ -164,3 +176,152 @@ def all_call_history():
 
     except Exception as e:
         return jsonify({"error": "Internal error", "detail": str(e)}), 400
+
+
+@bp.route("/download-user-history", methods=["GET"])
+@jwt_required()
+@admin_required
+def download_user_history():
+    """
+    Generates and downloads a PDF report for a single user's call history.
+    Values passed: user_id, filter (today, month, all)
+    """
+    if not HAS_REPORTLAB:
+        return jsonify({"error": "PDF generation library (reportlab) not installed on server."}), 500
+
+    try:
+        admin_id = int(get_jwt_identity())
+        user_id = request.args.get("user_id")
+        
+        if not user_id:
+            return jsonify({"error": "User ID is required"}), 400
+
+        # Verify user exists and belongs to admin
+        user = User.query.filter_by(id=user_id, admin_id=admin_id).first()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        # ============================
+        # 1️⃣ DATE FILTER SETUP
+        # ============================
+        filter_type = request.args.get("filter", "all")
+        now = datetime.utcnow()
+        start_time = None
+        period_label = "All Time"
+
+        if filter_type == "today":
+            start_time = datetime(now.year, now.month, now.day)
+            period_label = f"Today ({now.strftime('%d %b %Y')})"
+        elif filter_type == "month":
+            start_time = datetime(now.year, now.month, 1) # Start of current month
+            period_label = f"Monthly ({now.strftime('%B %Y')})"
+        
+        # ============================
+        # 2️⃣ QUERY DATA
+        # ============================
+        query = CallHistory.query.filter_by(user_id=user_id)
+        
+        if start_time:
+            # For "month", we ideally want the whole month range, but the previous logic just used start_time >= X
+            # Let's improve it for month to be cleaner
+            if filter_type == "month":
+                 if now.month == 12:
+                     end_time = datetime(now.year + 1, 1, 1)
+                 else:
+                     end_time = datetime(now.year, now.month + 1, 1)
+                 query = query.filter(CallHistory.timestamp >= start_time, CallHistory.timestamp < end_time)
+            else:
+                 query = query.filter(CallHistory.timestamp >= start_time)
+        
+        # Sort by latest
+        calls = query.order_by(CallHistory.timestamp.desc()).all()
+
+        # ============================
+        # 3️⃣ GENERATE PDF
+        # ============================
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        elements = []
+        styles = getSampleStyleSheet()
+
+        # Title
+        title_style = ParagraphStyle(
+            'TitleStyle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            alignment=TA_CENTER,
+            spaceAfter=5,
+            textColor=colors.HexColor('#2563EB')
+        )
+        elements.append(Paragraph(f"Call History: {user.name}", title_style))
+        
+        # Subtitle
+        subtitle_style = ParagraphStyle(
+            'SubtitleStyle',
+            parent=styles['Normal'],
+            fontSize=12,
+            alignment=TA_CENTER,
+            spaceAfter=20,
+            textColor=colors.gray
+        )
+        elements.append(Paragraph(f"Report Period: {period_label}", subtitle_style))
+
+        # Table Data
+        # Columns: Type, Number, Duration, Date
+        table_data = [[ "Type", "Number", "Duration", "Date & Time" ]]
+
+        def fmt_dur(seconds):
+             if not seconds: return "0s"
+             h = seconds // 3600
+             m = (seconds % 3600) // 60
+             s = seconds % 60
+             parts = []
+             if h: parts.append(f"{h}h")
+             if m: parts.append(f"{m}m")
+             if s: parts.append(f"{s}s")
+             return " ".join(parts)
+
+        for c in calls:
+            # Color coding for type (text only in PDF)
+            c_type = c.call_type.capitalize()
+            
+            table_data.append([
+                c_type,
+                c.phone_number,
+                fmt_dur(c.duration),
+                c.timestamp.strftime('%Y-%m-%d %H:%M:%S') if c.timestamp else "-"
+            ])
+
+        if len(table_data) == 1:
+            elements.append(Paragraph("No calls found for this period.", styles['Normal']))
+        else:
+            t = Table(table_data, colWidths=[80, 150, 80, 150])
+            t.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#F3F4F6')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E5E7EB')),
+                ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ]))
+            elements.append(t)
+
+        doc.build(elements)
+        buffer.seek(0)
+        
+        filename = f"CallHistory_{user.name}_{filter_type}_{datetime.now().strftime('%Y%m%d')}.pdf"
+        
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/pdf'
+        )
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "Internal error generating report", "detail": str(e)}), 400

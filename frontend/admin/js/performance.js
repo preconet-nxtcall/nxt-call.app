@@ -215,33 +215,100 @@ class PerformanceManager {
 
       modal.classList.remove('hidden');
 
+      // Reset filter on open
+      this.currentModalFilter = 'all';
+
       // Store current user for pagination
       this.currentModalUser = { userId, userName };
 
-      // Fetch calls with pagination (defaults to last 7 days)
-      const resp = await auth.makeAuthenticatedRequest(`/api/admin/all-call-history?user_id=${userId}&page=${page}&per_page=20`);
-      if (!resp || !resp.ok) {
-        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Failed to load history</td></tr>';
-        return;
+      // Setup Filter Buttons
+      this.setupModalControls(userId);
+
+      // Fetch calls with pagination (defaults to last 7 days) -- MODIFIED: Use current filter
+      await this.loadModalData(userId, userName, page);
+
+    } catch (e) {
+      console.error("Error viewing user call history", e);
+      auth.showNotification("Error opening call history", "error");
+    }
+  }
+
+  setupModalControls(userId) {
+    const btnAll = document.getElementById('modal-history-filter-all');
+    const btnToday = document.getElementById('modal-history-filter-today');
+    const btnMonth = document.getElementById('modal-history-filter-month');
+    const btnDownload = document.getElementById('modal-history-download');
+
+    // Reset UI active state based on current filter
+    [btnAll, btnToday, btnMonth].forEach(btn => {
+      if (btn) {
+        btn.classList.remove('bg-gray-100', 'active', 'ring-1', 'ring-transparent', 'focus:ring-blue-500');
+        // Reset to default simplistic style then add active if matches
+        // Simplified: just remove "active" logic class and re-add 
+        btn.className = "px-3 py-1 text-xs font-medium rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none";
       }
+    });
 
-      const data = await resp.json();
-      const calls = data.call_history || [];
-      const meta = data.meta || {};
+    const activeClass = "bg-gray-100";
 
-      if (calls.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No call records found</td></tr>';
-        if (paginationContainer) paginationContainer.innerHTML = '';
-        return;
-      }
+    // Default filter state if not set
+    if (!this.currentModalFilter) this.currentModalFilter = 'all';
 
-      tbody.innerHTML = calls.map(call => `
+    if (this.currentModalFilter === 'all' && btnAll) btnAll.classList.add(activeClass);
+    if (this.currentModalFilter === 'today' && btnToday) btnToday.classList.add(activeClass);
+    if (this.currentModalFilter === 'month' && btnMonth) btnMonth.classList.add(activeClass);
+
+    // Attach listeners (remove old ones by cloning or just assigning onclick handling carefully)
+    // using onclick assignment for simplicity in this context to avoid stacking listeners on modal reopen
+    if (btnAll) btnAll.onclick = () => this.changeModalFilter('all');
+    if (btnToday) btnToday.onclick = () => this.changeModalFilter('today');
+    if (btnMonth) btnMonth.onclick = () => this.changeModalFilter('month');
+
+    if (btnDownload) btnDownload.onclick = () => this.downloadModalReport();
+  }
+
+  async changeModalFilter(filter) {
+    this.currentModalFilter = filter;
+    // Update UI immediately
+    this.setupModalControls(this.currentModalUser.userId);
+    // Reload data page 1
+    await this.loadModalData(this.currentModalUser.userId, this.currentModalUser.userName, 1);
+  }
+
+  async loadModalData(userId, userName, page = 1) {
+    const tbody = document.getElementById('modalCallHistoryBody');
+    const paginationContainer = document.getElementById('modalCallHistoryPagination');
+
+    let url = `/api/admin/all-call-history?user_id=${userId}&page=${page}&per_page=20`;
+
+    // Append Filter
+    if (this.currentModalFilter && this.currentModalFilter !== 'all') {
+      url += `&filter=${this.currentModalFilter}`;
+    }
+
+    const resp = await auth.makeAuthenticatedRequest(url);
+    if (!resp || !resp.ok) {
+      tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-red-500">Failed to load history</td></tr>';
+      return;
+    }
+
+    const data = await resp.json();
+    const calls = data.call_history || [];
+    const meta = data.meta || {};
+
+    if (calls.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No call records found</td></tr>';
+      if (paginationContainer) paginationContainer.innerHTML = '';
+      return;
+    }
+
+    tbody.innerHTML = calls.map(call => `
         <tr>
           <td class="px-6 py-4 whitespace-nowrap">
             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
               ${call.call_type === 'incoming' ? 'bg-green-100 text-green-800' :
-          call.call_type === 'outgoing' ? 'bg-blue-100 text-blue-800' :
-            'bg-red-100 text-red-800'}">
+        call.call_type === 'outgoing' ? 'bg-blue-100 text-blue-800' :
+          'bg-red-100 text-red-800'}">
               ${call.call_type}
             </span>
           </td>
@@ -257,12 +324,39 @@ class PerformanceManager {
         </tr>
       `).join('');
 
-      // Render pagination
-      this.renderModalPagination(meta, paginationContainer);
+    // Render pagination
+    this.renderModalPagination(meta, paginationContainer);
+  }
+
+  async downloadModalReport() {
+    try {
+      const userId = this.currentModalUser?.userId;
+      if (!userId) return;
+
+      const filter = this.currentModalFilter || 'all';
+      auth.showNotification("Generating Report...", "info");
+
+      const token = auth.getToken();
+      const response = await fetch(`/api/admin/download-user-history?user_id=${userId}&filter=${filter}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) throw new Error("Failed to download");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `CallHistory_Report_${filter}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      auth.showNotification("Report downloaded successfully", "success");
 
     } catch (e) {
-      console.error("Error viewing user call history", e);
-      auth.showNotification("Error opening call history", "error");
+      console.error(e);
+      auth.showNotification("Failed to download report", "error");
     }
   }
 
