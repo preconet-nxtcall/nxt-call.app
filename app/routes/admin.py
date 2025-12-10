@@ -780,18 +780,26 @@ def user_logs():
 
         return jsonify({"logs": logs}), 200
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        current_app.logger.error(f"User Logs Error: {e}")
-        # Return 200 OK with a special log entry so the dashboard doesn't crash
-        # and the user sees WHY there is no data.
-        error_log = [{
-            "user_name": "System Alert",
-            "action": "Database Error: Run 'flask db upgrade'",
-            "timestamp": iso(datetime.now(timezone.utc)),
-            "is_active": False
-        }]
-        return jsonify({"logs": error_log}), 200
+        current_app.logger.warning(f"Recent Activity (Admin) failed, falling back to User Attendance: {e}")
+        # FALLBACK: Return User Attendance (Original Behavior)
+        # This ensures the dashboard works even if 'activity_logs' table is missing.
+        try:
+            logs = db.session.query(Attendance, User).join(User).filter(
+                User.admin_id == admin_id
+            ).order_by(Attendance.created_at.desc()).limit(10).all()
+
+            data = []
+            for att, user in logs:
+                data.append({
+                    "user_name": user.name,
+                    "action": f"Checked {att.status}",
+                    "timestamp": iso(att.created_at),
+                    "is_active": True if is_online(user.last_sync) else False
+                })
+            return jsonify({"logs": data}), 200
+        except Exception as e2:
+            current_app.logger.error(f"Fallback User Logs Error: {e2}")
+            return jsonify({"error": "Failed to load activity data"}), 500
 
 
 # =========================================================
