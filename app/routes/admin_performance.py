@@ -370,6 +370,17 @@ def performance():
                     last_day_stats["in"] = c_in
                     last_day_stats["out"] = c_out
 
+            def fmt_hms(seconds):
+                if not seconds: return "0s"
+                h = int(seconds // 3600)
+                m = int((seconds % 3600) // 60)
+                s = int(seconds % 60)
+                parts = []
+                if h: parts.append(f"{h}h")
+                if m: parts.append(f"{m}m")
+                if s: parts.append(f"{s}s")
+                return " ".join(parts)
+
             users_list.append({
                 "user_id": user.id,
                 "user_name": user.name,
@@ -384,9 +395,9 @@ def performance():
                 "score": percentage, # Overall Score
                 "status": status,    # Overall Status
                 "details": {
-                    "active_time": f"{round(last_day_stats['active']/3600, 1)}h",
-                    "inactive_time": f"{round(last_day_stats['inactive']/3600, 1)}h",
-                    "work_time": f"{round(last_day_stats['work']/3600, 1)}h",
+                    "active_time": fmt_hms(last_day_stats['active']),
+                    "inactive_time": fmt_hms(last_day_stats['inactive']),
+                    "work_time": fmt_hms(last_day_stats['work']),
                     "check_in": last_day_stats['in'].strftime('%I:%M %p') if last_day_stats['in'] else "-",
                     "check_out": last_day_stats['out'].strftime('%I:%M %p') if last_day_stats['out'] else "-"
                 }

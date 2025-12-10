@@ -1025,16 +1025,16 @@
       <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
       <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
       <div
-        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
-        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-          <div class="sm:flex sm:items-start">
-            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-              <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
+        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full flex flex-col max-h-[90vh]">
+        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 flex-1 overflow-hidden flex flex-col">
+          <div class="sm:flex sm:items-start flex-1 overflow-hidden flex flex-col">
+            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full flex-1 flex flex-col overflow-hidden">
+              <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4 flex-shrink-0" id="modal-title">
                 Call History: <span id="modalUserTitle" class="font-bold text-blue-600">User</span>
               </h3>
 
               <!-- Modal Filters -->
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 flex-shrink-0">
                 <div class="inline-flex rounded-lg border border-gray-200 bg-white p-1">
                   <button id="modal-history-filter-all"
                     class="px-3 py-1 text-xs font-medium rounded-md text-gray-700 hover:bg-gray-50 bg-gray-100 active focus:outline-none ring-1 ring-transparent focus:ring-blue-500">All</button>
@@ -1048,7 +1048,7 @@
                   <i class="fas fa-file-pdf"></i> Download Report
                 </button>
               </div>
-              <div class="mt-4 overflow-x-auto max-h-[60vh] overflow-y-auto">
+              <div class="mt-4 overflow-x-auto overflow-y-auto flex-1 min-h-0 border border-gray-100 rounded-md">
                 <table class="min-w-full divide-y divide-gray-200">
                   <thead class="bg-gray-50">
                     <tr>
