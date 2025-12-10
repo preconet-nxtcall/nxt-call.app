@@ -255,6 +255,9 @@ class PerformanceManager {
               </tbody>
             </table>
         </div>
+
+        <!-- Pagination -->
+        <div id="modalCallHistoryPagination" class="mt-4"></div>
       `;
 
       // INJECT STATS SUMMARY
