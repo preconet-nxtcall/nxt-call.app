@@ -310,8 +310,15 @@ def performance():
                      c_out = datetime.utcnow()
                 
                 if c_out:
+                    # CLAMP DATA TO "THIS DAY" (Start Date)
+                    # If user checked out days later, we only count the work time for the check-in day
+                    # to match the user perception of "Today's Work Time".
+                    
+                    day_end = c_in.replace(hour=23, minute=59, second=59, microsecond=999999)
+                    eff_c_out = min(c_out, day_end)
+
                     # Work Time for this specific day
-                    session_dur = (c_out - c_in).total_seconds()
+                    session_dur = (eff_c_out - c_in).total_seconds()
                     
                     # Gap calc for this day
                     l_active = 0
@@ -325,8 +332,8 @@ def performance():
                     for call in day_calls:
                         ct = call.timestamp
                         
-                        # Safety Check: Ignore calls outside session (should be filtered but double check)
-                        if ct < c_in or ct > c_out: 
+                        # Safety Check: Ignore calls outside session (clamped)
+                        if ct < c_in or ct > eff_c_out: 
                             continue
 
                         # If CALL is during lunch, update last_sync but don't count gap
@@ -338,11 +345,6 @@ def performance():
                         raw_gap = (ct - last_sync).total_seconds()
                         
                         # Determine overlapping lunch window for this GAP
-                        # Lunch is fixed 13:00-14:00 on the day of the gap
-                        # We need to check if the gap interval [last_sync, ct] overlaps with [13:00, 14:00]
-                        
-                        # Assume single day session for simplicity (as per current design)
-                        # Construct lunch start/end for the day of last_sync
                         current_lunch_start = last_sync.replace(hour=13, minute=0, second=0, microsecond=0)
                         current_lunch_end = last_sync.replace(hour=14, minute=0, second=0, microsecond=0)
                         
@@ -362,13 +364,13 @@ def performance():
                         last_sync = ct
                         
                     # Final gap (Last Call -> Check Out)
-                    raw_gap = (c_out - last_sync).total_seconds()
+                    raw_gap = (eff_c_out - last_sync).total_seconds()
                     
                     current_lunch_start = last_sync.replace(hour=13, minute=0, second=0, microsecond=0)
                     current_lunch_end = last_sync.replace(hour=14, minute=0, second=0, microsecond=0)
                     
                     ov_s = max(last_sync, current_lunch_start)
-                    ov_e = min(c_out, current_lunch_end)
+                    ov_e = min(eff_c_out, current_lunch_end)
                     overlap = max(0, (ov_e - ov_s).total_seconds())
                     
                     eff_gap = max(0, raw_gap - overlap)
@@ -379,18 +381,28 @@ def performance():
                         l_inactive += eff_gap
                     
                     # Total work time (Session - Lunch Overlap of Session)
-                    # Construct lunch for the session day
                     l_start = c_in.replace(hour=13, minute=0, second=0, microsecond=0)
                     l_end = c_in.replace(hour=14, minute=0, second=0, microsecond=0)
                     
                     ov_s = max(c_in, l_start)
-                    ov_e = min(c_out, l_end)
+                    ov_e = min(eff_c_out, l_end)
                     lunch_taken = max(0, (ov_e - ov_s).total_seconds())
                     
                     last_day_stats["work"] = max(0, session_dur - lunch_taken)
                     last_day_stats["active"] = l_active
                     last_day_stats["inactive"] = l_inactive
                     last_day_stats["in"] = c_in
+                    # Show actual check out time in UI (so user knows they worked late?)
+                    # OR show clamped? User said "only this day".
+                    # Screenshot shows 07:44 PM.
+                    # If I show clamped 11:59 PM, they might be confused.
+                    # I will stick to displaying the REAL check out, but calculating stats on clamped.
+                    # BUT wait, the backend sends formatted time.
+                    # If I use c_out (real), it shows 7pm (next day).
+                    # Ideally I show proper Date if diff day.
+                    # But for now, let's keep 'out' as c_out strictly for display purposes in the modal header?
+                    # The screenshot shows the metrics being 80h.
+                    # This change fixes the METRICS.
                     last_day_stats["out"] = c_out
 
             def fmt_hms(seconds):
