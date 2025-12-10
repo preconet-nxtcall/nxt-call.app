@@ -194,74 +194,46 @@ def admin_analytics_all_users():
         # ---------- User summary (Filtered) ----------
         # Need to apply the same date filters to the user summary
         
-        summary_query = db.session.query(
-                User.id.label("user_id"),
-                User.name.label("user_name"),
+        # ---------- User summary (Filtered) ----------
+        # Need to apply the same date filters to the user summary
+        
+        # Base selection columns
+        summary_cols = [
+            User.id.label("user_id"),
+            User.name.label("user_name"),
 
-                func.coalesce(func.sum(
-                    case((func.lower(CallHistory.call_type) == "incoming", 1), else_=0)
-                ), 0).label("incoming"),
+            func.coalesce(func.sum(
+                case((func.lower(CallHistory.call_type) == "incoming", 1), else_=0)
+            ), 0).label("incoming"),
 
-                func.coalesce(func.sum(
-                    case((func.lower(CallHistory.call_type) == "outgoing", 1), else_=0)
-                ), 0).label("outgoing"),
+            func.coalesce(func.sum(
+                case((func.lower(CallHistory.call_type) == "outgoing", 1), else_=0)
+            ), 0).label("outgoing"),
 
-                func.coalesce(func.sum(
-                    case((func.lower(CallHistory.call_type) == "missed", 1), else_=0)
-                ), 0).label("missed"),
+            func.coalesce(func.sum(
+                case((func.lower(CallHistory.call_type) == "missed", 1), else_=0)
+            ), 0).label("missed"),
 
-                func.coalesce(func.sum(
-                    case((func.lower(CallHistory.call_type) == "rejected", 1), else_=0)
-                ), 0).label("rejected"),
+            func.coalesce(func.sum(
+                case((func.lower(CallHistory.call_type) == "rejected", 1), else_=0)
+            ), 0).label("rejected"),
 
-                func.coalesce(func.sum(CallHistory.duration), 0).label("total_duration_seconds"),
+            func.coalesce(func.sum(CallHistory.duration), 0).label("total_duration_seconds"),
 
-                User.last_sync.label("last_sync")
-            ).outerjoin(CallHistory, (User.id == CallHistory.user_id))
-            
-        # Apply date filter on the JOINED CallHistory rows
-        # We need to be careful: if we filter CallHistory, users with no calls in that period might drop out or show 0.
-        # Outer join + filter on the right side logic:
-        # We want ALL users, but only count calls in the period.
-        # Standard SQL way: Join on User.id = CallHistory.user_id AND CallHistory.timestamp BETWEEN ...
+            User.last_sync.label("last_sync")
+        ]
         
         if start_date:
-            # Reconstruct query to verify join condition
-             summary_query = db.session.query(
-                User.id.label("user_id"),
-                User.name.label("user_name"),
-
-                func.count(case(
-                    (func.lower(CallHistory.call_type) == "incoming", 1)
-                )).label("incoming"), 
-                
-                # Wait, sum is better for 0/1 logic, but we need to ensure we only sum valid rows
-                 func.sum(case(
-                    (func.lower(CallHistory.call_type) == "incoming", 1), else_=0
-                 )).label("incoming"),
-
-                 func.sum(case(
-                    (func.lower(CallHistory.call_type) == "outgoing", 1), else_=0
-                 )).label("outgoing"),
-
-                 func.sum(case(
-                    (func.lower(CallHistory.call_type) == "missed", 1), else_=0
-                 )).label("missed"),
-
-                 func.sum(case(
-                    (func.lower(CallHistory.call_type) == "rejected", 1), else_=0
-                 )).label("rejected"),
-
-                 func.coalesce(func.sum(CallHistory.duration), 0).label("total_duration_seconds"),
-
-                 User.last_sync.label("last_sync")
-            ).select_from(User).outerjoin(CallHistory, 
+             # If filtering by date, apply filter ON the join condition for correct outer join behavior
+             # (Users with no calls in range should still appear with 0s)
+             summary_query = db.session.query(*summary_cols).select_from(User).outerjoin(CallHistory, 
                 (User.id == CallHistory.user_id) & 
                 (CallHistory.timestamp >= start_date if start_date else True) &
                 (CallHistory.timestamp < end_date if end_date else True)
             )
         else:
-            summary_query = summary_query.select_from(User).outerjoin(CallHistory, User.id == CallHistory.user_id)
+            # No date filter, simple outer join
+            summary_query = db.session.query(*summary_cols).select_from(User).outerjoin(CallHistory, User.id == CallHistory.user_id)
 
         summary_rows = summary_query.filter(User.admin_id == admin_id)\
             .group_by(User.id)\
