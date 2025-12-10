@@ -208,7 +208,7 @@ class CallAnalyticsManager {
       // or simple window.open if using cookie auth, but here we likely need the JWT header.
       // Since window.open doesn't support custom headers easily, we'll use fetch + blob.
 
-      auth.showNotification("Generating PDF Report...", "info");
+      // auth.showNotification("Generating PDF Report...", "info");
 
       const response = await fetch(`/api/admin/call-analytics/download-report?period=${this.currentPeriod}`, {
         headers: {
