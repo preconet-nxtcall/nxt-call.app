@@ -334,7 +334,7 @@ class PerformanceManager {
       if (!userId) return;
 
       const filter = this.currentModalFilter || 'all';
-      auth.showNotification("Generating Report...", "info");
+      // auth.showNotification("Generating Report...", "info");
 
       const token = auth.getToken();
       const response = await fetch(`/api/admin/download-user-history?user_id=${userId}&filter=${filter}`, {

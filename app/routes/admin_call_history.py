@@ -256,7 +256,7 @@ def download_user_history():
             spaceAfter=5,
             textColor=colors.HexColor('#2563EB')
         )
-        elements.append(Paragraph(f"Call History: {user.name}", title_style))
+        elements.append(Paragraph("NxtCall.app", title_style))
         
         # Subtitle
         subtitle_style = ParagraphStyle(
