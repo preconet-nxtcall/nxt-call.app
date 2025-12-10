@@ -209,172 +209,80 @@ class PerformanceManager {
     try {
       const modal = document.getElementById('userCallHistoryModal');
       const title = document.getElementById('modalUserTitle');
-      const tbody = document.getElementById('modalCallHistoryBody');
-      const paginationContainer = document.getElementById('modalCallHistoryPagination');
 
-      if (!modal || !tbody) return;
-
+      if (!modal) return;
       if (title) title.textContent = userName;
 
+      // Inject the new header controls and table structure
+      modal.querySelector('.modal-content').innerHTML = `
+        <div class="flex justify-between items-center pb-4 border-b border-gray-200 mb-4">
+          <h3 id="modalUserTitle" class="text-lg font-semibold text-gray-900">${userName}</h3>
+          <button type="button" class="text-gray-400 hover:text-gray-500" onclick="document.getElementById('userCallHistoryModal').classList.add('hidden');">
+            <span class="sr-only">Close modal</span>
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+
+        <!-- Header Controls -->
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4 mt-2">
+          <!-- Filter Buttons -->
+          <div class="flex bg-gray-100 p-1 rounded-lg">
+            <button onclick="performanceManager.changeModalFilter('all')" class="modal-filter px-3 py-1.5 rounded-md text-xs font-medium ${this.currentModalFilter === 'all' ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-900'}">All</button>
+            <button onclick="performanceManager.changeModalFilter('today')" class="modal-filter px-3 py-1.5 rounded-md text-xs font-medium ${this.currentModalFilter === 'today' ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-900'}">Today</button>
+            <button onclick="performanceManager.changeModalFilter('month')" class="modal-filter px-3 py-1.5 rounded-md text-xs font-medium ${this.currentModalFilter === 'month' ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-900'}">Month</button>
+          </div>
+
+          <!-- Download Report Button -->
+          <button onclick="performanceManager.downloadModalReport()" class="flex items-center gap-2 px-3 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 text-xs font-medium transition-colors whitespace-nowrap">
+            <i class="fas fa-file-pdf"></i>
+            Download Report
+          </button>
+        </div>
+
+        <!-- Table Header -->
+        <div class="overflow-x-auto border rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Number</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                </tr>
+              </thead>
+              <tbody id="modalCallHistoryBody" class="bg-white divide-y divide-gray-200">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+        </div>
+      `;
+
       // INJECT STATS SUMMARY
-      // Check if stats container exists, if not create active/inactive info
       let statsContainer = document.getElementById('modalUserStats');
       if (!statsContainer) {
-        // Create it after title
-        const header = modal.querySelector('h3'); // Usually the title
+        const header = modal.querySelector('h3');
         if (header && header.parentNode) {
           statsContainer = document.createElement('div');
           statsContainer.id = 'modalUserStats';
-          statsContainer.className = "grid grid-cols-2 md:grid-cols-5 gap-4 mb-4 mt-2 p-3 bg-gray-50 rounded-lg text-center";
+          statsContainer.className = "grid grid-cols-2 md:grid-cols-5 gap-4 mb-3 mt-2 p-3 bg-gray-50 rounded-lg text-center";
           header.parentNode.insertBefore(statsContainer, header.nextSibling);
         }
       }
 
-      if (statsContainer && this.userStats && this.userStats[userId]) {
-        const s = this.userStats[userId];
-        const d = s.details || {};
-        statsContainer.innerHTML = `
-            <div>
-                <p class="text-xs text-gray-500 uppercase">Check In</p>
-                <p class="font-bold text-gray-900">${d.check_in || '-'}</p>
-            </div>
-            <div>
-                <p class="text-xs text-gray-500 uppercase">Check Out</p>
-                <p class="font-bold text-gray-900">${d.check_out || '-'}</p>
-            </div>
-            <div>
-                <p class="text-xs text-gray-500 uppercase">Work Time</p>
-                <p class="font-bold text-gray-900">${d.work_time || '0h'}</p>
-            </div>
-            <div>
-                <p class="text-xs text-gray-500 uppercase">Active</p>
-                <p class="font-bold text-green-600">${d.active_time || '0h'}</p>
-            </div>
-             <div>
-                <p class="text-xs text-gray-500 uppercase">Inactive</p>
-                <p class="font-bold text-red-600">${d.inactive_time || '0h'}</p>
-            </div>
-          `;
-      } else if (statsContainer) {
-        statsContainer.innerHTML = '';
-      }
+      const tbody = document.getElementById('modalCallHistoryBody');
+      if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-4 text-center text-sm text-gray-500">Loading...</td></tr>';
 
-
-      tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Loading...</td></tr>';
       modal.classList.remove('hidden');
 
-      // Reset filter on open
-      this.currentModalFilter = 'all';
       this.currentModalUser = { userId, userName };
-      this.setupModalControls(userId);
+      this.currentModalFilter = "all";
+
       await this.loadModalData(userId, userName, page);
 
     } catch (e) {
       console.error("Error viewing user call history", e);
       auth.showNotification("Error opening call history", "error");
     }
-  }
-  const modal = document.getElementById('userCallHistoryModal');
-  const title = document.getElementById('modalUserTitle');
-
-  if(!modal) return;
-
-  if(title) title.textContent = userName;
-
-    // Inject the new header controls and table structure
-    modal.querySelector('.modal-content').innerHTML = `
-      <div class="flex justify-between items-center pb-4 border-b border-gray-200 mb-4">
-        <h3 id="modalUserTitle" class="text-lg font-semibold text-gray-900">${userName}</h3>
-        <button type="button" class="text-gray-400 hover:text-gray-500" onclick="document.getElementById('userCallHistoryModal').classList.add('hidden');">
-          <span class="sr-only">Close modal</span>
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
-      </div>
-
-      <!-- Header Controls -->
-      <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4 mt-2">
-        <!-- Filter Buttons -->
-        <div class="flex bg-gray-100 p-1 rounded-lg">
-          <button onclick="performanceManager.changeModalFilter('all')" class="modal-filter px-3 py-1.5 rounded-md text-xs font-medium ${this.currentModalFilter === 'all' ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-900'}">All</button>
-          <button onclick="performanceManager.changeModalFilter('today')" class="modal-filter px-3 py-1.5 rounded-md text-xs font-medium ${this.currentModalFilter === 'today' ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-900'}">Today</button>
-          <button onclick="performanceManager.changeModalFilter('month')" class="modal-filter px-3 py-1.5 rounded-md text-xs font-medium ${this.currentModalFilter === 'month' ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-900'}">Month</button>
-        </div>
-
-        <!-- Download Report Button -->
-        <button onclick="alert('Report Download feature coming soon')" class="flex items-center gap-2 px-3 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 text-xs font-medium transition-colors whitespace-nowrap">
-          <i class="fas fa-file-pdf"></i>
-          Download Report
-        </button>
-      </div>
-
-      <!-- Table Header -->
-      <div class="overflow-x-auto border rounded-lg">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Number</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
-              </tr>
-            </thead>
-            <tbody id="modalCallHistoryBody" class="bg-white divide-y divide-gray-200">
-              <!-- Populated by JS -->
-            </tbody>
-          </table>
-      </div>
-    `;
-
-    // INJECT STATS SUMMARY
-    let statsContainer = document.getElementById('modalUserStats');
-if (!statsContainer) {
-  const header = modal.querySelector('h3');
-  if (header && header.parentNode) {
-    statsContainer = document.createElement('div');
-    statsContainer.id = 'modalUserStats';
-    statsContainer.className = "grid grid-cols-2 md:grid-cols-5 gap-4 mb-3 mt-2 p-3 bg-gray-50 rounded-lg text-center";
-    header.parentNode.insertBefore(statsContainer, header.nextSibling);
-  }
-}
-
-if (statsContainer && this.userStats && this.userStats[userId]) {
-  const s = this.userStats[userId];
-  const d = s.details || {};
-  statsContainer.innerHTML = `
-        <div>
-            <p class="text-[10px] text-gray-500 uppercase mb-0.5">Check In</p>
-            <p class="font-bold text-sm text-gray-900">${d.check_in || '-'}</p>
-        </div>
-        <div>
-            <p class="text-[10px] text-gray-500 uppercase mb-0.5">Check Out</p>
-            <p class="font-bold text-sm text-gray-900">${d.check_out || '-'}</p>
-        </div>
-         <div>
-            <p class="text-[10px] text-gray-500 uppercase mb-0.5">Work Time</p>
-            <p class="font-bold text-sm text-gray-900">${d.work_time || '0s'}</p>
-        </div>
-         <div>
-            <p class="text-[10px] text-gray-500 uppercase mb-0.5">Active</p>
-            <p class="font-bold text-sm text-green-600">${d.active_time || '0s'}</p>
-        </div>
-         <div>
-            <p class="text-[10px] text-gray-500 uppercase mb-0.5">Inactive</p>
-            <p class="font-bold text-sm text-red-600">${d.inactive_time || '0s'}</p>
-        </div>
-      `;
-} else if (statsContainer) {
-  statsContainer.innerHTML = '';
-}
-
-const tbody = document.getElementById('modalCallHistoryBody');
-if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-4 text-center text-sm text-gray-500">Loading...</td></tr>';
-
-modal.classList.remove('hidden');
-
-this.currentModalUser = { userId, userName };
-this.currentModalFilter = "all";
-
-await this.loadModalData(userId, userName, page);
   }
 
 changeModalFilter(type) {
