@@ -220,7 +220,7 @@ class PerformanceManager {
         if (header && header.parentNode) {
           statsContainer = document.createElement('div');
           statsContainer.id = 'modalUserStats';
-          statsContainer.className = "grid grid-cols-3 gap-4 mb-4 mt-2 p-3 bg-gray-50 rounded-lg text-center";
+          statsContainer.className = "grid grid-cols-2 md:grid-cols-5 gap-4 mb-4 mt-2 p-3 bg-gray-50 rounded-lg text-center";
           header.parentNode.insertBefore(statsContainer, header.nextSibling);
         }
       }
@@ -229,6 +229,14 @@ class PerformanceManager {
         const s = this.userStats[userId];
         const d = s.details || {};
         statsContainer.innerHTML = `
+            <div>
+                <p class="text-xs text-gray-500 uppercase">Check In</p>
+                <p class="font-bold text-gray-900">${d.check_in || '-'}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase">Check Out</p>
+                <p class="font-bold text-gray-900">${d.check_out || '-'}</p>
+            </div>
             <div>
                 <p class="text-xs text-gray-500 uppercase">Work Time</p>
                 <p class="font-bold text-gray-900">${d.work_time || '0h'}</p>
