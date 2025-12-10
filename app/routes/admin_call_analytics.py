@@ -1,10 +1,22 @@
 # app/routes/admin_call_analytics.py
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from sqlalchemy import func, case
 from app.models import db, User, CallHistory
 from datetime import datetime, timedelta
+import io
+
+# Optional: ReportLab for PDF
+try:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER
+    HAS_REPORTLAB = True
+except ImportError:
+    HAS_REPORTLAB = False
 
 bp = Blueprint("admin_call_analytics", __name__, url_prefix="/api/admin/call-analytics")
 
@@ -18,6 +30,8 @@ def is_admin():
 def admin_analytics_all_users():
     """
     Returns aggregated analytics for ALL users under the admin.
+    Supports filtering by period: 'today', 'month', 'all' (default).
+    NOTE: The user requested 'today' and 'monthly' filters.
     """
     if not is_admin():
         return jsonify({"error": "Admin access required"}), 403
@@ -40,39 +54,109 @@ def admin_analytics_all_users():
                 "user_summary": []
             }), 200
 
-        # ---------- Top-level totals ----------
-        # Removed inner try-except to expose errors
-        total_calls = db.session.query(func.count(CallHistory.id))\
-            .filter(CallHistory.user_id.in_(user_ids)).scalar() or 0
+        # --- DATE FILTER LOGIC ---
+        period = request.args.get("period", "all") # default all to match previous behavior if not specified
+        
+        now = datetime.utcnow()
+        today_start = datetime(now.year, now.month, now.day)
+        
+        start_date = None
+        end_date = None
 
-        incoming = db.session.query(func.count(CallHistory.id))\
-            .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "incoming").scalar() or 0
+        if period == "today":
+            start_date = today_start
+            end_date = today_start + timedelta(days=1)
+        elif period == "month":
+            # Start of current month
+            start_date = datetime(now.year, now.month, 1)
+            # Start of next month (for strictly less than comparison)
+            if now.month == 12:
+                end_date = datetime(now.year + 1, 1, 1)
+            else:
+                end_date = datetime(now.year, now.month + 1, 1)
+        
+        # If period is 'all' or unknown, we don't apply date filters to the MAIN counts if that was the original intent,
+        # BUT the task says "show only today data" etc.
+        # So we should apply filters.
+        
+        # Base query for CallHistory
+        base_query = CallHistory.query.filter(CallHistory.user_id.in_(user_ids))
+        if start_date:
+            base_query = base_query.filter(CallHistory.timestamp >= start_date)
+        if end_date:
+            base_query = base_query.filter(CallHistory.timestamp < end_date)
 
-        outgoing = db.session.query(func.count(CallHistory.id))\
-            .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "outgoing").scalar() or 0
+        # Helper to execute count queries on the filtered base
+        def get_count(filter_condition=None):
+            q = base_query
+            if filter_condition is not None:
+                q = q.filter(filter_condition)
+            return db.session.query(func.count(q.statement.columns.id)).scalar() or 0
 
-        missed = db.session.query(func.count(CallHistory.id))\
-            .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "missed").scalar() or 0
-
-        rejected = db.session.query(func.count(CallHistory.id))\
-            .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "rejected").scalar() or 0
-
-        # New Metrics
+        def get_sum(col):
+            return db.session.query(func.sum(col)).filter(
+                col.expression.left.in_(user_ids)
+            ).filter(
+                CallHistory.timestamp >= start_date if start_date else True,
+                CallHistory.timestamp < end_date if end_date else True
+            ).scalar() or 0
+            
+        # Optimization: Single aggregation query is better, but keeping style consistent with previous code for safety
+        # unless it was too slow. Previous code Aggregated independently.
+        # Let's use the base_query efficiently.
+        
+        # We can actually do one big query for the totals
+        totals = db.session.query(
+            func.count(CallHistory.id),
+            func.sum(case((func.lower(CallHistory.call_type) == "incoming", 1), else_=0)),
+            func.sum(case((func.lower(CallHistory.call_type) == "outgoing", 1), else_=0)),
+            func.sum(case((func.lower(CallHistory.call_type) == "missed", 1), else_=0)),
+            func.sum(case((func.lower(CallHistory.call_type) == "rejected", 1), else_=0)),
+            func.sum(CallHistory.duration),
+             # averages
+            func.avg(case((func.lower(CallHistory.call_type) == "incoming", CallHistory.duration), else_=None)),
+            func.avg(case((func.lower(CallHistory.call_type) == "outgoing", CallHistory.duration), else_=None)),
+            func.count(func.distinct(CallHistory.phone_number))
+        ).filter(
+            CallHistory.user_id.in_(user_ids)
+        )
+        
+        if start_date:
+            totals = totals.filter(CallHistory.timestamp >= start_date)
+        if end_date:
+            totals = totals.filter(CallHistory.timestamp < end_date)
+            
+        (
+            total_calls, 
+            incoming, 
+            outgoing, 
+            missed, 
+            rejected, 
+            total_duration,
+            avg_in_dur,
+            avg_out_dur,
+            unique_numbers
+        ) = totals.first()
+        
+        # Handle None
+        total_calls = total_calls or 0
+        incoming = int(incoming or 0)
+        outgoing = int(outgoing or 0)
+        missed = int(missed or 0)
+        rejected = int(rejected or 0)
+        total_duration = int(total_duration or 0)
+        avg_inbound_duration = float(avg_in_dur or 0)
+        avg_outbound_duration = float(avg_out_dur or 0)
+        unique_numbers = unique_numbers or 0
+        
         total_answered = incoming + outgoing
 
-        unique_numbers = db.session.query(func.count(func.distinct(CallHistory.phone_number)))\
-            .filter(CallHistory.user_id.in_(user_ids)).scalar() or 0
-
-        avg_inbound_duration = db.session.query(func.avg(CallHistory.duration))\
-            .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "incoming").scalar() or 0
-
-        avg_outbound_duration = db.session.query(func.avg(CallHistory.duration))\
-            .filter(CallHistory.user_id.in_(user_ids), func.lower(CallHistory.call_type) == "outgoing").scalar() or 0
-        
-        total_duration = db.session.query(func.sum(CallHistory.duration))\
-            .filter(CallHistory.user_id.in_(user_ids)).scalar() or 0
-
         # ---------- Daily trend (last 7 days) ----------
+        # Trend should usually show context, maybe keep it last 7 days regardless of filter?
+        # Or filter it? Usually trend charts are specific.
+        # existing logic: 7 days. Let's keep existing logic for the chart for now unless 'today' only makes sense to show activity per hour?
+        # The frontend hides the chart anyway in the provided code snippets (commented out), but let's leave it as is.
+        
         week_ago = datetime.utcnow() - timedelta(days=7)
 
         # Activity Trend (Count)
@@ -107,9 +191,10 @@ def admin_analytics_all_users():
                 "duration": data["duration"]
             })
 
-        # ---------- User summary ----------
-        summary_rows = (
-            db.session.query(
+        # ---------- User summary (Filtered) ----------
+        # Need to apply the same date filters to the user summary
+        
+        summary_query = db.session.query(
                 User.id.label("user_id"),
                 User.name.label("user_name"),
 
@@ -132,23 +217,66 @@ def admin_analytics_all_users():
                 func.coalesce(func.sum(CallHistory.duration), 0).label("total_duration_seconds"),
 
                 User.last_sync.label("last_sync")
+            ).outerjoin(CallHistory, (User.id == CallHistory.user_id))
+            
+        # Apply date filter on the JOINED CallHistory rows
+        # We need to be careful: if we filter CallHistory, users with no calls in that period might drop out or show 0.
+        # Outer join + filter on the right side logic:
+        # We want ALL users, but only count calls in the period.
+        # Standard SQL way: Join on User.id = CallHistory.user_id AND CallHistory.timestamp BETWEEN ...
+        
+        if start_date:
+            # Reconstruct query to verify join condition
+             summary_query = db.session.query(
+                User.id.label("user_id"),
+                User.name.label("user_name"),
+
+                func.count(case(
+                    (func.lower(CallHistory.call_type) == "incoming", 1)
+                )).label("incoming"), 
+                
+                # Wait, sum is better for 0/1 logic, but we need to ensure we only sum valid rows
+                 func.sum(case(
+                    (func.lower(CallHistory.call_type) == "incoming", 1), else_=0
+                 )).label("incoming"),
+
+                 func.sum(case(
+                    (func.lower(CallHistory.call_type) == "outgoing", 1), else_=0
+                 )).label("outgoing"),
+
+                 func.sum(case(
+                    (func.lower(CallHistory.call_type) == "missed", 1), else_=0
+                 )).label("missed"),
+
+                 func.sum(case(
+                    (func.lower(CallHistory.call_type) == "rejected", 1), else_=0
+                 )).label("rejected"),
+
+                 func.coalesce(func.sum(CallHistory.duration), 0).label("total_duration_seconds"),
+
+                 User.last_sync.label("last_sync")
+            ).select_from(User).outerjoin(CallHistory, 
+                (User.id == CallHistory.user_id) & 
+                (CallHistory.timestamp >= start_date if start_date else True) &
+                (CallHistory.timestamp < end_date if end_date else True)
             )
-            .outerjoin(CallHistory, User.id == CallHistory.user_id)
-            .filter(User.admin_id == admin_id)
-            .group_by(User.id)
-            .order_by(User.name)
+        else:
+            summary_query = summary_query.select_from(User).outerjoin(CallHistory, User.id == CallHistory.user_id)
+
+        summary_rows = summary_query.filter(User.admin_id == admin_id)\
+            .group_by(User.id)\
+            .order_by(User.name)\
             .all()
-        )
 
         user_summary = []
         for r in summary_rows:
             user_summary.append({
                 "user_id": int(r.user_id),
                 "user_name": r.user_name,
-                "incoming": int(r.incoming),
-                "outgoing": int(r.outgoing),
-                "missed": int(r.missed),
-                "rejected": int(r.rejected),
+                "incoming": int(r.incoming or 0),
+                "outgoing": int(r.outgoing or 0),
+                "missed": int(r.missed or 0),
+                "rejected": int(r.rejected or 0),
                 "total_duration_seconds": int(r.total_duration_seconds or 0),
                 "last_sync": r.last_sync.isoformat() if r.last_sync else None
             })
@@ -167,10 +295,167 @@ def admin_analytics_all_users():
             "avg_outbound_duration": int(avg_outbound_duration),
             "daily_trend": daily_trend,
             "duration_trend": duration_trend,
-            "user_summary": user_summary
+            "user_summary": user_summary,
+            "period": period
         }), 200
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 400
+
+
+@bp.route("/download-report", methods=["GET"])
+@jwt_required()
+def download_analytics_report():
+    """
+    Generates and downloads a PDF report for the filtered data.
+    """
+    if not is_admin():
+        return jsonify({"error": "Admin access required"}), 403
+    
+    if not HAS_REPORTLAB:
+        return jsonify({"error": "PDF generation library (reportlab) not installed on server."}), 500
+
+    try:
+        admin_id = int(get_jwt_identity())
+        
+        # --- 1. Fetch Data (Same logic as analytics endpoint effectively) ---
+        period = request.args.get("period", "all")
+        
+        now = datetime.utcnow()
+        today_start = datetime(now.year, now.month, now.day)
+        start_date = None
+        end_date = None
+        period_label = "All Time"
+
+        if period == "today":
+            start_date = today_start
+            end_date = today_start + timedelta(days=1)
+            period_label = f"Today ({now.strftime('%d %b %Y')})"
+        elif period == "month":
+            start_date = datetime(now.year, now.month, 1)
+            if now.month == 12:
+                end_date = datetime(now.year + 1, 1, 1)
+            else:
+                end_date = datetime(now.year, now.month + 1, 1)
+            period_label = f"Monthly ({now.strftime('%B %Y')})"
+            
+        # Query User Summary
+        summary_query = db.session.query(
+                User.id,
+                User.name,
+                func.sum(case((func.lower(CallHistory.call_type) == "incoming", 1), else_=0)).label("incoming"),
+                func.sum(case((func.lower(CallHistory.call_type) == "outgoing", 1), else_=0)).label("outgoing"),
+                func.sum(case((func.lower(CallHistory.call_type) == "missed", 1), else_=0)).label("missed"),
+                func.sum(case((func.lower(CallHistory.call_type) == "rejected", 1), else_=0)).label("rejected"),
+                func.coalesce(func.sum(CallHistory.duration), 0).label("total_duration"),
+                User.last_sync
+            ).select_from(User).outerjoin(CallHistory, 
+                (User.id == CallHistory.user_id) & 
+                (CallHistory.timestamp >= start_date if start_date else True) &
+                (CallHistory.timestamp < end_date if end_date else True)
+            )
+
+        summary_rows = summary_query.filter(User.admin_id == admin_id)\
+            .group_by(User.id)\
+            .order_by(User.name)\
+            .all()
+
+        # --- 2. Generate PDF ---
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        elements = []
+        styles = getSampleStyleSheet()
+        
+        # Title
+        title_style = ParagraphStyle(
+            'TitleStyle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            alignment=TA_CENTER,
+            spaceAfter=10,
+            textColor=colors.HexColor('#2563EB')
+        )
+        elements.append(Paragraph("NxtCall.app", title_style))
+        
+        # Subtitle
+        subtitle_style = ParagraphStyle(
+            'SubtitleStyle',
+            parent=styles['Heading2'],
+            fontSize=14,
+            alignment=TA_CENTER,
+            spaceAfter=30,
+            textColor=colors.gray
+        )
+        elements.append(Paragraph(f"User Performance Report - {period_label}", subtitle_style))
+
+        # Table Data
+        # Headers
+        table_data = [[
+            "User", "Incoming", "Outgoing", "Missed", "Rejected", "Duration", "Last Sync"
+        ]]
+        
+        def fmt_dur(seconds):
+            if not seconds: return "0s"
+            h = seconds // 3600
+            m = (seconds % 3600) // 60
+            s = seconds % 60
+            parts = []
+            if h: parts.append(f"{h}h")
+            if m: parts.append(f"{m}m")
+            if s: parts.append(f"{s}s")
+            return " ".join(parts[:2]) if len(parts) > 2 else " ".join(parts)
+
+        for r in summary_rows:
+            last_sync_str = r.last_sync.strftime('%Y-%m-%d') if r.last_sync else "Never"
+            table_data.append([
+                r.name,
+                str(int(r.incoming or 0)),
+                str(int(r.outgoing or 0)),
+                str(int(r.missed or 0)),
+                str(int(r.rejected or 0)),
+                fmt_dur(int(r.total_duration or 0)),
+                last_sync_str
+            ])
+
+        if len(table_data) == 1:
+            elements.append(Paragraph("No data available for this period.", styles['Normal']))
+        else:
+            # Table Style
+            t = Table(table_data)
+            t.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#F3F4F6')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                 # Align name left
+                ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#E5E7EB')),
+                ('FONTSIZE', (0, 1), (-1, -1), 9),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F9FAFB')])
+            ]))
+            elements.append(t)
+        
+        # Build
+        doc.build(elements)
+        buffer.seek(0)
+        
+        filename = f"NxtCall_Report_{period}_{datetime.now().strftime('%Y%m%d')}.pdf"
+        
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/pdf'
+        )
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 400
 
 
@@ -202,8 +487,13 @@ def admin_analytics_single_user(user_id):
             start_dt = datetime(now.year, now.month, now.day) - timedelta(days=7)
             end_dt = datetime(now.year, now.month, now.day) + timedelta(days=1)
         elif period == "month":
-            start_dt = datetime(now.year, now.month, now.day) - timedelta(days=30)
-            end_dt = datetime(now.year, now.month, now.day) + timedelta(days=1)
+            start_dt = datetime(now.year, now.month, 1)
+            # Logic to get next month start safely
+            if now.month == 12:
+                next_month = datetime(now.year + 1, 1, 1)
+            else:
+                next_month = datetime(now.year, now.month + 1, 1)
+            end_dt = next_month
         elif period == "all":
             start_dt = datetime.min
             end_dt = datetime.max

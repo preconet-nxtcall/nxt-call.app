@@ -2,12 +2,13 @@ class CallAnalyticsManager {
 
   constructor() {
     this.data = null;
+    this.currentPeriod = 'all'; // Default to all as requested
   }
 
   async loadAnalytics() {
     try {
       const resp = await auth.makeAuthenticatedRequest(
-        "/api/admin/call-analytics"
+        `/api/admin/call-analytics?period=${this.currentPeriod}`
       );
 
       if (!resp.ok) {
@@ -22,13 +23,15 @@ class CallAnalyticsManager {
       // Charts removed as per request
       // this.renderCharts();
 
-      // Also load the user summary table if needed
+      // Ensure user_summary is populated from the main response
       if (this.data.user_summary) {
         this.renderTable();
       } else {
-        await this.loadUserSummary();
+        // Fallback if structure is different
         this.renderTable();
       }
+
+      this.updateFilterUI();
 
     } catch (e) {
       console.error(e);
@@ -36,10 +39,42 @@ class CallAnalyticsManager {
     }
   }
 
+  updateFilterUI() {
+    // Improve button styles
+    const btnAll = document.getElementById('perf-filter-all');
+    const btnToday = document.getElementById('perf-filter-today');
+    const btnMonth = document.getElementById('perf-filter-month');
+
+    // Helper to reset classes
+    const setInactive = (btn) => {
+      if (!btn) return;
+      btn.classList.remove('bg-gray-100', 'text-gray-900', 'active');
+      btn.classList.add('text-gray-500');
+    };
+
+    const setActive = (btn) => {
+      if (!btn) return;
+      btn.classList.add('bg-gray-100', 'text-gray-900', 'active');
+      btn.classList.remove('text-gray-500');
+    };
+
+    if (btnAll && btnToday && btnMonth) {
+      // Reset all
+      setInactive(btnAll);
+      setInactive(btnToday);
+      setInactive(btnMonth);
+
+      // Activate current
+      if (this.currentPeriod === 'all') setActive(btnAll);
+      else if (this.currentPeriod === 'today') setActive(btnToday);
+      else if (this.currentPeriod === 'month') setActive(btnMonth);
+    }
+  }
+
   updateKPICards() {
     if (!this.data) return;
 
-    // API returns flat structure, not nested 'kpis'
+    // API returns flat structure
     const kpis = this.data;
 
     // Helper to safely set text content
@@ -75,28 +110,6 @@ class CallAnalyticsManager {
     setText("analytics-avg-inbound", this.formatDuration(kpis.avg_inbound_duration || 0));
   }
 
-  async loadUserSummary() {
-    try {
-      const resp = await auth.makeAuthenticatedRequest(
-        "/api/admin/call-analytics/users"
-      );
-
-      if (!resp.ok) {
-        console.warn("Could not load user summary, using existing data");
-        return;
-      }
-
-      const data = await resp.json();
-      // Update user summary from the separate endpoint
-      if (data.users && Array.isArray(data.users)) {
-        this.data.user_summary = data.users;
-      }
-    } catch (e) {
-      console.warn("Failed to load user summary:", e);
-      // Continue with existing data if available
-    }
-  }
-
   renderTable() {
     const container = document.getElementById("call-analytics-table-container");
     if (!container) return;
@@ -104,49 +117,49 @@ class CallAnalyticsManager {
     const rows = this.data?.user_summary || [];
 
     container.innerHTML = `
-      <div class="bg-white rounded-lg shadow overflow-hidden">
+      <div class="bg-white overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-gray-50">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">User</th>
-                <th class="px-6 py-3 text-center text-xs font-bold text-black uppercase tracking-wider">Incoming</th>
-                <th class="px-6 py-3 text-center text-xs font-bold text-black uppercase tracking-wider">Outgoing</th>
-                <th class="px-6 py-3 text-center text-xs font-bold text-black uppercase tracking-wider">Missed</th>
-                <th class="px-6 py-3 text-center text-xs font-bold text-black uppercase tracking-wider">Rejected</th>
-                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">Total Duration</th>
-                <th class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">Last Sync</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">User</th>
+                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Incoming</th>
+                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Outgoing</th>
+                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Missed</th>
+                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Rejected</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Total Duration</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Last Sync</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
               ${rows.length
         ? rows.map(row => `
                     <tr class="hover:bg-gray-50 transition-colors">
-                      <td class="p-3 text-sm font-medium text-gray-900">${row.name || row.user_name || "-"}</td>
+                      <td class="p-3 px-6 text-sm font-medium text-gray-900">${row.name || row.user_name || "-"}</td>
                       <td class="p-3 text-sm text-center">
-                        <span class="inline-block px-2 py-1 rounded bg-green-100 text-green-800 font-medium">
+                        <span class="inline-block px-2 py-1 rounded bg-green-100 text-green-800 font-medium min-w-[30px]">
                           ${row.incoming || 0}
                         </span>
                       </td>
                       <td class="p-3 text-sm text-center">
-                        <span class="inline-block px-2 py-1 rounded bg-purple-100 text-purple-800 font-medium">
+                        <span class="inline-block px-2 py-1 rounded bg-purple-100 text-purple-800 font-medium min-w-[30px]">
                           ${row.outgoing || 0}
                         </span>
                       </td>
                       <td class="p-3 text-sm text-center">
-                        <span class="inline-block px-2 py-1 rounded bg-red-100 text-red-800 font-medium">
+                        <span class="inline-block px-2 py-1 rounded bg-red-100 text-red-800 font-medium min-w-[30px]">
                           ${row.missed || 0}
                         </span>
                       </td>
                       <td class="p-3 text-sm text-center">
-                        <span class="inline-block px-2 py-1 rounded bg-orange-100 text-orange-800 font-medium">
+                        <span class="inline-block px-2 py-1 rounded bg-orange-100 text-orange-800 font-medium min-w-[30px]">
                           ${row.rejected || 0}
                         </span>
                       </td>
-                      <td class="p-3 text-sm text-gray-600">
+                      <td class="p-3 px-6 text-sm text-gray-600">
                         ${this.formatDuration(row.total_duration_seconds || 0)}
                       </td>
-                      <td class="p-3 text-sm text-gray-500">
+                      <td class="p-3 px-6 text-sm text-gray-500">
                         ${row.last_sync ? new Date(row.last_sync).toLocaleDateString() : 'Never'}
                       </td>
                     </tr>
@@ -154,8 +167,8 @@ class CallAnalyticsManager {
         : `
                     <tr>
                       <td colspan="7" class="p-6 text-center text-gray-500">
-                        <i class="fas fa-users-slash text-3xl mb-2 text-gray-300"></i>
-                        <div>No user data available</div>
+                        <i class="fas fa-filter text-3xl mb-2 text-gray-300"></i>
+                        <div>No user data available for this period</div>
                       </td>
                     </tr>
                   `
@@ -182,15 +195,71 @@ class CallAnalyticsManager {
     return parts.join(" ");
   }
 
-  // Optional: Add refresh functionality
-  async refresh() {
-    await this.loadAnalytics();
-    auth.showNotification("Analytics refreshed", "success");
+  setPeriod(period) {
+    if (this.currentPeriod === period) return;
+    this.currentPeriod = period;
+    this.loadAnalytics(); // Reload data
   }
 
-  // Optional: Initialize with auto-refresh
+  async downloadReport() {
+    try {
+      const token = localStorage.getItem('access_token');
+      // Use fetch with blob to handle file download properly with auth headers if needed, 
+      // or simple window.open if using cookie auth, but here we likely need the JWT header.
+      // Since window.open doesn't support custom headers easily, we'll use fetch + blob.
+
+      auth.showNotification("Generating PDF Report...", "info");
+
+      const response = await fetch(`/api/admin/call-analytics/download-report?period=${this.currentPeriod}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate report");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      // Filename is usually in Content-Disposition header, but we can set a default
+      a.download = `NxtCall_Report_${this.currentPeriod}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      auth.showNotification("Report downloaded successfully", "success");
+
+    } catch (e) {
+      console.error(e);
+      auth.showNotification("Failed to download report", "error");
+    }
+  }
+
   init() {
     this.loadAnalytics();
+
+    // Bind Events
+    const btnAll = document.getElementById('perf-filter-all');
+    const btnToday = document.getElementById('perf-filter-today');
+    const btnMonth = document.getElementById('perf-filter-month');
+    const btnDownload = document.getElementById('btnDownloadReport');
+
+    if (btnAll) {
+      btnAll.addEventListener('click', () => this.setPeriod('all'));
+    }
+    if (btnToday) {
+      btnToday.addEventListener('click', () => this.setPeriod('today'));
+    }
+    if (btnMonth) {
+      btnMonth.addEventListener('click', () => this.setPeriod('month'));
+    }
+    if (btnDownload) {
+      btnDownload.addEventListener('click', () => this.downloadReport());
+    }
+
     // Auto-refresh every 60 seconds
     setInterval(() => this.loadAnalytics(), 60000);
   }
