@@ -281,7 +281,7 @@ class PerformanceManager {
 
     } catch (e) {
       console.error("Error viewing user call history", e);
-      auth.showNotification("Error opening call history", "error");
+      auth.showNotification(`Error opening details: ${e.message}`, "error");
     }
   }
 
