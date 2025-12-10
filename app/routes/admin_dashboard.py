@@ -142,36 +142,32 @@ def user_logs():
 
         admin_id = int(get_jwt_identity())
 
-        # Get all users for this admin
-        users = User.query.filter_by(admin_id=admin_id).all()
-        
+        # Define "today" in UTC
+        now_utc = datetime.utcnow()
+        today_start = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        # Fetch TODAY's attendance events only
+        logs_query = db.session.query(Attendance, User).join(User).filter(
+            User.admin_id == admin_id,
+            Attendance.check_in >= today_start  # Only today's records
+        ).order_by(Attendance.created_at.desc()).limit(10).all()
+
         logs = []
-        for user in users:
-            # Get latest attendance
-            last_attendance = (
-                Attendance.query.filter_by(user_id=user.id)
-                .order_by(Attendance.check_in.desc())
-                .first()
-            )
-            
-            check_in_time = iso(last_attendance.check_in) if last_attendance else "Never"
-            status = "Active" if user.is_active else "Inactive"
-            
+        for att, user in logs_query:
+            # Determine status based on check-in/check-out
+            if att.check_in and not att.check_out:
+                status = "Active"
+                is_active = True
+            else:
+                status = "Inactive"
+                is_active = False
+                
             logs.append({
                 "user_name": user.name,
                 "action": f"Status: {status}",
-                "timestamp": check_in_time,
-                "is_active": user.is_active
+                "timestamp": iso(att.check_in),
+                "is_active": is_active
             })
-
-        # Sort by latest check-in (optional, but good for 'recent' activity)
-        # We can sort by timestamp, handling "Never"
-        def sort_key(x):
-            if x["timestamp"] == "Never":
-                return ""
-            return x["timestamp"]
-            
-        logs.sort(key=sort_key, reverse=True)
 
         return jsonify({
             "logs": logs

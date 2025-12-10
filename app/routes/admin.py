@@ -751,21 +751,35 @@ def user_logs():
 
     admin_id = int(get_jwt_identity())
 
-    # Fetch recent attendance events as "logs"
-    # Join User to filter by admin_id
+    # Define "today" in UTC
+    now_utc = datetime.utcnow()
+    today_start = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # Fetch TODAY's attendance events only
     logs = db.session.query(Attendance, User).join(User).filter(
-        User.admin_id == admin_id
+        User.admin_id == admin_id,
+        Attendance.check_in >= today_start  # Only today's records
     ).order_by(Attendance.created_at.desc()).limit(10).all()
 
     data = []
     for att, user in logs:
+        # Determine status based on check-in/check-out
+        # If checked in but NOT checked out -> Active
+        # If checked out -> Inactive
+        if att.check_in and not att.check_out:
+            status = "Active"
+            is_active = True
+        else:
+            status = "Inactive"
+            is_active = False
+            
         data.append({
             "id": att.id,
             "user_name": user.name,
-            "action": f"Checked {att.status}", # "Checked in" or "Checked out"
-            "timestamp": iso(att.created_at),
+            "action": f"Status: {status}",
+            "timestamp": iso(att.check_in),  # Show check-in time
             "type": "attendance",
-            "is_active": is_online(user.last_sync)
+            "is_active": is_active
         })
 
     return jsonify({"logs": data}), 200
