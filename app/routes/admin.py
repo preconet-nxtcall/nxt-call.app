@@ -783,7 +783,15 @@ def user_logs():
         import traceback
         traceback.print_exc()
         current_app.logger.error(f"User Logs Error: {e}")
-        return jsonify({"error": str(e)}), 500
+        # Return 200 OK with a special log entry so the dashboard doesn't crash
+        # and the user sees WHY there is no data.
+        error_log = [{
+            "user_name": "System Alert",
+            "action": "Database Error: Run 'flask db upgrade'",
+            "timestamp": iso(datetime.now(timezone.utc)),
+            "is_active": False
+        }]
+        return jsonify({"logs": error_log}), 200
 
 
 # =========================================================
