@@ -218,9 +218,24 @@ def login():
         if callable(getattr(admin, "is_expired", None)) and admin.is_expired():
             return jsonify({"error": "Account expired"}), 403
 
-        # Update last login
+
         admin.last_login = datetime.now(timezone.utc)
         db.session.commit()
+
+        # LOGGING (Added for Recent Activity)
+        try:
+            log = ActivityLog(
+                actor_role=UserRole.ADMIN,
+                actor_id=admin.id,
+                action="Logged in",  # Simple action text
+                target_type="admin",
+                target_id=admin.id
+            )
+            db.session.add(log)
+            db.session.commit()
+        except Exception as log_error:
+            # Don't fail the login if logging fails
+            current_app.logger.warning(f"Failed to log admin login: {log_error}")
 
         token = create_access_token(
             identity=str(admin.id),
@@ -395,12 +410,36 @@ def get_users():
             if score is None or score == 0:
                 score = calculate_performance_for_user(u.id)
 
+            # Determine "Online Status" based on TODAY'S attendance
+            # 1. Get today's attendance record for this user
+            today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+            
+            todays_attendance = (
+               Attendance.query.filter(
+                   Attendance.user_id == u.id, 
+                   Attendance.check_in >= today_start
+               )
+               .order_by(Attendance.check_in.desc())
+               .first()
+            )
+
+            # 2. Logic:
+            # - If checked_in but NOT checked_out -> "Active"
+            # - If checked_out -> "Inactive"
+            # - If no record -> "Inactive"
+            
+            attendance_status = "Inactive"
+            if todays_attendance:
+                if todays_attendance.check_in and not todays_attendance.check_out:
+                    attendance_status = "Active"
+                
             return {
                 "id": u.id,
                 "name": u.name,
                 "email": u.email,
                 "phone": u.phone,
-                "is_active": u.is_active,
+                "is_active": u.is_active, # Account status
+                "attendance_status": attendance_status, # Today's Check-in status
                 "performance_score": score,
                 "created_at": iso(getattr(u, "created_at", None)),
                 "last_login": iso(getattr(u, "last_login", None)),
@@ -712,24 +751,33 @@ def user_logs():
 
     admin_id = int(get_jwt_identity())
 
-    # Fetch recent attendance events as "logs"
-    # Join User to filter by admin_id
-    logs = db.session.query(Attendance, User).join(User).filter(
-        User.admin_id == admin_id
-    ).order_by(Attendance.created_at.desc()).limit(10).all()
+    # Define "today" in UTC
+    now_utc = datetime.utcnow()
+    today_start = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    data = []
-    for att, user in logs:
-        data.append({
-            "id": att.id,
-            "user_name": user.name,
-            "action": f"Checked {att.status}", # "Checked in" or "Checked out"
-            "timestamp": iso(att.created_at),
-            "type": "attendance",
-            "is_active": is_online(user.last_sync)
+    # Query ActivityLog for THIS admin, TODAY, filtering for "Logged in"
+    activities = (
+        ActivityLog.query
+        .filter(
+            ActivityLog.actor_id == admin_id,
+            ActivityLog.actor_role == UserRole.ADMIN,
+            ActivityLog.timestamp >= today_start,
+            ActivityLog.action.ilike("%Logged in%")
+        )
+        .order_by(ActivityLog.timestamp.desc())
+        .all()
+    )
+
+    logs = []
+    for act in activities:
+            logs.append({
+            "user_name": "You (Admin)",
+            "action": act.action,
+            "timestamp": iso(act.timestamp),
+            "is_active": True
         })
 
-    return jsonify({"logs": data}), 200
+    return jsonify({"logs": logs}), 200
 
 
 # =========================================================

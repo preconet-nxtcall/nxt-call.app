@@ -142,36 +142,34 @@ def user_logs():
 
         admin_id = int(get_jwt_identity())
 
-        # Get all users for this admin
-        users = User.query.filter_by(admin_id=admin_id).all()
-        
-        logs = []
-        for user in users:
-            # Get latest attendance
-            last_attendance = (
-                Attendance.query.filter_by(user_id=user.id)
-                .order_by(Attendance.check_in.desc())
-                .first()
-            )
-            
-            check_in_time = iso(last_attendance.check_in) if last_attendance else "Never"
-            status = "Active" if user.is_active else "Inactive"
-            
-            logs.append({
-                "user_name": user.name,
-                "action": f"Status: {status}",
-                "timestamp": check_in_time,
-                "is_active": user.is_active
-            })
+        # Define "today" in UTC
+        now_utc = datetime.utcnow()
+        today_start = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
 
-        # Sort by latest check-in (optional, but good for 'recent' activity)
-        # We can sort by timestamp, handling "Never"
-        def sort_key(x):
-            if x["timestamp"] == "Never":
-                return ""
-            return x["timestamp"]
-            
-        logs.sort(key=sort_key, reverse=True)
+        # Query ActivityLog for THIS admin, TODAY, filtering for "Logged in"
+        # We want to show "Recent Activity" -> Admin Login Data (Today)
+        # Filter: actor_id == admin_id, actor_role == ADMIN, timestamp >= today_start
+        
+        activities = (
+            ActivityLog.query
+            .filter(
+                ActivityLog.actor_id == admin_id,
+                ActivityLog.actor_role == UserRole.ADMIN,
+                ActivityLog.timestamp >= today_start,
+                ActivityLog.action.ilike("%Logged in%")
+            )
+            .order_by(ActivityLog.timestamp.desc())
+            .all()
+        )
+
+        logs = []
+        for act in activities:
+             logs.append({
+                "user_name": "You (Admin)", # Or fetch admin name if needed
+                "action": act.action,
+                "timestamp": iso(act.timestamp),
+                "is_active": True # Admin is active if they are logging in
+            })
 
         return jsonify({
             "logs": logs

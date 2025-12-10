@@ -127,15 +127,13 @@ class DashboardManager {
         <div class="p-4 rounded border bg-white hover:bg-gray-50 transition-colors">
           <div class="flex justify-between items-center">
             <div class="flex items-center gap-3">
-              <div class="w-2 h-2 rounded-full ${l.is_active ? 'bg-green-500' : 'bg-red-500'}"></div>
+              <div class="w-2 h-2 rounded-full ${l.is_active ? 'bg-green-500' : 'bg-gray-400'}"></div>
               <div>
-                <div class="font-medium text-gray-900">${l.user_name || 'Unknown'}</div>
-                <div class="text-xs text-gray-500">Last Check-in: ${l.timestamp !== 'Never' ? window.formatDateTime(l.timestamp) : 'Never'}</div>
+                <div class="font-medium text-gray-900">${l.action || 'Activity'}</div>
+                <div class="text-xs text-gray-500">${l.timestamp !== 'Never' ? window.formatDateTime(l.timestamp) : 'Never'}</div>
               </div>
             </div>
-            <div class="text-xs font-medium px-2 py-1 rounded-full ${l.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
-              ${l.is_active ? 'Active' : 'Inactive'}
-            </div>
+            
           </div>
         </div>
       `).join('');
