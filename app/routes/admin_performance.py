@@ -5,7 +5,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import func, and_, or_, case
 from datetime import datetime, timedelta
 
-from app.models import db, CallHistory, User, Admin
+from app.models import db, CallHistory, User, Admin, Attendance
 
 bp = Blueprint("admin_performance", __name__, url_prefix="/api/admin")
 
@@ -48,98 +48,298 @@ def performance():
         if not admin:
             return jsonify({"error": "Unauthorized"}), 401
 
-        # Load filter
+        # Load filter (start_dt, end_dt)
         filter_type = request.args.get("filter", "today")
         start_dt, end_dt = get_date_range(filter_type)
         
         # User Filter
         user_id_param = request.args.get("user_id", "all")
 
-        # CASE expressions (Standardized Syntax: Positional Args)
-        incoming_case = case((func.lower(CallHistory.call_type) == "incoming", 1), else_=0)
-        outgoing_case = case((func.lower(CallHistory.call_type) == "outgoing", 1), else_=0)
-        missed_case = case((func.lower(CallHistory.call_type) == "missed", 1), else_=0)
-        rejected_case = case((func.lower(CallHistory.call_type) == "rejected", 1), else_=0)
-
-        # Base query with Date Filter in OUTER JOIN
-        # This ensures we keep users even if they have no calls in the date range
-        query = db.session.query(
-            User.id,
-            User.name,
-            func.count(CallHistory.id).label("total_calls"),
-            func.sum(CallHistory.duration).label("total_duration"),
-            func.sum(incoming_case).label("incoming"),
-            func.sum(outgoing_case).label("outgoing"),
-            func.sum(missed_case).label("missed"),
-            func.sum(rejected_case).label("rejected"),
-        ).outerjoin(
-            CallHistory, 
-            and_(
-                CallHistory.user_id == User.id,
-                CallHistory.timestamp >= start_dt,
-                CallHistory.timestamp < end_dt
-            )
-        )
-
-        # Apply Admin Filter
-        filters = [User.admin_id == admin_id]
-
-        # Apply User Filter
+        # Base user query
+        user_query = User.query.filter(User.admin_id == admin_id)
         if user_id_param and user_id_param != "all":
             try:
-                uid = int(user_id_param)
-                filters.append(User.id == uid)
-            except ValueError:
-                pass # Ignore invalid user_id
-
-        # Execute Query
-        user_data = (
-            query.filter(*filters)
-            .group_by(User.id)
-            .all()
-        )
-
-        # Format response
+                user_query = user_query.filter(User.id == int(user_id_param))
+            except:
+                pass
+        
+        users = user_query.all()
         users_list = []
-        for u in user_data:
+
+        # Helper to check if time is in lunch (13:00 - 14:00)
+        def is_lunch_time(dt):
+            return dt.hour == 13
+
+        for user in users:
+            # 1. Fetch Attendance (to define work sessions)
+            # We assume one main session per day for simplicity or take min(check_in) and max(check_out)
+            # Filtering by range
+            attendances = Attendance.query.filter(
+                Attendance.user_id == user.id,
+                Attendance.check_in >= start_dt,
+                Attendance.check_in < end_dt
+            ).all()
+
+            # 2. Fetch Call History
+            calls = CallHistory.query.filter(
+                CallHistory.user_id == user.id,
+                CallHistory.timestamp >= start_dt,
+                CallHistory.timestamp < end_dt
+            ).order_by(CallHistory.timestamp.asc()).all()
+
+            # Group by Date (YYYY-MM-DD)
+            daily_data = {}
+
+            # Process Attendance to get CheckIn/CheckOut per day
+            for att in attendances:
+                d_str = att.check_in.date().isoformat()
+                if d_str not in daily_data:
+                    daily_data[d_str] = {"check_in": att.check_in, "check_out": att.check_out, "calls": []}
+                else:
+                    # Update min check_in and max check_out if multiple records exist
+                    if att.check_in < daily_data[d_str]["check_in"]:
+                        daily_data[d_str]["check_in"] = att.check_in
+                    
+                    # Handle check_out selection
+                    # If existing is None, keep it None (or update?)
+                    # If this one is None (currently working?), keep None?
+                    # Let's try to find the latest valid check_out
+                    current_co = daily_data[d_str]["check_out"]
+                    if att.check_out:
+                         if current_co is None or att.check_out > current_co:
+                             daily_data[d_str]["check_out"] = att.check_out
+            
+            # Map calls to days
+            for call in calls:
+                d_str = call.timestamp.date().isoformat()
+                if d_str in daily_data:
+                    daily_data[d_str]["calls"].append(call)
+                # Note: calls on days without attendance are effectively ignored for "performance" as per rules? 
+                # "No performance calculation... Before check-in". 
+                # So we only care if there is attendance.
+
+            # Calculate Stats
+            total_active_sec = 0.0
+            total_inactive_sec = 0.0
+            total_work_sec = 0.0
+            
+            # Keep track of detailed counts for table
+            incoming = 0
+            outgoing = 0
+            missed = 0
+            rejected = 0
+            total_calls = 0
+
+            for d_str, day_info in daily_data.items():
+                c_in = day_info["check_in"]
+                c_out = day_info["check_out"]
+                
+                # If currently working (no check_out), assume NOW (if today)
+                if c_out is None:
+                    if d_str == datetime.utcnow().date().isoformat():
+                        c_out = datetime.utcnow()
+                    else:
+                        # Forgot to checkout previous day? 
+                        # We could ignore, or assume end of day? 
+                        # Let's skip calculation or assume 1 hour of work? 
+                        # Safe fallback: assume inactive if forgot.
+                        continue 
+
+                # Total Work Time = (Out - In) - 1 Hour (Lunch)
+                session_dur = (c_out - c_in).total_seconds()
+                work_dur = max(0, session_dur - 3600)
+                total_work_sec += work_dur
+
+                # GAP CALCULATION
+                last_sync_time = c_in
+                day_calls = day_info["calls"]
+                
+                # Add counts
+                for c in day_calls:
+                    total_calls += 1
+                    ct = c.call_type.lower()
+                    if ct == 'incoming': incoming += 1
+                    elif ct == 'outgoing': outgoing += 1
+                    elif ct == 'missed': missed += 1
+                    elif ct == 'rejected': rejected += 1
+
+                # Sort calls? They are query ordered, but careful if appended differently
+                # They are from sorted query.
+
+                for call in day_calls:
+                    curr_time = call.timestamp
+                    
+                    # 1. Check bounds
+                    if curr_time < c_in: continue # Before check-in
+                    if curr_time > c_out: continue # After check-out
+                    
+                    # 2. Check Lunch (13:00 - 14:00)
+                    # Simple hour check
+                    if is_lunch_time(curr_time):
+                        # Inside lunch: Ignore gap, update last sync
+                        last_sync_time = curr_time
+                        continue
+                    
+                    # 3. Calculate Gap
+                    # Ensure last_sync_time is also not in lunch? 
+                    # If last_sync was 12:50 and curr is 14:10. Gap is 1h 20m.
+                    # Lunch is 13-14. 
+                    # Pure Gap = 80 mins. 
+                    # Subtract Lunch overlap?
+                    # The instruction says: "If sync event occurs inside lunch... DO NOT UPDATE ACTIVITY".
+                    # It implies gaps spanning over lunch might be tricky.
+                    # "No performance calculations are allowed during 1 PM - 2 PM".
+                    # Let's strictly block 1-2.
+                    # If last_sync < 13:00 and curr > 14:00.
+                    # We should subtract 60 mins from gap?
+                    
+                    # Simplified logic based on "Classify each gap... gap = curr - last"
+                    # If strictly adhering to "No calc during lunch", we can clamp timestamps.
+                    
+                    # Workable approach:
+                    # Calculate raw gap.
+                    # If gap spans lunch, subtract overlap.
+                    
+                    raw_gap = (curr_time - last_sync_time).total_seconds()
+                    
+                    # Adjust for lunch overlap
+                    # Lunch range for this day
+                    lunch_start = c_in.replace(hour=13, minute=0, second=0, microsecond=0)
+                    lunch_end = c_in.replace(hour=14, minute=0, second=0, microsecond=0)
+                    
+                    # Intersect (last_sync, curr_time) with (lunch_start, lunch_end)
+                    overlap_start = max(last_sync_time, lunch_start)
+                    overlap_end = min(curr_time, lunch_end)
+                    overlap = max(0, (overlap_end - overlap_start).total_seconds())
+                    
+                    effective_gap = max(0, raw_gap - overlap)
+                    
+                    # If last_sync was inside lunch, overlap handles it (overlap start = last_sync)
+                    # If curr_time inside lunch, overlap handles it (overlap end = curr_time)
+                    
+                    if effective_gap <= 600: # 10 mins * 60
+                         total_active_sec += effective_gap
+                    else:
+                         total_inactive_sec += effective_gap
+                         
+                    last_sync_time = curr_time
+
+                # Add final gap (Call -> Checkout)? 
+                # "From check-in to check-out"
+                # The prompt says: "Classify each gap between call syncs". 
+                # Does it include gap from last call to check-out? 
+                # Usually yes for "Continuous calculation".
+                # "gap = current_sync_time - last_sync_time". 
+                # If we consider check-out as a sync event?
+                # "For every call sync event".
+                # It doesn't explicitly say check-out is a sync event for gap calc, 
+                # BUT "Define total working time... Activity Ratio = Active / Total".
+                # If we don't count the end, we miss a lot.
+                # Let's treat Check-Out as the final "Sync Event".
+                
+                # Check-out Calc
+                final_gap_raw = (c_out - last_sync_time).total_seconds()
+                
+                lunch_start = c_in.replace(hour=13, minute=0, second=0, microsecond=0)
+                lunch_end = c_in.replace(hour=14, minute=0, second=0, microsecond=0)
+                
+                overlap_start = max(last_sync_time, lunch_start)
+                overlap_end = min(c_out, lunch_end)
+                overlap = max(0, (overlap_end - overlap_start).total_seconds())
+                
+                final_gap = max(0, final_gap_raw - overlap)
+                
+                if final_gap <= 600:
+                    total_active_sec += final_gap
+                else:
+                    total_inactive_sec += final_gap
+
+
+            # 4. Activity Ratio & Status
+            # Safety: avoid division by zero
+            if total_work_sec > 0:
+                ratio = total_active_sec / total_work_sec
+            else:
+                ratio = 0.0
+            
+            # Cap ratio at 1.0 (though logic shouldn't exceed it unless overlap bug)
+            ratio = min(ratio, 1.0)
+            
+            percentage = round(ratio * 100, 1)
+
+            if ratio >= 0.75:
+                status = "Excellent"
+            elif ratio >= 0.50:
+                status = "Moderate"
+            else:
+                # If work time exists but low active -> Poor
+                # If no work time -> Inactive?
+                # Prompt: "If user does not sync at all, active_time = 0 and performance becomes 'Inactive'"
+                # "Below 0.50 Inactive / Poor"
+                if total_work_sec == 0:
+                     status = "Inactive"
+                else:
+                     status = "Poor"
+
+            # Find overall check-in/out for the period (useful for 'today')
+            # If multiple days, this might just show first/last of range, which is acceptable or we show just for Today.
+            overall_check_in = None
+            overall_check_out = None
+            
+            all_check_ins = [d["check_in"] for d in daily_data.values() if d["check_in"]]
+            all_check_outs = [d["check_out"] for d in daily_data.values() if d["check_out"]]
+            
+            if all_check_ins:
+                overall_check_in = min(all_check_ins)
+            if all_check_outs:
+                overall_check_out = max(all_check_outs)
+
             users_list.append({
-                "user_id": u.id,
-                "user_name": u.name,
-                "total_calls": int(u.total_calls or 0),
-                "total_duration_sec": int(u.total_duration or 0),
-                "incoming": int(u.incoming or 0),
-                "outgoing": int(u.outgoing or 0),
-                "missed": int(u.missed or 0),
-                "rejected": int(u.rejected or 0),
+                "user_id": user.id,
+                "user_name": user.name,
+                "total_calls": total_calls,
+                "incoming": incoming,
+                "outgoing": outgoing,
+                "missed": missed,
+                "rejected": rejected,
+                "total_work_sec": total_work_sec,
+                "active_sec": total_active_sec,
+                "inactive_sec": total_inactive_sec,
+                "score": percentage, # Reuse 'score' key for Charts compatibility (shows %)
+                "status": status,
+                "details": {
+                    "active_time": f"{round(total_active_sec/3600, 1)}h",
+                    "inactive_time": f"{round(total_inactive_sec/3600, 1)}h",
+                    "work_time": f"{round(total_work_sec/3600, 1)}h",
+                    "check_in": overall_check_in.strftime('%H:%M') if overall_check_in else "-",
+                    "check_out": overall_check_out.strftime('%H:%M') if overall_check_out else "-"
+                }
             })
 
-        # Calculate Score (Simple: Incoming + Outgoing)
-        # You can make this more complex (e.g. weighted)
-        for u in users_list:
-            u["score"] = u["incoming"] + u["outgoing"]
-
-        # Sort
+        # Sort by Score (Ratio)
         sort_order = request.args.get("sort", "desc")
         reverse = (sort_order == "desc")
         users_list.sort(key=lambda x: x["score"], reverse=reverse)
 
-        # Prepare response for Chart.js and Table
+        # Prepare response
         labels = [u["user_name"] for u in users_list]
-        values = [u["score"] for u in users_list]
+        values = [u["score"] for u in users_list] # This is now %
         user_ids = [u["user_id"] for u in users_list]
         
-        # Detailed data arrays for table
-        incoming_counts = [u["incoming"] for u in users_list]
-        outgoing_counts = [u["outgoing"] for u in users_list]
-        total_counts = [u["total_calls"] for u in users_list]
+        # Extra arrays for table rendering
+        statuses = [u["status"] for u in users_list]
+        details = [u["details"] for u in users_list]
 
         return jsonify({
             "labels": labels,
             "values": values,
             "user_ids": user_ids,
-            "incoming": incoming_counts,
-            "outgoing": outgoing_counts,
-            "total_calls": total_counts
+            "statuses": statuses,
+            "details": details,
+            # Maintain backward compat for other fields if frontend uses them sparingly
+            "incoming": [u["incoming"] for u in users_list],
+            "outgoing": [u["outgoing"] for u in users_list], 
+            "total_calls": [u["total_calls"] for u in users_list]
         }), 200
 
     except Exception as e:

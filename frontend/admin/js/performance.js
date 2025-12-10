@@ -60,14 +60,22 @@ class PerformanceManager {
       const labels = data.labels || [];
       const values = data.values || [];
       const user_ids = data.user_ids || [];
-      const incoming = data.incoming || [];
-      const outgoing = data.outgoing || [];
-      const total_calls = data.total_calls || [];
+      const statuses = data.statuses || [];
+      const details = data.details || [];
+
+      // Store stats for modal access
+      this.userStats = {};
+      user_ids.forEach((uid, i) => {
+        this.userStats[uid] = {
+          score: values[i],
+          status: statuses[i],
+          details: details[i]
+        };
+      });
 
       // Render both chart + table
-      // Render both chart + table
       this.renderChart(labels, values);
-      this.renderTable(labels, values, user_ids);
+      this.renderTable(labels, values, user_ids, statuses);
 
     } catch (e) {
       console.error(e);
@@ -83,13 +91,10 @@ class PerformanceManager {
     if (this.chart) {
       this.chart.destroy();
     } else {
-      // Fallback: Check if Chart.js has an instance associated with this canvas
-      // This happens if the component was re-initialized but the canvas persisted
       const existingChart = Chart.getChart(canvas);
       if (existingChart) existingChart.destroy();
     }
 
-    // Custom plugin to draw values on top of bars
     const dataLabelPlugin = {
       id: 'dataLabelPlugin',
       afterDatasetsDraw(chart, args, options) {
@@ -109,16 +114,9 @@ class PerformanceManager {
       }
     };
 
-    // Colorful palette
     const colors = [
-      '#3B82F6', // Blue
-      '#10B981', // Green
-      '#EF4444', // Red
-      '#8B5CF6', // Purple
-      '#F59E0B', // Orange
-      '#06B6D4', // Cyan
-      '#EC4899', // Pink
-      '#6366F1', // Indigo
+      '#3B82F6', '#10B981', '#EF4444', '#8B5CF6',
+      '#F59E0B', '#06B6D4', '#EC4899', '#6366F1',
     ];
 
     this.chart = new Chart(ctx, {
@@ -127,7 +125,7 @@ class PerformanceManager {
         labels: labels,
         datasets: [
           {
-            label: "Performance Score",
+            label: "Activity Ratio (%)",
             data: values,
             backgroundColor: labels.map((_, i) => colors[i % colors.length]),
             borderRadius: 4,
@@ -139,55 +137,56 @@ class PerformanceManager {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: {
-            display: false // Hide legend as bars are colorful
-          },
+          legend: { display: false },
           tooltip: {
             callbacks: {
-              label: ctx => `Score: ${ctx.raw}%`
+              label: ctx => `Ratio: ${ctx.raw}%`
             }
           }
         },
         scales: {
-          y: {
-            beginAtZero: true,
-            max: 100, // Assuming score is percentage
-            grid: {
-              display: false
-            }
-          },
-          x: {
-            grid: {
-              display: false
-            }
-          }
+          y: { beginAtZero: true, max: 100, grid: { display: false } },
+          x: { grid: { display: false } }
         }
       },
       plugins: [dataLabelPlugin]
     });
   }
 
-  renderTable(labels, values, ids) {
+  renderTable(labels, values, ids, statuses) {
     const body = document.getElementById("performanceTableBody");
     if (!body) return;
 
+    // Update Header if needed? 
+    // Assuming table header has: Rank, Team Member, Score, Details
+    // We should probably inject a Status column or combine it.
+    // For now, I'll put Status in a pill next to Score or in a new column if I could edit HTML easily.
+    // I will combine Score and Status in the same cell for layout stability.
+
     if (labels.length === 0) {
-      body.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-500">No performance data found</td></tr>`;
+      body.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-500">No performance data found</td></tr>`;
       return;
     }
 
-    body.innerHTML = labels.map((name, i) => `
+    body.innerHTML = labels.map((name, i) => {
+      const score = values[i];
+      const status = statuses[i] || 'Unknown';
+      let statusColor = 'bg-gray-100 text-gray-800';
+      if (status === 'Excellent') statusColor = 'bg-green-100 text-green-800';
+      else if (status === 'Moderate') statusColor = 'bg-yellow-100 text-yellow-800';
+      else if (status === 'Poor' || status === 'Inactive') statusColor = 'bg-red-100 text-red-800';
+
+      return `
       <tr class="border-t hover:bg-gray-50 transition-colors">
         <td class="px-6 py-4 text-gray-900 font-medium">#${i + 1}</td>
         <td class="px-6 py-4 text-gray-700 font-medium">${name}</td>
-        <td class="px-6 py-4 text-center">
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${values[i] >= 80 ? 'bg-green-100 text-green-800' :
-        values[i] >= 60 ? 'bg-blue-100 text-blue-800' :
-          values[i] >= 40 ? 'bg-yellow-100 text-yellow-800' :
-            'bg-red-100 text-red-800'
-      }">
-            ${values[i]}%
-          </span>
+        <td class="px-6 py-4">
+             <div class="flex flex-col gap-1">
+                <span class="text-sm font-bold text-gray-900">${score}% Efficiency</span>
+                <span class="inline-flex w-fit items-center px-2 py-0.5 rounded text-xs font-medium ${statusColor}">
+                    ${status}
+                </span>
+             </div>
         </td>
         <td class="px-6 py-4">
           <button 
@@ -198,7 +197,7 @@ class PerformanceManager {
           </button>
         </td>
       </tr>
-    `).join('');
+    `}).join('');
   }
 
   async viewUserCallHistory(userId, userName, page = 1) {
@@ -211,20 +210,50 @@ class PerformanceManager {
       if (!modal || !tbody) return;
 
       if (title) title.textContent = userName;
-      tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Loading...</td></tr>';
 
+      // INJECT STATS SUMMARY
+      // Check if stats container exists, if not create active/inactive info
+      let statsContainer = document.getElementById('modalUserStats');
+      if (!statsContainer) {
+        // Create it after title
+        const header = modal.querySelector('h3'); // Usually the title
+        if (header && header.parentNode) {
+          statsContainer = document.createElement('div');
+          statsContainer.id = 'modalUserStats';
+          statsContainer.className = "grid grid-cols-3 gap-4 mb-4 mt-2 p-3 bg-gray-50 rounded-lg text-center";
+          header.parentNode.insertBefore(statsContainer, header.nextSibling);
+        }
+      }
+
+      if (statsContainer && this.userStats && this.userStats[userId]) {
+        const s = this.userStats[userId];
+        const d = s.details || {};
+        statsContainer.innerHTML = `
+            <div>
+                <p class="text-xs text-gray-500 uppercase">Work Time</p>
+                <p class="font-bold text-gray-900">${d.work_time || '0h'}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase">Active</p>
+                <p class="font-bold text-green-600">${d.active_time || '0h'}</p>
+            </div>
+             <div>
+                <p class="text-xs text-gray-500 uppercase">Inactive</p>
+                <p class="font-bold text-red-600">${d.inactive_time || '0h'}</p>
+            </div>
+          `;
+      } else if (statsContainer) {
+        statsContainer.innerHTML = '';
+      }
+
+
+      tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Loading...</td></tr>';
       modal.classList.remove('hidden');
 
       // Reset filter on open
       this.currentModalFilter = 'all';
-
-      // Store current user for pagination
       this.currentModalUser = { userId, userName };
-
-      // Setup Filter Buttons
       this.setupModalControls(userId);
-
-      // Fetch calls with pagination (defaults to last 7 days) -- MODIFIED: Use current filter
       await this.loadModalData(userId, userName, page);
 
     } catch (e) {
