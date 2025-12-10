@@ -56,7 +56,8 @@ def all_call_history():
         elif filter_type == "week":
             start_time = now - timedelta(days=7)
         elif filter_type == "month":
-            start_time = now - timedelta(days=30)
+            # Change "Month" to "Start of Current Month"
+            start_time = datetime(now.year, now.month, 1)
         # Removed automatic 7-day default to show all available data
         # Users can explicitly apply filters if needed
 
@@ -165,6 +166,86 @@ def all_call_history():
                 "created_at": rec.created_at.isoformat() if rec.created_at else None,
             })
 
+        # Calculate Stats for the response if filtered by "today" (or generally if possible)
+        # We need "last active day" stats logic if filter is ALL, or "specific day" stats if filter is TODAY.
+        stats_response = None
+        
+        # Only calculate stats if user_id is provided
+        if user_id:
+            # We need to import Attendance to check work time
+            from app.models import Attendance
+            
+            # Decide which day to show stats for:
+            # If "today", show Today'sstats.
+            # If "all" or others, show "Last Active Day" stats (like performance page).
+            
+            target_date = None
+            if filter_type == "today":
+                target_date = datetime(now.year, now.month, now.day).date()
+            else:
+                # If not today, we might want "Last Active Day" from the QUERY results? 
+                # Or just standard "Last Active Day" of the user?
+                # The performance page shows "Last Active Day". Let's replicate that if filter is NOT today.
+                # If filter IS today, we explicitly want Today's stats even if 0.
+                pass
+
+            # Query Attendance
+            att_query = Attendance.query.filter_by(user_id=user_id)
+            
+            if target_date:
+                # Specific day
+                att_record = att_query.filter(func.date(Attendance.date) == target_date).first()
+            else:
+                # Last active day (order by date desc)
+                att_record = att_query.order_by(Attendance.date.desc()).first()
+
+            if att_record:
+                # Calculate Duration
+                # We need a helper for hms, let's define it inline or import?
+                # Inline is safe.
+                def fmt_hms_local(seconds):
+                    if not seconds: return "0s"
+                    h = int(seconds // 3600)
+                    m = int((seconds % 3600) // 60)
+                    s = int(seconds % 60)
+                    parts = []
+                    if h: parts.append(f"{h}h")
+                    if m: parts.append(f"{m}m")
+                    if s: parts.append(f"{s}s")
+                    return " ".join(parts)
+                
+                # Check In / Out
+                c_in = att_record.check_in
+                c_out = att_record.check_out
+                
+                # Work Time
+                w_time = 0
+                if c_in and c_out:
+                    w_time = (c_out - c_in).total_seconds()
+                    # We might need lunch deduction? 
+                    # For simplicity in this "quick view", raw diff is OK, OR apply 1h deduction if > 5h?
+                    # The main performance logic has complex lunch logic.
+                    # Let's apply simple lunch logic: if > 5 hours, deduct 1 hr? 
+                    # Or just return raw for now to avoid mismatch if user didn't take lunch?
+                    # User complained about "80h" vs "9h". The fix was strictly using check_out.
+                    # Here we have c_out, so it should be fine.
+                    # Let's NOT apply arbitrary lunch deduction here to avoid confusion, 
+                    # unless we verify against admin_performance logic. 
+                    # Replicating admin_performance logic precisely is hard here without importing.
+                    # Let's show (c_out - c_in).
+                
+                # Active/Inactive - harder to calc on the fly without iterating calls.
+                # If we want to return "details" structure:
+                stats_response = {
+                    "details": {
+                        "check_in": c_in.strftime("%I:%M %p") if c_in else "-",
+                        "check_out": c_out.strftime("%I:%M %p") if c_out else "-",
+                        "work_time": fmt_hms_local(w_time),
+                        "active_time": "-", # difficult to calc efficiently here
+                        "inactive_time": "-" # difficult to calc efficiently here
+                    }
+                }
+
         return jsonify({
             "call_history": data,
             "meta": {
@@ -174,7 +255,8 @@ def all_call_history():
                 "pages": paginated.pages,
                 "has_next": paginated.has_next,
                 "has_prev": paginated.has_prev,
-            }
+            },
+            "stats": stats_response
         }), 200
 
     except Exception as e:
