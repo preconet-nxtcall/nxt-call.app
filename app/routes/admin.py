@@ -746,60 +746,29 @@ def recent_sync():
 @bp.route("/user-logs", methods=["GET"])
 @jwt_required()
 def user_logs():
-    try:
-        if not admin_required():
-            return jsonify({"error": "Admin access only"}), 403
+    if not admin_required():
+        return jsonify({"error": "Admin access only"}), 403
 
-        admin_id = int(get_jwt_identity())
+    admin_id = int(get_jwt_identity())
 
-        # Define "today" in UTC
-        now_utc = datetime.utcnow()
-        today_start = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
+    # Fetch recent attendance events as "logs"
+    # Join User to filter by admin_id
+    logs = db.session.query(Attendance, User).join(User).filter(
+        User.admin_id == admin_id
+    ).order_by(Attendance.created_at.desc()).limit(10).all()
 
-        # Query ActivityLog for THIS admin, TODAY, filtering for "Logged in"
-        activities = (
-            ActivityLog.query
-            .filter(
-                ActivityLog.actor_id == admin_id,
-                ActivityLog.actor_role == UserRole.ADMIN,
-                ActivityLog.timestamp >= today_start,
-                ActivityLog.action.ilike("%Logged in%")
-            )
-            .order_by(ActivityLog.timestamp.desc())
-            .all()
-        )
+    data = []
+    for att, user in logs:
+        data.append({
+            "id": att.id,
+            "user_name": user.name,
+            "action": f"Checked {att.status}", # "Checked in" or "Checked out"
+            "timestamp": iso(att.created_at),
+            "type": "attendance",
+            "is_active": is_online(user.last_sync)
+        })
 
-        logs = []
-        for act in activities:
-                logs.append({
-                "user_name": "You (Admin)",
-                "action": act.action,
-                "timestamp": iso(act.timestamp),
-                "is_active": True
-            })
-
-        return jsonify({"logs": logs}), 200
-    except Exception as e:
-        current_app.logger.warning(f"Recent Activity (Admin) failed, falling back to User Attendance: {e}")
-        # FALLBACK: Return User Attendance (Original Behavior)
-        # This ensures the dashboard works even if 'activity_logs' table is missing.
-        try:
-            logs = db.session.query(Attendance, User).join(User).filter(
-                User.admin_id == admin_id
-            ).order_by(Attendance.created_at.desc()).limit(10).all()
-
-            data = []
-            for att, user in logs:
-                data.append({
-                    "user_name": user.name,
-                    "action": f"Checked {att.status}",
-                    "timestamp": iso(att.created_at),
-                    "is_active": True if is_online(user.last_sync) else False
-                })
-            return jsonify({"logs": data}), 200
-        except Exception as e2:
-            current_app.logger.error(f"Fallback User Logs Error: {e2}")
-            return jsonify({"error": "Failed to load activity data"}), 500
+    return jsonify({"logs": data}), 200
 
 
 # =========================================================
