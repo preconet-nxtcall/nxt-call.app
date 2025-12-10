@@ -234,15 +234,91 @@ def all_call_history():
                     # Replicating admin_performance logic precisely is hard here without importing.
                     # Let's show (c_out - c_in).
                 
-                # Active/Inactive - harder to calc on the fly without iterating calls.
-                # If we want to return "details" structure:
+                # Calculate Active/Inactive times by analyzing call gaps
+                # Get calls for this specific day/filter
+                calls_query = CallHistory.query.filter_by(user_id=user_id)
+                
+                # Apply same date filter as main query
+                if filter_type == "today":
+                    calls_query = calls_query.filter(CallHistory.timestamp >= start_time)
+                elif filter_type == "month":
+                    # Use same month logic as main query
+                    if now.month == 12:
+                        end_time_calc = datetime(now.year + 1, 1, 1)
+                    else:
+                        end_time_calc = datetime(now.year, now.month + 1, 1)
+                    calls_query = calls_query.filter(CallHistory.timestamp >= start_time, CallHistory.timestamp < end_time_calc)
+                elif start_time:
+                    calls_query = calls_query.filter(CallHistory.timestamp >= start_time)
+                
+                # Get calls within work session
+                day_calls = calls_query.filter(
+                    CallHistory.timestamp >= c_in,
+                    CallHistory.timestamp <= c_out
+                ).order_by(CallHistory.timestamp.asc()).all()
+                
+                # Calculate active/inactive time
+                active_sec = 0
+                inactive_sec = 0
+                last_sync = c_in
+                
+                def is_lunch_hour(dt):
+                    return dt.hour == 13
+                
+                for call in day_calls:
+                    curr_time = call.timestamp
+                    
+                    # Skip if in lunch hour
+                    if is_lunch_hour(curr_time):
+                        last_sync = curr_time
+                        continue
+                    
+                    # Calculate gap
+                    raw_gap = (curr_time - last_sync).total_seconds()
+                    
+                    # Subtract lunch overlap from gap
+                    lunch_start = c_in.replace(hour=13, minute=0, second=0, microsecond=0)
+                    lunch_end = c_in.replace(hour=14, minute=0, second=0, microsecond=0)
+                    
+                    overlap_start = max(last_sync, lunch_start)
+                    overlap_end = min(curr_time, lunch_end)
+                    overlap = max(0, (overlap_end - overlap_start).total_seconds())
+                    
+                    effective_gap = max(0, raw_gap - overlap)
+                    
+                    # Classify gap: ≤10 min = active, >10 min = inactive
+                    if effective_gap <= 600:
+                        active_sec += effective_gap
+                    else:
+                        inactive_sec += effective_gap
+                    
+                    last_sync = curr_time
+                
+                # Final gap from last call to checkout
+                if day_calls or c_in:
+                    final_gap = (c_out - last_sync).total_seconds()
+                    
+                    lunch_start = c_in.replace(hour=13, minute=0, second=0, microsecond=0)
+                    lunch_end = c_in.replace(hour=14, minute=0, second=0, microsecond=0)
+                    
+                    overlap_start = max(last_sync, lunch_start)
+                    overlap_end = min(c_out, lunch_end)
+                    overlap = max(0, (overlap_end - overlap_start).total_seconds())
+                    
+                    effective_gap = max(0, final_gap - overlap)
+                    
+                    if effective_gap <= 600:
+                        active_sec += effective_gap
+                    else:
+                        inactive_sec += effective_gap
+                
                 stats_response = {
                     "details": {
                         "check_in": c_in.strftime("%I:%M %p") if c_in else "-",
                         "check_out": c_out.strftime("%I:%M %p") if c_out else "-",
                         "work_time": fmt_hms_local(w_time),
-                        "active_time": "-", # difficult to calc efficiently here
-                        "inactive_time": "-" # difficult to calc efficiently here
+                        "active_time": fmt_hms_local(active_sec),
+                        "inactive_time": fmt_hms_local(inactive_sec)
                     }
                 }
 
