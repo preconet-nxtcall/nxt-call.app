@@ -269,6 +269,33 @@ class PerformanceManager {
         }
       }
 
+      // POPULATE STATS FROM CACHE
+      if (statsContainer && this.userStats && this.userStats[userId] && this.userStats[userId].details) {
+        const d = this.userStats[userId].details;
+        statsContainer.innerHTML = `
+                <div>
+                    <p class="text-[10px] text-gray-500 uppercase mb-0.5">Check In</p>
+                    <p class="font-bold text-sm text-gray-900">${d.check_in || '-'}</p>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-500 uppercase mb-0.5">Check Out</p>
+                    <p class="font-bold text-sm text-gray-900">${d.check_out || '-'}</p>
+                </div>
+                 <div>
+                    <p class="text-[10px] text-gray-500 uppercase mb-0.5">Work Time</p>
+                    <p class="font-bold text-sm text-gray-900">${d.work_time || '0s'}</p>
+                </div>
+                 <div>
+                    <p class="text-[10px] text-gray-500 uppercase mb-0.5">Active</p>
+                    <p class="font-bold text-sm text-green-600">${d.active_time || '0s'}</p>
+                </div>
+                 <div>
+                    <p class="text-[10px] text-gray-500 uppercase mb-0.5">Inactive</p>
+                    <p class="font-bold text-sm text-red-600">${d.inactive_time || '0s'}</p>
+                </div>
+          `;
+      }
+
       const tbody = document.getElementById('modalCallHistoryBody');
       if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-4 text-center text-sm text-gray-500">Loading...</td></tr>';
 
