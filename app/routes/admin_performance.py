@@ -281,18 +281,94 @@ def performance():
                 else:
                      status = "Poor"
 
-            # Find overall check-in/out for the period (useful for 'today')
-            # If multiple days, this might just show first/last of range, which is acceptable or we show just for Today.
-            overall_check_in = None
-            overall_check_out = None
+            # Determine "Last Active Day" for the Details Modal
+            # Instead of overall sums, we show the stats for the most recent day user worked.
+            last_day_stats = {
+                "active": 0, "inactive": 0, "work": 0, "in": None, "out": None
+            }
             
-            all_check_ins = [d["check_in"] for d in daily_data.values() if d["check_in"]]
-            all_check_outs = [d["check_out"] for d in daily_data.values() if d["check_out"]]
-            
-            if all_check_ins:
-                overall_check_in = min(all_check_ins)
-            if all_check_outs:
-                overall_check_out = max(all_check_outs)
+            if daily_data:
+                # Find max date
+                last_date_str = max(daily_data.keys())
+                day_info = daily_data[last_date_str]
+                
+                # Re-calc stats for just this day
+                # (We did this in the loop above but aggregated it. We need to isolate it or extract it)
+                # Since the loop above summed things up and didn't store per-day breakdown in 'daily_data'
+                # cleanly for simple retrieval without re-running gap logic (gap logic was inside the loop),
+                # we might need to adjust the loop or repeat the logic for this one day.
+                
+                # OPTION: The loop above iterates daily_data. We can just capture the values for the last day.
+                # But the loop logic is complex (gaps). 
+                
+                # Let's rebuild the gap logic for the 'last_day' specifically to be safe and accurate.
+                c_in = day_info["check_in"]
+                c_out = day_info["check_out"]
+                
+                # Handle 'current/now' check-out if None
+                if c_out is None and last_date_str == datetime.utcnow().date().isoformat():
+                     c_out = datetime.utcnow()
+                
+                if c_out:
+                    # Work Time
+                    session_dur = (c_out - c_in).total_seconds()
+                    # Minus lunch logic (approx 1h if overlaps 1-2pm)
+                    # The loop handled exact overlaps. Let's replicate exact overlap.
+                    
+                    # Gap calc for this day
+                    l_active = 0
+                    l_inactive = 0
+                    
+                    last_sync = c_in
+                    day_calls = day_info["calls"]
+                    
+                    def is_lunch(dt): return dt.hour == 13
+                    
+                    for call in day_calls:
+                        ct = call.timestamp
+                        if ct < c_in or ct > c_out: continue
+                        if is_lunch(ct):
+                            last_sync = ct
+                            continue
+                        
+                        raw = (ct - last_sync).total_seconds()
+                        
+                        # Overlap
+                        l_start = c_in.replace(hour=13, minute=0, second=0, microsecond=0)
+                        l_end = c_in.replace(hour=14, minute=0, second=0, microsecond=0)
+                        ov_s = max(last_sync, l_start)
+                        ov_e = min(ct, l_end)
+                        ov = max(0, (ov_e - ov_s).total_seconds())
+                        
+                        eff = max(0, raw - ov)
+                        if eff <= 600: l_active += eff
+                        else: l_inactive += eff
+                        last_sync = ct
+                        
+                    # Final gap
+                    raw = (c_out - last_sync).total_seconds()
+                    l_start = c_in.replace(hour=13, minute=0, second=0, microsecond=0)
+                    l_end = c_in.replace(hour=14, minute=0, second=0, microsecond=0)
+                    ov_s = max(last_sync, l_start)
+                    ov_e = min(c_out, l_end)
+                    ov = max(0, (ov_e - ov_s).total_seconds())
+                    
+                    eff = max(0, raw - ov)
+                    if eff <= 600: l_active += eff
+                    else: l_inactive += eff
+                    
+                    # Total work time (Session - Lunch)
+                    session_total = (c_out - c_in).total_seconds()
+                    # Calc lunch overlap for full session
+                    ov_s = max(c_in, l_start)
+                    ov_e = min(c_out, l_end)
+                    lunch_taken = max(0, (ov_e - ov_s).total_seconds())
+                    
+                    last_day_stats["work"] = max(0, session_total - lunch_taken)
+                    last_day_stats["active"] = l_active
+                    last_day_stats["inactive"] = l_inactive
+                    last_day_stats["in"] = c_in
+                    last_day_stats["out"] = c_out
 
             users_list.append({
                 "user_id": user.id,
@@ -305,14 +381,14 @@ def performance():
                 "total_work_sec": total_work_sec,
                 "active_sec": total_active_sec,
                 "inactive_sec": total_inactive_sec,
-                "score": percentage, # Reuse 'score' key for Charts compatibility (shows %)
-                "status": status,
+                "score": percentage, # Overall Score
+                "status": status,    # Overall Status
                 "details": {
-                    "active_time": f"{round(total_active_sec/3600, 1)}h",
-                    "inactive_time": f"{round(total_inactive_sec/3600, 1)}h",
-                    "work_time": f"{round(total_work_sec/3600, 1)}h",
-                    "check_in": overall_check_in.strftime('%I:%M %p') if overall_check_in else "-",
-                    "check_out": overall_check_out.strftime('%I:%M %p') if overall_check_out else "-"
+                    "active_time": f"{round(last_day_stats['active']/3600, 1)}h",
+                    "inactive_time": f"{round(last_day_stats['inactive']/3600, 1)}h",
+                    "work_time": f"{round(last_day_stats['work']/3600, 1)}h",
+                    "check_in": last_day_stats['in'].strftime('%I:%M %p') if last_day_stats['in'] else "-",
+                    "check_out": last_day_stats['out'].strftime('%I:%M %p') if last_day_stats['out'] else "-"
                 }
             })
 
