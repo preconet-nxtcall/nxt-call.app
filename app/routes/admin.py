@@ -746,38 +746,44 @@ def recent_sync():
 @bp.route("/user-logs", methods=["GET"])
 @jwt_required()
 def user_logs():
-    if not admin_required():
-        return jsonify({"error": "Admin access only"}), 403
+    try:
+        if not admin_required():
+            return jsonify({"error": "Admin access only"}), 403
 
-    admin_id = int(get_jwt_identity())
+        admin_id = int(get_jwt_identity())
 
-    # Define "today" in UTC
-    now_utc = datetime.utcnow()
-    today_start = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
+        # Define "today" in UTC
+        now_utc = datetime.utcnow()
+        today_start = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    # Query ActivityLog for THIS admin, TODAY, filtering for "Logged in"
-    activities = (
-        ActivityLog.query
-        .filter(
-            ActivityLog.actor_id == admin_id,
-            ActivityLog.actor_role == UserRole.ADMIN,
-            ActivityLog.timestamp >= today_start,
-            ActivityLog.action.ilike("%Logged in%")
+        # Query ActivityLog for THIS admin, TODAY, filtering for "Logged in"
+        activities = (
+            ActivityLog.query
+            .filter(
+                ActivityLog.actor_id == admin_id,
+                ActivityLog.actor_role == UserRole.ADMIN,
+                ActivityLog.timestamp >= today_start,
+                ActivityLog.action.ilike("%Logged in%")
+            )
+            .order_by(ActivityLog.timestamp.desc())
+            .all()
         )
-        .order_by(ActivityLog.timestamp.desc())
-        .all()
-    )
 
-    logs = []
-    for act in activities:
-            logs.append({
-            "user_name": "You (Admin)",
-            "action": act.action,
-            "timestamp": iso(act.timestamp),
-            "is_active": True
-        })
+        logs = []
+        for act in activities:
+                logs.append({
+                "user_name": "You (Admin)",
+                "action": act.action,
+                "timestamp": iso(act.timestamp),
+                "is_active": True
+            })
 
-    return jsonify({"logs": logs}), 200
+        return jsonify({"logs": logs}), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        current_app.logger.error(f"User Logs Error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 # =========================================================
