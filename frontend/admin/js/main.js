@@ -4,6 +4,39 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("Admin Panel Loaded");
 
     // ---------------------------------
+    // THEME HANDLING (Night Mode)
+    // ---------------------------------
+    const themeToggleBtn = document.getElementById("themeToggle");
+    const themeIcon = themeToggleBtn ? themeToggleBtn.querySelector("i") : null;
+
+    // Load saved theme
+    if (localStorage.getItem("theme") === "dark") {
+        document.body.classList.add("dark-mode");
+        if (themeIcon) {
+            themeIcon.classList.remove("fa-moon");
+            themeIcon.classList.add("fa-sun");
+        }
+        if (themeToggleBtn) {
+            themeToggleBtn.innerHTML = '<i class="fas fa-sun mr-1"></i> Light Mode';
+        }
+    }
+
+    // Toggle Event
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener("click", () => {
+            document.body.classList.toggle("dark-mode");
+
+            if (document.body.classList.contains("dark-mode")) {
+                localStorage.setItem("theme", "dark");
+                themeToggleBtn.innerHTML = '<i class="fas fa-sun mr-1"></i> Light Mode';
+            } else {
+                localStorage.setItem("theme", "light");
+                themeToggleBtn.innerHTML = '<i class="fas fa-moon mr-1"></i> Night Mode';
+            }
+        });
+    }
+
+    // ---------------------------------
     // 0. GLOBAL HELPERS
     // ---------------------------------
     window.formatDateTime = (dateString) => {

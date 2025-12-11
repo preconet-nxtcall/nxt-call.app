@@ -1,0 +1,77 @@
+/* Default Light Theme */
+:root {
+    --bg: #f9fafb;
+    /* Gray-50 matches tailwind bg-gray-50 */
+    --text: #1f2937;
+    /* Gray-800 matches tailwind text-gray-800 */
+    --card: #ffffff;
+    --border: #e5e7eb;
+    /* Gray-200 */
+    --nav-bg: #111827;
+    /* Gray-900 for sidebar */
+    --nav-text: #ffffff;
+}
+
+/* Dark Theme */
+.dark-mode {
+    --bg: #121212;
+    --text: #ffffff;
+    --card: #1e1e1e;
+    --border: #333333;
+    --nav-bg: #000000;
+    --nav-text: #e5e5e5;
+}
+
+/* Apply variables globally */
+body {
+    background-color: var(--bg);
+    color: var(--text);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Override Tailwind bg-white and border-gray colors for specific components when in dark mode */
+.dark-mode .bg-white {
+    background-color: var(--card) !important;
+}
+
+.dark-mode .bg-gray-50 {
+    background-color: var(--bg) !important;
+}
+
+.dark-mode .text-gray-900 {
+    color: var(--text) !important;
+}
+
+.dark-mode .text-gray-800 {
+    color: var(--text) !important;
+}
+
+.dark-mode .border-gray-100,
+.dark-mode .border-gray-200 {
+    border-color: var(--border) !important;
+}
+
+/* Sidebar and Navbar adjustments */
+.card,
+.sidebar,
+.navbar {
+    background-color: var(--card);
+    border-color: var(--border);
+}
+
+/* Fix specific dark mode issues with cards */
+.dark-mode .shadow-sm {
+    box-shadow: 0 1px 2px 0 rgba(255, 255, 255, 0.05);
+}
+
+.dark-mode input,
+.dark-mode select {
+    background-color: #2d2d2d !important;
+    border-color: #444 !important;
+    color: #fff !important;
+}
+
+.dark-mode .bg-gray-900 {
+    background-color: #000 !important;
+    /* Darker sidebar */
+}
