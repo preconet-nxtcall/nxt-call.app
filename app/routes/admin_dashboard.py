@@ -116,6 +116,11 @@ def recent_sync():
             .all()
         )
 
+        print("="*80, flush=True)
+        print(f"[RECENT_SYNC] Endpoint called at {datetime.utcnow()}", flush=True)
+        print(f"[RECENT_SYNC] Found {len(users)} users", flush=True)
+        print("="*80, flush=True)
+
         # Strict check as requested: "today date syncronize means online"
         return jsonify({
             "recent_sync": [
@@ -144,30 +149,30 @@ def check_online_status(dt):
         ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
         today_ist = ist_now.date()
         
-        print(f"[SYNC DEBUG] Input dt: {dt}, type: {type(dt)}")
+        print(f"[SYNC DEBUG] Input dt: {dt}, type: {type(dt)}", flush=True)
         
         # Handle the sync datetime
         sync_dt = dt
         if isinstance(dt, str):
             sync_dt = datetime.fromisoformat(str(dt).replace('Z', '+00:00'))
-            print(f"[SYNC DEBUG] Parsed from string: {sync_dt}")
+            print(f"[SYNC DEBUG] Parsed from string: {sync_dt}", flush=True)
         
         # CRITICAL: Convert sync time from UTC to IST before extracting date
         # The database stores UTC time, but we need to compare IST dates
         if hasattr(sync_dt, 'date'):
-            print(f"[SYNC DEBUG] UTC datetime: {sync_dt}")
+            print(f"[SYNC DEBUG] UTC datetime: {sync_dt}", flush=True)
             sync_dt_ist = sync_dt + timedelta(hours=5, minutes=30)
-            print(f"[SYNC DEBUG] IST datetime: {sync_dt_ist}")
+            print(f"[SYNC DEBUG] IST datetime: {sync_dt_ist}", flush=True)
             sync_date = sync_dt_ist.date()
-            print(f"[SYNC DEBUG] IST date extracted: {sync_date}")
+            print(f"[SYNC DEBUG] IST date extracted: {sync_date}", flush=True)
         else:
             sync_date = sync_dt
-            print(f"[SYNC DEBUG] Direct date (no conversion): {sync_date}")
+            print(f"[SYNC DEBUG] Direct date (no conversion): {sync_date}", flush=True)
         
         # Simple comparison: does the sync date match today?
         is_online = (sync_date == today_ist)
         
-        print(f"[SYNC DEBUG] FINAL: sync_date={sync_date} == today_ist={today_ist} ? {is_online}")
+        print(f"[SYNC DEBUG] FINAL: sync_date={sync_date} == today_ist={today_ist} ? {is_online}", flush=True)
         return is_online
         
     except Exception as e:

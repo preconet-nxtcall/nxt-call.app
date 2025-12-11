@@ -85,7 +85,27 @@ class DashboardManager {
 
       const items = data.recent_sync || [];
 
-      list.innerHTML = items.map(r => `
+      // Helper function to check if sync date is today
+      const isOnlineToday = (lastSyncISO) => {
+        if (!lastSyncISO) return false;
+        try {
+          const syncDate = new Date(lastSyncISO);
+          const today = new Date();
+
+          // Compare year, month, and day
+          return syncDate.getFullYear() === today.getFullYear() &&
+            syncDate.getMonth() === today.getMonth() &&
+            syncDate.getDate() === today.getDate();
+        } catch (e) {
+          return false;
+        }
+      };
+
+      list.innerHTML = items.map(r => {
+        // Calculate online status in frontend based on local date
+        const isOnline = isOnlineToday(r.last_sync);
+
+        return `
         <div class="border p-3 rounded bg-white">
           <div class="flex justify-between items-start">
             <div>
@@ -94,12 +114,12 @@ class DashboardManager {
                 Last Sync: ${window.formatDateTime(r.last_sync)}
               </div>
             </div>
-            <div class="text-sm ${r.is_online ? 'text-green-600' : 'text-red-600'}">
-              ${r.is_online ? 'Online' : 'Offline'}
+            <div class="text-sm ${isOnline ? 'text-green-600' : 'text-red-600'}">
+              ${isOnline ? 'Online' : 'Offline'}
             </div>
           </div>
         </div>
-      `).join('');
+      `}).join('');
 
     } catch (e) {
       console.error(e);
