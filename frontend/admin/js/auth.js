@@ -111,8 +111,9 @@ class Auth {
         }
 
         if (resp.status === 403) {
-            this.showNotification("Access denied", "error");
-            return resp;
+            this.showNotification("Access denied: Subscription Expired or Inactive", "error");
+            setTimeout(() => this.logout(), 2000); // Delay slightly to show message
+            return null;
         }
 
         if (resp.status >= 500) {
