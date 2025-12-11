@@ -213,8 +213,29 @@ class PerformanceManager {
       if (!modal) return;
       if (title) title.textContent = userName;
 
-      // Inject the new header controls and table structure
-      modal.querySelector('.modal-content').innerHTML = `
+      this.currentModalUser = { userId, userName };
+      this.currentModalFilter = "all";
+
+      // Render the Shell
+      this.renderModalShell(userName);
+
+      // Load initial data
+      await this.loadModalData(userId, userName, 1);
+
+    } catch (e) {
+      console.error("Error viewing user call history", e);
+      auth.showNotification(`Error opening details: ${e.message}`, "error");
+    }
+  }
+
+  // New method to render the static parts of the modal
+  renderModalShell(userName) {
+    const modal = document.getElementById('userCallHistoryModal');
+    const title = document.getElementById('modalUserTitle');
+    if (!modal) return;
+    if (title) title.textContent = userName;
+
+    modal.querySelector('.modal-content').innerHTML = `
         <!-- Top Header: Name & Stats -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-4 border-b border-gray-200 p-6">
           <h3 id="modalUserTitle" class="text-xl font-bold text-gray-900 mb-4 md:mb-0">${userName}</h3>
@@ -235,9 +256,9 @@ class PerformanceManager {
             <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
               <!-- Filter Buttons -->
               <div class="flex bg-gray-100 p-1 rounded-lg">
-                <button onclick="performanceManager.changeModalFilter('all')" class="modal-filter px-4 py-1.5 rounded-md text-sm font-medium ${this.currentModalFilter === 'all' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}">All</button>
-                <button onclick="performanceManager.changeModalFilter('today')" class="modal-filter px-4 py-1.5 rounded-md text-sm font-medium ${this.currentModalFilter === 'today' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}">Today</button>
-                <button onclick="performanceManager.changeModalFilter('month')" class="modal-filter px-4 py-1.5 rounded-md text-sm font-medium ${this.currentModalFilter === 'month' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}">Month</button>
+                <button onclick="performanceManager.changeModalFilter('all')" class="modal-filter-btn px-4 py-1.5 rounded-md text-sm font-medium transition-all">All</button>
+                <button onclick="performanceManager.changeModalFilter('today')" class="modal-filter-btn px-4 py-1.5 rounded-md text-sm font-medium transition-all">Today</button>
+                <button onclick="performanceManager.changeModalFilter('month')" class="modal-filter-btn px-4 py-1.5 rounded-md text-sm font-medium transition-all">Month</button>
               </div>
 
               <!-- Download Report Button -->
@@ -248,7 +269,7 @@ class PerformanceManager {
             </div>
 
             <!-- Table -->
-            <div class="overflow-hidden overflow-y-auto max-h-[60vh] border border-gray-200 rounded-lg">
+            <div class="overflow-hidden overflow-y-auto max-h-[55vh] border border-gray-200 rounded-lg">
                 <table class="min-w-full divide-y divide-gray-200">
                   <thead class="bg-gray-50 sticky top-0 z-10">
                     <tr>
@@ -269,53 +290,32 @@ class PerformanceManager {
         </div>
       `;
 
-      // POPULATE STATS FROM CACHE INITIAL
-      const statsContainer = document.getElementById('modalUserStats');
-      if (statsContainer && this.userStats && this.userStats[userId] && this.userStats[userId].details) {
-        const d = this.userStats[userId].details;
-        statsContainer.innerHTML = `
-                <div class="text-center">
-                    <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Check In</p>
-                    <p class="font-bold text-sm text-gray-900">${d.check_in || '-'}</p>
-                </div>
-                <div class="text-center">
-                    <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Check Out</p>
-                    <p class="font-bold text-sm text-gray-900">${d.check_out || '-'}</p>
-                </div>
-                 <div class="text-center">
-                    <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Work Time</p>
-                    <p class="font-bold text-sm text-gray-900">${d.work_time || '0s'}</p>
-                </div>
-                 <div class="text-center">
-                    <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Active</p>
-                    <p class="font-bold text-sm text-green-600">${d.active_time || '0s'}</p>
-                </div>
-                 <div class="text-center">
-                    <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Inactive</p>
-                    <p class="font-bold text-sm text-red-600">${d.inactive_time || '0s'}</p>
-                </div>
-          `;
+    this.updateFilterButtons();
+    modal.classList.remove('hidden');
+  }
+
+  updateFilterButtons() {
+    const btns = document.querySelectorAll('.modal-filter-btn');
+    const filters = ['all', 'today', 'month'];
+    btns.forEach((btn, i) => {
+      if (filters[i] === this.currentModalFilter) {
+        btn.classList.add('bg-white', 'text-gray-900', 'shadow-sm');
+        btn.classList.remove('text-gray-500', 'hover:text-gray-900');
+      } else {
+        btn.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
+        btn.classList.add('text-gray-500', 'hover:text-gray-900');
       }
-
-      const tbody = document.getElementById('modalCallHistoryBody');
-      if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-10 text-center text-sm text-gray-500">Loading call history...</td></tr>';
-
-      modal.classList.remove('hidden');
-
-      this.currentModalUser = { userId, userName };
-      this.currentModalFilter = "all";
-
-      await this.loadModalData(userId, userName, page);
-
-    } catch (e) {
-      console.error("Error viewing user call history", e);
-      auth.showNotification(`Error opening details: ${e.message}`, "error");
-    }
+    });
   }
 
   changeModalFilter(type) {
     this.currentModalFilter = type;
-    this.viewUserCallHistory(this.currentModalUser.userId, this.currentModalUser.userName, 1);
+    this.updateFilterButtons();
+    this.loadModalData(this.currentModalUser.userId, this.currentModalUser.userName, 1);
+  }
+
+  changePage(page) {
+    this.loadModalData(this.currentModalUser.userId, this.currentModalUser.userName, page);
   }
 
   async loadModalData(userId, userName, page = 1) {
@@ -460,7 +460,7 @@ class PerformanceManager {
     for (let i = startPage; i <= endPage; i++) {
       pagesHtml += `
         <button 
-          onclick="performanceManager.viewUserCallHistory(${this.currentModalUser.userId}, '${this.currentModalUser.userName}', ${i})"
+          onclick="performanceManager.changePage(${i})"
           class="px-3 py-1 rounded ${i === currentPage ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'} border border-gray-300 text-sm font-medium">
           ${i}
         </button>
@@ -475,14 +475,14 @@ class PerformanceManager {
         </div>
         <div class="flex gap-1">
           <button 
-            onclick="performanceManager.viewUserCallHistory(${this.currentModalUser.userId}, '${this.currentModalUser.userName}', ${currentPage - 1})"
+            onclick="performanceManager.changePage(${currentPage - 1})"
             ${!meta.has_prev ? 'disabled' : ''}
             class="px-3 py-1 rounded bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
             Previous
           </button>
           ${pagesHtml}
           <button 
-            onclick="performanceManager.viewUserCallHistory(${this.currentModalUser.userId}, '${this.currentModalUser.userName}', ${currentPage + 1})"
+            onclick="performanceManager.changePage(${currentPage + 1})"
             ${!meta.has_next ? 'disabled' : ''}
             class="px-3 py-1 rounded bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
             Next
