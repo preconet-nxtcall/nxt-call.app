@@ -116,8 +116,11 @@ def recent_sync():
             .all()
         )
 
-        today = datetime.utcnow().date()
-        return jsonify({
+                # Consider online if synced within last 16 hours (handles timezone shifts)
+                now_utc = datetime.utcnow()
+                cutoff = now_utc - timedelta(hours=16)
+
+                return jsonify({
             "recent_sync": [
                 {
                     "id": u.id,
@@ -126,7 +129,7 @@ def recent_sync():
                     "phone": u.phone or "-",
                     "is_active": u.is_active,
                     "last_sync": iso(u.last_sync),
-                    "is_online": True if (u.last_sync and u.last_sync.date() == today) else False
+                    "is_online": True if (u.last_sync and u.last_sync >= cutoff) else False
                 }
                 for u in users
             ]
