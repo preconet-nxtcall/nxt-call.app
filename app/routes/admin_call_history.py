@@ -251,38 +251,11 @@ def all_call_history():
                 elif start_time:
                     calls_query = calls_query.filter(CallHistory.timestamp >= start_time)
                 
-                # Get calls - Remove strict DB filter on c_in/c_out to avoid timezone mismatch exclusions
-                # We will filter in memory after shifting timezones
-                day_calls_raw = calls_query.order_by(CallHistory.timestamp.asc()).all()
-                
-                # Filter calls to strictly within check-in/out window (DST/TZ safe)
-                # IMPLEMENTING FUZZY MATCHING: Check Raw, +5:30, and -5:30
-                for call in day_calls_raw:
-                    matched_time = None
-                    
-                    # 1. Try Raw (If both matches)
-                    if c_in and c_out:
-                        # Candidate 1: Raw
-                        t1 = call.timestamp
-                        
-                        # Candidate 2: +5:30 (UTC to IST)
-                        t2 = call.timestamp + timedelta(hours=5, minutes=30)
-                        
-                        # Candidate 3: -5:30 (IST to UTC?)
-                        t3 = call.timestamp - timedelta(hours=5, minutes=30)
-                        
-                        if t1 >= c_in and t1 <= c_out:
-                            matched_time = t1
-                        elif t2 >= c_in and t2 <= c_out:
-                            matched_time = t2
-                        elif t3 >= c_in and t3 <= c_out:
-                            matched_time = t3
-                            
-                    if matched_time:
-                        day_calls.append({
-                            'start': matched_time,
-                            'duration': call.duration or 0
-                        })
+                # Get calls within work session
+                day_calls = calls_query.filter(
+                    CallHistory.timestamp >= c_in,
+                    CallHistory.timestamp <= c_out
+                ).order_by(CallHistory.timestamp.asc()).all()
                 
                 # Calculate active/inactive time
                 active_sec = 0
@@ -293,69 +266,51 @@ def all_call_history():
                     return dt.hour == 13
                 
                 for call in day_calls:
-                    curr_time = call['start']
-                    duration = call['duration']
-                    call_end = curr_time + timedelta(seconds=duration)
+                    curr_time = call.timestamp
                     
-                    # 1. Calculate GAP from Last Event -> Call Start
-                    # Skip lunch overlap in gap
-                    current_gap_active = 0
-                    current_gap_inactive = 0
+                    # Skip if in lunch hour
+                    if is_lunch_hour(curr_time):
+                        last_sync = curr_time
+                        continue
                     
-                    # Define gap window
-                    gap_start = last_sync
-                    gap_end = curr_time
+                    # Calculate gap
+                    raw_gap = (curr_time - last_sync).total_seconds()
                     
-                    if gap_end > gap_start:
-                        raw_gap = (gap_end - gap_start).total_seconds()
-                        
-                        # Handle Lunch Deduction from Gap
-                        lunch_start = c_in.replace(hour=13, minute=0, second=0, microsecond=0)
-                        lunch_end = c_in.replace(hour=14, minute=0, second=0, microsecond=0)
-                        
-                        overlap_start = max(gap_start, lunch_start)
-                        overlap_end = min(gap_end, lunch_end)
-                        overlap = max(0, (overlap_end - overlap_start).total_seconds())
-                        
-                        effective_gap = max(0, raw_gap - overlap)
-                        
-                        # Classify Gap
-                        # Relaxed gap rule: <= 15 mins (900s) is Active (waiting)
-                        if effective_gap <= 900: 
-                            current_gap_active = effective_gap
-                        else:
-                            current_gap_inactive = effective_gap
+                    # Subtract lunch overlap from gap
+                    lunch_start = c_in.replace(hour=13, minute=0, second=0, microsecond=0)
+                    lunch_end = c_in.replace(hour=14, minute=0, second=0, microsecond=0)
                     
-                    active_sec += current_gap_active
-                    inactive_sec += current_gap_inactive
+                    overlap_start = max(last_sync, lunch_start)
+                    overlap_end = min(curr_time, lunch_end)
+                    overlap = max(0, (overlap_end - overlap_start).total_seconds())
                     
-                    # 2. Add Call Duration to Active (Always Active)
-                    # Exclude lunch time from duration? usually calls during lunch count as work
-                    active_sec += duration
+                    effective_gap = max(0, raw_gap - overlap)
                     
-                    # Update last_sync to end of this call
-                    last_sync = call_end
+                    # Classify gap: ≤10 min = active, >10 min = inactive
+                    if effective_gap <= 600:
+                        active_sec += effective_gap
+                    else:
+                        inactive_sec += effective_gap
+                    
+                    last_sync = curr_time
                 
                 # Final gap from last call to checkout
-                if c_out and last_sync < c_out:
-                    final_gap_start = last_sync
-                    final_gap_end = c_out
-                    
-                    raw_final = (final_gap_end - final_gap_start).total_seconds()
+                if day_calls or c_in:
+                    final_gap = (c_out - last_sync).total_seconds()
                     
                     lunch_start = c_in.replace(hour=13, minute=0, second=0, microsecond=0)
                     lunch_end = c_in.replace(hour=14, minute=0, second=0, microsecond=0)
                     
-                    overlap_start = max(final_gap_start, lunch_start)
-                    overlap_end = min(final_gap_end, lunch_end)
+                    overlap_start = max(last_sync, lunch_start)
+                    overlap_end = min(c_out, lunch_end)
                     overlap = max(0, (overlap_end - overlap_start).total_seconds())
                     
-                    eff_final = max(0, raw_final - overlap)
+                    effective_gap = max(0, final_gap - overlap)
                     
-                    if eff_final <= 900:
-                        active_sec += eff_final
+                    if effective_gap <= 600:
+                        active_sec += effective_gap
                     else:
-                        inactive_sec += eff_final
+                        inactive_sec += effective_gap
                 
                 stats_response = {
                     "details": {
