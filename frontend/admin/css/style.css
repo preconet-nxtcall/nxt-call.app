@@ -52,6 +52,7 @@ body {
 }
 
 /* Sidebar and Navbar adjustments */
+/* Sidebar and Navbar adjustments */
 .card,
 .sidebar,
 .navbar {
@@ -74,4 +75,42 @@ body {
 .dark-mode .bg-gray-900 {
     background-color: #000 !important;
     /* Darker sidebar */
+}
+
+/* Text Color Overrides for Dark Mode */
+.dark-mode .text-gray-700,
+.dark-mode .text-gray-600,
+.dark-mode .text-gray-500 {
+    color: #d1d5db !important;
+    /* Gray-300 - lighter for readability */
+}
+
+.dark-mode .text-gray-400 {
+    color: #9ca3af !important;
+    /* Gray-400 */
+}
+
+/* Navbar Title Fix */
+.dark-mode #pageTitle {
+    color: #ffffff !important;
+}
+
+.dark-mode #pageSubtitle {
+    color: #d1d5db !important;
+}
+
+/* Fix Graph Labels visibility if needed (invert colors) */
+.dark-mode canvas {
+    filter: invert(0) !important;
+    /* Keeping charts authentic for now unless requested otherwise */
+}
+
+/* Ensure headings are white */
+.dark-mode h1,
+.dark-mode h2,
+.dark-mode h3,
+.dark-mode h4,
+.dark-mode h5,
+.dark-mode h6 {
+    color: #ffffff !important;
 }
