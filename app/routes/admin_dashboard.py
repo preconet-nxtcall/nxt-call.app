@@ -139,9 +139,22 @@ def is_same_day(dt):
     if not dt:
         return False
     try:
-        # Strict checking: Online only if sync date matches today (UTC)
-        return dt.date() == datetime.utcnow().date()
-    except:
+        now = datetime.utcnow().date()
+        target = dt
+        
+        # Handle string dates if (unlikely) DB returns strings
+        if isinstance(dt, str):
+            # Attempt basic ISO parsing
+            # dateutil would be better but keeping deps minimal
+             target = datetime.fromisoformat(str(dt).replace('Z', '+00:00'))
+
+        target_date = target.date() if hasattr(target, 'date') else target
+
+        print(f"DEBUG: Sync Check -> UserSync: {target_date} ({type(target)}), ServerNow: {now}")
+        
+        return target_date == now
+    except Exception as e:
+        print(f"DEBUG ERROR in is_same_day: {e}")
         return False
 
 # ... inside route ...
