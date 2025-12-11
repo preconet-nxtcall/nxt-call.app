@@ -94,8 +94,8 @@ class DashboardManager {
                 Last Sync: ${window.formatDateTime(r.last_sync)}
               </div>
             </div>
-            <div class="text-sm ${r.is_active ? 'text-green-600' : 'text-red-600'}">
-              ${r.is_active ? 'Active' : 'Inactive'}
+            <div class="text-sm ${r.is_online ? 'text-green-600' : 'text-red-600'}">
+              ${r.is_online ? 'Online' : 'Offline'}
             </div>
           </div>
         </div>

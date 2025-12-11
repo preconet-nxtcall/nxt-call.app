@@ -116,7 +116,8 @@ def recent_sync():
             .all()
         )
 
-        return jsonify({
+                today = datetime.utcnow().date()
+                return jsonify({
             "recent_sync": [
                 {
                     "id": u.id,
@@ -124,7 +125,8 @@ def recent_sync():
                     "email": u.email or "-",
                     "phone": u.phone or "-",
                     "is_active": u.is_active,
-                    "last_sync": iso(u.last_sync)
+                    "last_sync": iso(u.last_sync),
+                    "is_online": True if (u.last_sync and u.last_sync.date() == today) else False
                 }
                 for u in users
             ]
