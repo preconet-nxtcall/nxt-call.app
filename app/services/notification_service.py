@@ -81,7 +81,7 @@ class NotificationService:
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Welcome to Call Manager</title>
+  <title>Welcome to Nxt Call Manager</title>
   <style>
     body {{ font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }}
     .container {{ max-width: 600px; background: white; padding: 25px; border-radius: 10px;
