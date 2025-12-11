@@ -24,8 +24,8 @@ def forgot_password():
         super_admin = SuperAdmin.query.filter_by(email=email).first()
 
         if not (user or admin or super_admin):
-            # DEBUG: Reveal existence
-            return jsonify({"error": f"DEBUG: Email '{email}' not found."}), 404
+            # Security: Don't reveal if user exists. Just say email sent if valid.
+            return jsonify({"message": "If this email is registered, you will receive a reset link."}), 200
 
         # Generate Token
         token = uuid.uuid4().hex
@@ -44,14 +44,13 @@ def forgot_password():
         origin = request.headers.get("Origin") or "https://call-manager-pro.onrender.com"
         reset_link = f"{origin}/admin/reset_password.html?token={token}"
 
-        if NotificationService.send_password_reset_email(email, reset_link):
-             return jsonify({"message": f"Reset link sent to {email}"}), 200
-        else:
-             return jsonify({"error": "DEBUG: Failed to send email (Check server logs)"}), 500
+        NotificationService.send_password_reset_email(email, reset_link)
+
+        return jsonify({"message": "If this email is registered, you will receive a reset link."}), 200
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"Exception: {str(e)}"}), 500
+        return jsonify({"error": str(e)}), 500
 
 
 # =========================================================
