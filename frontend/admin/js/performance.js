@@ -322,7 +322,7 @@ class PerformanceManager {
     const tbody = document.getElementById('modalCallHistoryBody');
     const paginationContainer = document.getElementById('modalCallHistoryPagination');
 
-    let url = `/api/admin/all-call-history?user_id=${userId}&page=${page}&per_page=20`;
+    let url = `/api/admin/all-call-history?user_id=${userId}&page=${page}&per_page=30`;
 
     if (this.currentModalFilter && this.currentModalFilter !== 'all') {
       url += `&filter=${this.currentModalFilter}`;
@@ -339,9 +339,9 @@ class PerformanceManager {
     const meta = data.meta || {};
     const stats = data.stats || null;
 
-    if (stats) {
-      const statsContainer = document.getElementById('modalUserStats');
-      if (statsContainer) {
+    const statsContainer = document.getElementById('modalUserStats');
+    if (statsContainer) {
+      if (stats) {
         const d = stats.details || {};
         statsContainer.innerHTML = `
                 <div>
@@ -365,6 +365,15 @@ class PerformanceManager {
                     <p class="font-bold text-sm text-red-600">${d.inactive_time || '0s'}</p>
                 </div>
               `;
+      } else {
+        // Clear stats if not provided (e.g. filtered to a day with no attendance)
+        statsContainer.innerHTML = `
+                <div><p class="text-[10px] text-gray-500 uppercase mb-0.5">Check In</p><p class="font-bold text-sm text-gray-900">-</p></div>
+                <div><p class="text-[10px] text-gray-500 uppercase mb-0.5">Check Out</p><p class="font-bold text-sm text-gray-900">-</p></div>
+                <div><p class="text-[10px] text-gray-500 uppercase mb-0.5">Work Time</p><p class="font-bold text-sm text-gray-900">0s</p></div>
+                <div><p class="text-[10px] text-gray-500 uppercase mb-0.5">Active</p><p class="font-bold text-sm text-green-600">0s</p></div>
+                <div><p class="text-[10px] text-gray-500 uppercase mb-0.5">Inactive</p><p class="font-bold text-sm text-red-600">0s</p></div>
+         `;
       }
     }
 

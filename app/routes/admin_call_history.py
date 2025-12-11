@@ -40,7 +40,7 @@ def all_call_history():
         admin_id = int(get_jwt_identity())
 
         page = int(request.args.get("page", 1))
-        per_page = int(request.args.get("per_page", 50))
+        per_page = int(request.args.get("per_page", 30))
 
         # ============================
         # 1️⃣ DATE FILTER
