@@ -149,16 +149,18 @@ def check_online_status(dt):
         if isinstance(dt, str):
             sync_dt = datetime.fromisoformat(str(dt).replace('Z', '+00:00'))
         
-        # Get the date from sync_dt
+        # CRITICAL: Convert sync time from UTC to IST before extracting date
+        # The database stores UTC time, but we need to compare IST dates
         if hasattr(sync_dt, 'date'):
-            sync_date = sync_dt.date()
+            sync_dt_ist = sync_dt + timedelta(hours=5, minutes=30)
+            sync_date = sync_dt_ist.date()
         else:
             sync_date = sync_dt
         
         # Simple comparison: does the sync date match today?
         is_online = (sync_date == today_ist)
         
-        print(f"DEBUG Sync: {sync_date} vs Today: {today_ist} = {is_online}")
+        print(f"DEBUG Sync: UTC={dt}, IST_Date={sync_date} vs Today_IST={today_ist} = {is_online}")
         return is_online
         
     except Exception as e:
