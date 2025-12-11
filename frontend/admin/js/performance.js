@@ -248,14 +248,14 @@ class PerformanceManager {
             </div>
 
             <!-- Table -->
-            <div class="overflow-hidden border border-gray-200 rounded-lg">
+            <div class="overflow-hidden overflow-y-auto max-h-[60vh] border border-gray-200 rounded-lg">
                 <table class="min-w-full divide-y divide-gray-200">
-                  <thead class="bg-gray-50">
+                  <thead class="bg-gray-50 sticky top-0 z-10">
                     <tr>
-                      <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
-                      <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Number</th>
-                      <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Duration</th>
-                      <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date & Time</th>
+                      <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-50">Type</th>
+                      <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-50">Number</th>
+                      <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-50">Duration</th>
+                      <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-50">Date & Time</th>
                     </tr>
                   </thead>
                   <tbody id="modalCallHistoryBody" class="bg-white divide-y divide-gray-200">
