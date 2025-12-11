@@ -116,11 +116,11 @@ def recent_sync():
             .all()
         )
 
-                # Consider online if synced within last 16 hours (handles timezone shifts)
-                now_utc = datetime.utcnow()
-                cutoff = now_utc - timedelta(hours=16)
+        # Consider online if synced within last 16 hours (handles timezone shifts)
+        now_utc = datetime.utcnow()
+        cutoff = now_utc - timedelta(hours=16)
 
-                return jsonify({
+        return jsonify({
             "recent_sync": [
                 {
                     "id": u.id,
