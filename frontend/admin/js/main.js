@@ -68,6 +68,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ---------------------------------
+    // LOAD ADMIN PROFILE IN SIDEBAR
+    // ---------------------------------
+    const currentUser = auth.getCurrentUser();
+    if (currentUser) {
+        const nameEl = document.getElementById('sidebarUserName');
+        const emailEl = document.getElementById('sidebarUserEmail');
+
+        if (nameEl) {
+            nameEl.textContent = currentUser.name || currentUser.email || 'Admin User';
+        }
+        if (emailEl) {
+            emailEl.textContent = currentUser.email || 'admin@example.com';
+        }
+    }
+
+    // ---------------------------------
     // 1. SIDEBAR TOGGLE
     // ---------------------------------
     const sidebar = document.getElementById("sidebar");
