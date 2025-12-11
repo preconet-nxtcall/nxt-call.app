@@ -55,18 +55,22 @@ def dashboard_stats():
     
     daily_counts = []
     if user_ids:
-        trend_rows = (
-            db.session.query(
-                func.date(CallHistory.timestamp).label("date"),
-                func.count(CallHistory.id).label("count")
-            )
-            .filter(CallHistory.user_id.in_(user_ids), CallHistory.timestamp >= week_ago)
-            .group_by(func.date(CallHistory.timestamp))
-            .order_by(func.date(CallHistory.timestamp))
+        # Fetch raw calls for Python-side aggregation to avoid SQL dialect issues with dates
+        raw_calls = (
+            db.session.query(CallHistory.timestamp)
+            .filter(CallHistory.user_id.in_(user_ids))
+            .filter(CallHistory.timestamp >= week_ago)
             .all()
         )
-        trend_map = {str(r.date): int(r.count) for r in trend_rows}
         
+        # Group by date string (YYYY-MM-DD)
+        trend_map = {}
+        for c in raw_calls:
+            if c.timestamp:
+                d_str = str(c.timestamp.date())
+                trend_map[d_str] = trend_map.get(d_str, 0) + 1
+        
+        # Build the result list ensuring last 7 days are covered
         for i in range(6, -1, -1):
             d = (datetime.utcnow() - timedelta(days=i)).date()
             d_str = str(d)
