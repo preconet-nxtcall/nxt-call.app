@@ -126,9 +126,9 @@ class FollowupManager {
             const tr = document.createElement('tr');
             tr.className = 'hover:bg-gray-50 transition-colors';
 
-            // Format dates
-            const dateTime = new Date(f.date_time).toLocaleString();
-            const createdAt = new Date(f.created_at).toLocaleString();
+            // Format dates using the global formatDateTime function (12-hour format with AM/PM)
+            const dateTime = window.formatDateTime(f.date_time);
+            const createdAt = window.formatDateTime(f.created_at);
 
             // Status Styles
             let statusClass = 'bg-gray-100 text-gray-800';
