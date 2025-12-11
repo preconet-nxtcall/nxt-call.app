@@ -108,6 +108,11 @@ def get_admin_attendance():
                 "latitude": a.latitude,
                 "longitude": a.longitude,
                 "image_path": a.image_path,
+                # ✅ ADD CHECKOUT FIELDS
+                "check_out_address": a.check_out_address,
+                "check_out_latitude": a.check_out_latitude,
+                "check_out_longitude": a.check_out_longitude,
+                "check_out_image": a.check_out_image,
                 "synced": a.synced,
                 "external_id": a.external_id,
                 "created_at": a.created_at.isoformat() if a.created_at else None,
