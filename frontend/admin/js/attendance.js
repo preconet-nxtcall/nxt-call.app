@@ -304,13 +304,14 @@ class AttendanceManager {
       }
 
       // Convert to CSV
-      const headers = ["User", "Check In", "Check Out", "Status", "Address"];
+      const headers = ["User", "Check In", "Check In Location", "Check Out", "Check Out Location", "Status"];
       const rows = items.map(a => [
         this.escapeCsv(a.user_name || "Unknown"),
         this.escapeCsv(window.formatDateTime(a.check_in)),
+        this.escapeCsv(a.address || ""),
         this.escapeCsv(window.formatDateTime(a.check_out)),
-        this.escapeCsv(a.status),
-        this.escapeCsv(a.address || "")
+        this.escapeCsv(a.check_out_address || ""),
+        this.escapeCsv(a.status)
       ]);
 
       let csvContent = "data:text/csv;charset=utf-8,"
