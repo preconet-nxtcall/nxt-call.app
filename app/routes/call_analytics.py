@@ -2,6 +2,7 @@
 
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from app.auth_helpers import get_authorized_user
 from datetime import datetime, timedelta
 from sqlalchemy import func
 from app.models import db, User, CallHistory
@@ -19,14 +20,10 @@ bp = Blueprint("call_analytics", __name__, url_prefix="/api/call-analytics")
 @jwt_required()
 def sync_analytics():
     try:
-        user_id = int(get_jwt_identity())
-        user = User.query.get(user_id)
-
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-
-        if not user.is_active:
-            return jsonify({"error": "User inactive"}), 403
+        user, err_resp = get_authorized_user()
+        if err_resp:
+            return err_resp
+        user_id = user.id
 
         # ---- Total Calls ----
         total_calls = CallHistory.query.filter_by(user_id=user_id).count()
@@ -79,14 +76,10 @@ def sync_analytics():
 @jwt_required()
 def get_analytics():
     try:
-        user_id = int(get_jwt_identity())
-        user = User.query.get(user_id)
-
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-
-        if not user.is_active:
-            return jsonify({"error": "User inactive"}), 403
+        user, err_resp = get_authorized_user()
+        if err_resp:
+            return err_resp
+        user_id = user.id
 
         # Base query
         base_query = CallHistory.query.filter_by(user_id=user_id)

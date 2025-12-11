@@ -7,6 +7,7 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 
 from app.models import db, User, CallHistory
+from app.auth_helpers import get_authorized_user
 from sqlalchemy import func
 
 bp = Blueprint("call_history", __name__, url_prefix="/api/call-history")
@@ -84,11 +85,10 @@ def paginate(query):
 @jwt_required()
 def sync_call_history():
     try:
-        user_id = int(get_jwt_identity())
-        user = User.query.get(user_id)
-
-        if not user or not user.is_active:
-            return jsonify({"error": "User inactive or missing"}), 403
+        user, err_resp = get_authorized_user()
+        if err_resp:
+            return err_resp
+        user_id = user.id
 
         payload = request.get_json(silent=True) or {}
         call_list = payload.get("call_history", [])
@@ -234,7 +234,10 @@ def sync_call_history():
 @jwt_required()
 def my_call_history():
     try:
-        user_id = int(get_jwt_identity())
+        user, err_resp = get_authorized_user()
+        if err_resp:
+            return err_resp
+        user_id = user.id
 
         q = CallHistory.query.filter_by(user_id=user_id).order_by(CallHistory.timestamp.desc())
         items, meta = paginate(q)

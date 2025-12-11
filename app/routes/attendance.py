@@ -2,6 +2,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models import db, Attendance
+from app.auth_helpers import get_authorized_user
 from datetime import datetime
 import uuid
 import os
@@ -35,6 +36,10 @@ def upload_image():
     """
     Uploads an image, compresses it to < 200KB, and returns the relative path.
     """
+    user, err_resp = get_authorized_user()
+    if err_resp:
+        return err_resp
+
     if 'image' not in request.files:
         return jsonify({"error": "No image part"}), 400
     
@@ -76,6 +81,10 @@ def upload_image():
             # Return relative path for storage
             relative_path = f"uploads/attendance/{filename}"
             
+            print(f"✅ Image uploaded successfully: {relative_path}", flush=True)
+            print(f"   File size: {file_size} bytes", flush=True)
+            print(f"   Saved to: {filepath}", flush=True)
+            
             return jsonify({
                 "status": "success",
                 "image_path": relative_path,
@@ -83,7 +92,7 @@ def upload_image():
             }), 200
 
         except Exception as e:
-            print(f"Image upload failed: {e}")
+            print(f"❌ Image upload failed: {e}", flush=True)
             return jsonify({"error": "Image processing failed"}), 500
     
     return jsonify({"error": "Invalid file type"}), 400
@@ -98,7 +107,10 @@ def sync_attendance():
         if not data or "records" not in data:
             return jsonify({"error": "Invalid request format"}), 400
 
-        user_id = int(get_jwt_identity())
+        user, err_resp = get_authorized_user()
+        if err_resp:
+            return err_resp
+        user_id = user.id
         records = data["records"]
 
         for rec in records:

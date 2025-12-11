@@ -1,24 +1,27 @@
 from flask import Blueprint, request, jsonify, current_app
 from ..models import db, Followup, User
 from datetime import datetime, timedelta
+from flask_jwt_extended import jwt_required
+from app.auth_helpers import get_authorized_user
 
 bp = Blueprint("followup", __name__, url_prefix="/api")
 
 @bp.route("/followup/create", methods=["POST"])
+@jwt_required()
 def create_followup():
     try:
         data = request.get_json()
         
+        # Verify Auth & Expiry
+        user, err_resp = get_authorized_user()
+        if err_resp:
+            return err_resp
+            
         # Validate required fields
         required_fields = ["reminder_id", "user_id", "phone", "date_time"]
         for field in required_fields:
             if field not in data:
                 return jsonify({"error": f"Missing required field: {field}"}), 400
-
-        # Check if user exists
-        user = User.query.get(data["user_id"])
-        if not user:
-            return jsonify({"error": "User not found"}), 404
 
         # Parse date_time
         try:
@@ -39,7 +42,7 @@ def create_followup():
 
         followup = Followup(
             id=data["reminder_id"],
-            user_id=data["user_id"],
+            user_id=user.id, # Enforce current user ownership
             contact_name=data.get("contact_name"),
             phone=data["phone"],
             message=data.get("message"),

@@ -12,6 +12,7 @@ from sqlalchemy import func
 import re
 
 from app.models import db, User, Admin, ActivityLog, UserRole
+from app.auth_helpers import get_authorized_user
 
 bp = Blueprint("users", __name__, url_prefix="/api/users")
 
@@ -193,13 +194,19 @@ def login():
 # ============================================================
 # PROFILE (me)
 # ============================================================
+# Local get_authorized_user removed (moved to app/auth_helpers.py)
+
+
+# ============================================================
+# PROFILE (me)
+# ============================================================
 @bp.route("/me", methods=["GET"])
 @jwt_required()
 def get_me():
     try:
-        user = User.query.get(int(get_jwt_identity()))
-        if not user:
-            return jsonify({"error": "User not found"}), 404
+        user, error_resp = get_authorized_user()
+        if error_resp:
+            return error_resp
 
         return jsonify({
             "user": {
