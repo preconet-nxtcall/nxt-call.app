@@ -24,6 +24,18 @@ def get_authorized_user():
     if not user.is_active:
         return None, (jsonify({"error": "Account deactivated"}), 403)
 
+    # Session Check (Single Device Login)
+    from flask_jwt_extended import get_jwt
+    claims = get_jwt()
+    token_session_id = claims.get("session_id")
+    
+    # If token has session_id, it MUST match DB. 
+    # If token has NO session_id (old token), fail if DB has one.
+    # If DB has NO session_id, we might allow (transition period) or force re-login.
+    # Strict mode:
+    if user.current_session_id and token_session_id != user.current_session_id:
+        return None, (jsonify({"error": "Session expired or logged in on another device"}), 401)
+
     # Check Admin Status
     admin = Admin.query.get(user.admin_id)
     if not admin:

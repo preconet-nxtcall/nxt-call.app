@@ -163,16 +163,22 @@ def login():
             if expiry < today:
                 return jsonify({"error": "Your admin subscription has expired"}), 403
 
-        # Update login time
+        # Update login time & session
+        import uuid
+        session_id = uuid.uuid4().hex
         try:
             user.last_login = datetime.utcnow()
+            user.current_session_id = session_id
             db.session.commit()
         except:
             db.session.rollback()
 
         token = create_access_token(
             identity=str(user.id),
-            additional_claims={"role": "user"}
+            additional_claims={
+                "role": "user",
+                "session_id": session_id
+            }
         )
 
         return jsonify({

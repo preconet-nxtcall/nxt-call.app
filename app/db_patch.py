@@ -22,7 +22,8 @@ def run_schema_patch():
             'check_out_latitude': 'FLOAT',
             'check_out_longitude': 'FLOAT',
             'check_out_address': 'VARCHAR(500)',
-            'check_out_image': 'VARCHAR(1024)'
+            'check_out_image': 'VARCHAR(1024)',
+            'current_session_id': 'VARCHAR(100)' # For single device login
         }
         
         with engine.connect() as conn:
@@ -35,6 +36,20 @@ def run_schema_patch():
                         print(f"✅ Added {col_name}")
                     except Exception as e:
                         print(f"❌ Failed to add {col_name}: {e}")
+            
+            # Message for attendances
+            # Now check USERS table for session_id
+            if 'users' in inspector.get_table_names():
+                user_cols = [c['name'] for c in inspector.get_columns('users')]
+                if 'current_session_id' not in user_cols:
+                    print("Adding current_session_id to users table...")
+                    try:
+                         conn.execute(text('ALTER TABLE users ADD COLUMN current_session_id VARCHAR(100)'))
+                         print("✅ Added current_session_id to users")
+                    except Exception as e:
+                         print(f"❌ Failed to add current_session_id: {e}")
+
+            conn.commit()
             
             conn.commit()
             print("Schema patch complete.")

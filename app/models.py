@@ -147,6 +147,9 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=now)
     last_login = db.Column(db.DateTime)
     last_sync = db.Column(db.DateTime)
+    
+    # Session Management
+    current_session_id = db.Column(db.String(100), nullable=True)
 
     def set_password(self, password):
         self.password_hash = bcrypt.generate_password_hash(password).decode("utf-8")
