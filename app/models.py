@@ -331,9 +331,9 @@ class Followup(db.Model):
             "contact_name": self.contact_name,
             "phone": self.phone,
             "message": self.message,
-            "date_time": self.date_time.isoformat() if self.date_time else None,
+            "date_time": self.date_time.isoformat() + 'Z' if self.date_time else None,
             "status": self.status,
-            "created_at": self.created_at.isoformat() if self.created_at else None
+            "created_at": self.created_at.isoformat() + 'Z' if self.created_at else None
         }
 
 
