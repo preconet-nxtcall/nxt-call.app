@@ -162,8 +162,8 @@ def all_call_history():
                 "contact_name": rec.contact_name,
                 "call_type": rec.call_type,
                 "duration": rec.duration,
-                "timestamp": rec.timestamp.isoformat() if rec.timestamp else None,
-                "created_at": rec.created_at.isoformat() if rec.created_at else None,
+                "timestamp": rec.timestamp.isoformat() + 'Z' if rec.timestamp else None,
+                "created_at": rec.created_at.isoformat() + 'Z' if rec.created_at else None,
             })
 
         # Calculate Stats for the response if filtered by "today" (or generally if possible)
