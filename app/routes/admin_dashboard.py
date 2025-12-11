@@ -129,7 +129,7 @@ def recent_sync():
                     "phone": u.phone or "-",
                     "is_active": u.is_active,
                     "last_sync": iso(u.last_sync),
-                    "is_online": True if (u.last_sync and u.last_sync >= cutoff) else False
+                    "is_online": debug_check(u, cutoff)
                 }
                 for u in users
             ]
@@ -137,6 +137,11 @@ def recent_sync():
     except Exception as e:
         print(f"Error in recent_sync: {e}")
         return jsonify({"error": str(e)}), 400
+
+def debug_check(u, cutoff):
+    val = (u.last_sync and u.last_sync >= cutoff)
+    print(f"DEBUG: {u.name} last_sync={u.last_sync}, cutoff={cutoff}, is_online={val}")
+    return val
 
 
 # =========================================================
