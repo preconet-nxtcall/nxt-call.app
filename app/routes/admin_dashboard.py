@@ -139,20 +139,33 @@ def is_same_day(dt):
     if not dt:
         return False
     try:
-        now = datetime.utcnow().date()
-        target = dt
+        # Shift server time to IST (UTC + 5:30)
+        # This aligns "Today" with the user's perception in India
+        server_now_ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
+        now_date = server_now_ist.date()
         
-        # Handle string dates if (unlikely) DB returns strings
+        target = dt
         if isinstance(dt, str):
-            # Attempt basic ISO parsing
-            # dateutil would be better but keeping deps minimal
              target = datetime.fromisoformat(str(dt).replace('Z', '+00:00'))
 
-        target_date = target.date() if hasattr(target, 'date') else target
+        # If stored datetime is naïve, assume UTC, shift to IST for comparison
+        # (Assuming app sends UTC or stored as UTC)
+        if hasattr(target, 'date'):
+             # If exact match required, compare days
+             # But if target is UTC, we should ideally shift it too? 
+             # Let's assume target is already correct relative to real time.
+             # If target is 13:33 IST, stored as 08:03 UTC.
+             # 08:03 UTC + 5:30 = 13:33 IST. Date is Dec 11.
+             # Server Now (15:00 IST). Date is Dec 11.
+             # Match!
+             target_ist = target + timedelta(hours=5, minutes=30)
+             target_date = target_ist.date()
+        else:
+             target_date = target
 
-        print(f"DEBUG: Sync Check -> UserSync: {target_date} ({type(target)}), ServerNow: {now}")
+        print(f"DEBUG: Sync Check (IST) -> UserSync: {target_date}, ServerNow: {now_date}")
         
-        return target_date == now
+        return target_date == now_date
     except Exception as e:
         print(f"DEBUG ERROR in is_same_day: {e}")
         return False
