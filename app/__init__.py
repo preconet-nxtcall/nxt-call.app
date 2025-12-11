@@ -105,6 +105,7 @@ def create_app(config_class=Config):
     from app.routes.admin_users import admin_user_bp  # NEW
     from app.routes.call_analytics import bp as call_analytics_bp  # NEW
     from app.routes.followup import bp as followup_bp # NEW
+    from app.routes.auth_pwd import bp as auth_pwd_bp # NEW
 
     # =======================================================
     # REGISTER BLUEPRINTS
@@ -127,6 +128,7 @@ def create_app(config_class=Config):
 
     app.register_blueprint(call_analytics_bp)  # NEW
     app.register_blueprint(followup_bp) # NEW
+    app.register_blueprint(auth_pwd_bp) # NEW
 
 
     # =======================================================

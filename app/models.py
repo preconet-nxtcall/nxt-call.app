@@ -340,3 +340,20 @@ class Followup(db.Model):
         }
 
 
+# =========================================================
+# PASSWORD RESET MODEL
+# =========================================================
+class PasswordReset(db.Model):
+    __tablename__ = "password_resets"
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(150), nullable=False, index=True)
+    token = db.Column(db.String(100), unique=True, nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    used = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=now)
+
+    def is_valid(self):
+        return not self.used and datetime.utcnow() < self.expires_at
+
+

@@ -51,6 +51,26 @@ def run_schema_patch():
 
             conn.commit()
             
+            # Create password_resets table if missing
+            if 'password_resets' not in inspector.get_table_names():
+                print("Creating password_resets table...")
+                try:
+                    conn.execute(text('''
+                        CREATE TABLE password_resets (
+                            id SERIAL PRIMARY KEY,
+                            email VARCHAR(150) NOT NULL,
+                            token VARCHAR(100) UNIQUE NOT NULL,
+                            expires_at TIMESTAMP NOT NULL,
+                            used BOOLEAN DEFAULT FALSE,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    '''))
+                    # Add index on email for faster lookups
+                    conn.execute(text('CREATE INDEX idx_pwd_reset_email ON password_resets (email)'))
+                    print("✅ Created password_resets table")
+                except Exception as e:
+                    print(f"❌ Failed to create password_resets table: {e}")
+
             conn.commit()
             print("Schema patch complete.")
             

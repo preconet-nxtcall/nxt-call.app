@@ -124,3 +124,33 @@ class NotificationService:
         # SEND
         # ---------------------------------------------------------
         return NotificationService.send_email(email, subject, html_content)
+
+    @staticmethod
+    def send_password_reset_email(email, reset_link):
+        """
+        Sends Password Reset Email.
+        """
+        subject = "Reset Your Password - Nxt Call.app"
+        
+        html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {{ font-family: Arial, sans-serif; padding: 20px; }}
+    .btn {{ background-color: #dc2626; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }}
+  </style>
+</head>
+<body>
+  <h2>Password Reset Request</h2>
+  <p>We received a request to reset your password.</p>
+  <p>Click the button below to reset it:</p>
+  <br>
+  <a href="{reset_link}" class="btn">Reset Password</a>
+  <br><br>
+  <p>If you did not request this, please ignore this email.</p>
+  <p>Link expires in 15 minutes.</p>
+</body>
+</html>
+"""
+        return NotificationService.send_email(email, subject, html_content)
