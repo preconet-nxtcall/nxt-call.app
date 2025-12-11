@@ -18,12 +18,11 @@ def forgot_password():
         if not email:
             return jsonify({"error": "Email is required"}), 400
 
-        # Check if email exists in any role
-        user = User.query.filter_by(email=email).first()
+        # Check if email exists in Admin or SuperAdmin role
         admin = Admin.query.filter_by(email=email).first()
         super_admin = SuperAdmin.query.filter_by(email=email).first()
 
-        if not (user or admin or super_admin):
+        if not (admin or super_admin):
             # Security: Don't reveal if user exists. Just say email sent if valid.
             return jsonify({"message": "If this email is registered, you will receive a reset link."}), 200
 
@@ -87,9 +86,6 @@ def reset_password():
             updated = True
         elif admin:
             admin.set_password(new_password)
-            updated = True
-        elif user:
-            user.set_password(new_password)
             updated = True
         
         if not updated:
