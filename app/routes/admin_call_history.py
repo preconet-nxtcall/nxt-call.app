@@ -255,24 +255,32 @@ def all_call_history():
                 # We will filter in memory after shifting timezones
                 day_calls_raw = calls_query.order_by(CallHistory.timestamp.asc()).all()
                 
-                day_calls = []
                 # Filter calls to strictly within check-in/out window (DST/TZ safe)
-                # Assumption: c_in/c_out are LOCAL TIME (IST) naive, CallHistory is UTC
+                # IMPLEMENTING FUZZY MATCHING: Check Raw, +5:30, and -5:30
                 for call in day_calls_raw:
-                    # Shift call to IST
-                    call_local = call.timestamp + timedelta(hours=5, minutes=30)
+                    matched_time = None
                     
-                    # Ensure c_in/c_out are comparable (naive)
-                    # If call_local is aware (unlikely if +timedelta on naive), make naive or vice versa
-                    # Usually call.timestamp is naive UTC from DB. +timedelta makes it naive IST.
-                    
-                    in_window = True
-                    if c_in and call_local < c_in: in_window = False
-                    if c_out and call_local > c_out: in_window = False
-                    
-                    if in_window:
+                    # 1. Try Raw (If both matches)
+                    if c_in and c_out:
+                        # Candidate 1: Raw
+                        t1 = call.timestamp
+                        
+                        # Candidate 2: +5:30 (UTC to IST)
+                        t2 = call.timestamp + timedelta(hours=5, minutes=30)
+                        
+                        # Candidate 3: -5:30 (IST to UTC?)
+                        t3 = call.timestamp - timedelta(hours=5, minutes=30)
+                        
+                        if t1 >= c_in and t1 <= c_out:
+                            matched_time = t1
+                        elif t2 >= c_in and t2 <= c_out:
+                            matched_time = t2
+                        elif t3 >= c_in and t3 <= c_out:
+                            matched_time = t3
+                            
+                    if matched_time:
                         day_calls.append({
-                            'start': call_local,
+                            'start': matched_time,
                             'duration': call.duration or 0
                         })
                 
