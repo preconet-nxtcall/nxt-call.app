@@ -128,6 +128,7 @@ class AttendanceManager {
           <!-- CHECK OUT -->
           <td class="p-3 text-gray-700">
             ${window.formatDateTime(a.check_out)}
+            ${a.check_out_address ? `<div class="text-xs text-gray-500">${a.check_out_address}</div>` : ''}
           </td>
 
           <!-- STATUS -->
@@ -141,13 +142,21 @@ class AttendanceManager {
           <!-- ACTIONS -->
           <td class="p-3 flex gap-4">
 
-            <!-- VIEW IMAGE (if exists) -->
+            <!-- VIEW CHECK-IN IMAGE (if exists) -->
             ${a.image_path ? `
               <button onclick="attendanceManager.showImage('${a.image_path}')"
                 class="text-blue-600 hover:underline">
                 View Image
               </button>
             ` : "-"}
+            
+            <!-- VIEW CHECK-OUT IMAGE (if exists) -->
+            ${a.check_out_image ? `
+              <button onclick="attendanceManager.showImage('${a.check_out_image}')"
+                class="text-purple-600 hover:underline">
+                Checkout Image
+              </button>
+            ` : ""}
 
             <!-- OPEN MAP -->
             ${a.latitude && a.longitude ? `
@@ -162,6 +171,7 @@ class AttendanceManager {
 
         </tr>
       `).join("");
+
 
       // Render Pagination
       this.renderPagination(data.meta, date, user_id, month);
