@@ -111,10 +111,21 @@ def sync_attendance():
 
                 # Check if record already exists
                 existing = None
+                
+                # First, try to find by external_id (mobile-generated ID)
                 if external_id:
                     existing = Attendance.query.filter_by(
                         external_id=external_id,
                         user_id=user_id
+                    ).first()
+                
+                # If not found by external_id, check if there's already a record for today
+                if not existing and check_in:
+                    from sqlalchemy import func
+                    check_in_date = check_in.date()
+                    existing = Attendance.query.filter(
+                        Attendance.user_id == user_id,
+                        func.date(Attendance.check_in) == check_in_date
                     ).first()
 
                 if existing:
