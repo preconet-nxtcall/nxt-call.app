@@ -82,16 +82,14 @@ def reset_password():
         admin = Admin.query.filter_by(email=email).first()
         super_admin = SuperAdmin.query.filter_by(email=email).first()
 
-        if user:
-            user.set_password(new_password)
-            updated = True
-        
-        if admin:
-            admin.set_password(new_password)
-            updated = True
-            
         if super_admin:
             super_admin.set_password(new_password)
+            updated = True
+        elif admin:
+            admin.set_password(new_password)
+            updated = True
+        elif user:
+            user.set_password(new_password)
             updated = True
         
         if not updated:
