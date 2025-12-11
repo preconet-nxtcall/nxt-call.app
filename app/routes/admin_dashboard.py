@@ -116,8 +116,8 @@ def recent_sync():
             .all()
         )
 
-                today = datetime.utcnow().date()
-                return jsonify({
+        today = datetime.utcnow().date()
+        return jsonify({
             "recent_sync": [
                 {
                     "id": u.id,
