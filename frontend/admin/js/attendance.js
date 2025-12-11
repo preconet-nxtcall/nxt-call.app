@@ -228,14 +228,38 @@ class AttendanceManager {
 
   /* OPEN IMAGE PREVIEW */
   showImage(path) {
+    console.log('🖼️ Attempting to show image:', path);
+
+    if (!path) {
+      console.error('❌ No image path provided');
+      alert('No image available');
+      return;
+    }
+
+    // Construct full URL
     const fullPath = `${window.location.origin}/${path}`;
+    console.log('🔗 Full image URL:', fullPath);
+
     const modal = document.getElementById('imagePreviewModal');
     const img = document.getElementById('previewImage');
 
     if (modal && img) {
       img.src = fullPath;
+
+      // Add error handler
+      img.onerror = () => {
+        console.error('❌ Image failed to load:', fullPath);
+        alert(`Image not found: ${path}\n\nThis might mean:\n1. Image wasn't uploaded to server\n2. Image path is incorrect\n3. Image was deleted`);
+        modal.classList.add('hidden');
+      };
+
+      img.onload = () => {
+        console.log('✅ Image loaded successfully');
+      };
+
       modal.classList.remove('hidden');
     } else {
+      console.log('📂 Opening image in new tab');
       window.open(fullPath, "_blank");
     }
   }

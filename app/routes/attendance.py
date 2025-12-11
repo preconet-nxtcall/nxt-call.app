@@ -122,17 +122,23 @@ def sync_attendance():
                     existing.check_in = check_in
                     existing.check_out = check_out
                     
-                    # Check-in Data
-                    existing.latitude = rec.get("latitude")
-                    existing.longitude = rec.get("longitude")
-                    existing.address = rec.get("location")
-                    if rec.get("image_path"): # Matches Flutter JSON key 'image_path'
+                    # Check-in Data - Only update if provided (don't overwrite with None)
+                    if rec.get("latitude") is not None:
+                        existing.latitude = rec.get("latitude")
+                    if rec.get("longitude") is not None:
+                        existing.longitude = rec.get("longitude")
+                    if rec.get("location"):
+                        existing.address = rec.get("location")
+                    if rec.get("image_path"):
                         existing.image_path = rec.get("image_path")
                     
-                    # Check-out Data
-                    existing.check_out_latitude = rec.get("check_out_latitude")
-                    existing.check_out_longitude = rec.get("check_out_longitude")
-                    existing.check_out_address = rec.get("check_out_location") # Flutter sends 'check_out_location'
+                    # Check-out Data - Only update if provided
+                    if rec.get("check_out_latitude") is not None:
+                        existing.check_out_latitude = rec.get("check_out_latitude")
+                    if rec.get("check_out_longitude") is not None:
+                        existing.check_out_longitude = rec.get("check_out_longitude")
+                    if rec.get("check_out_location"):
+                        existing.check_out_address = rec.get("check_out_location")
                     if rec.get("check_out_image"):
                         existing.check_out_image = rec.get("check_out_image")
 
