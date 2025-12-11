@@ -116,10 +116,7 @@ def recent_sync():
             .all()
         )
 
-        # Consider online if synced within last 16 hours (handles timezone shifts)
-        now_utc = datetime.utcnow()
-        cutoff = now_utc - timedelta(hours=16)
-
+        # Strict check as requested: "today date syncronize means online"
         return jsonify({
             "recent_sync": [
                 {
@@ -129,7 +126,7 @@ def recent_sync():
                     "phone": u.phone or "-",
                     "is_active": u.is_active,
                     "last_sync": iso(u.last_sync),
-                    "is_online": debug_check(u, cutoff)
+                    "is_online": is_same_day(u.last_sync)
                 }
                 for u in users
             ]
@@ -138,10 +135,17 @@ def recent_sync():
         print(f"Error in recent_sync: {e}")
         return jsonify({"error": str(e)}), 400
 
-def debug_check(u, cutoff):
-    val = (u.last_sync and u.last_sync >= cutoff)
-    print(f"DEBUG: {u.name} last_sync={u.last_sync}, cutoff={cutoff}, is_online={val}")
-    return val
+def is_same_day(dt):
+    if not dt:
+        return False
+    try:
+        # Strict checking: Online only if sync date matches today (UTC)
+        return dt.date() == datetime.utcnow().date()
+    except:
+        return False
+
+# ... inside route ...
+# "is_online": is_same_day(u.last_sync)
 
 
 # =========================================================
