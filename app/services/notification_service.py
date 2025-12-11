@@ -16,6 +16,7 @@ class NotificationService:
             
             if not api_token or not sender_email:
                 logging.warning("Skipping Email: ZEPTOMAIL credentials not set.")
+                print(f"DEBUG: Msg credentials missing. Token: {bool(api_token)}, Sender: {sender_email}")
                 return False
 
             url = "https://api.zeptomail.in/v1.1/email"
@@ -40,7 +41,9 @@ class NotificationService:
                 "authorization": api_token
             }
             
+            print(f"DEBUG: Sending email to {to_email} via {url}")
             response = requests.post(url, json=payload, headers=headers, timeout=15)
+            print(f"DEBUG: Response {response.status_code} - {response.text}")
             
             if response.status_code in [200, 201]:
                 logging.info(f"Email sent successfully to {to_email}")
@@ -51,6 +54,7 @@ class NotificationService:
 
         except Exception as e:
             logging.error(f"Failed to send email to {to_email}: {e}")
+            print(f"DEBUG: Exception sending email: {e}")
             return False
 
     @staticmethod

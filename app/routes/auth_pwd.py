@@ -24,9 +24,8 @@ def forgot_password():
         super_admin = SuperAdmin.query.filter_by(email=email).first()
 
         if not (user or admin or super_admin):
-            # Security: Don't reveal if user exists. Just say email sent if valid.
-            # But for good UX, many apps do reveal. Let's return success regardless to prevent enumeration.
-            return jsonify({"message": "If this email is registered, you will receive a reset link."}), 200
+            # DEBUG: Reveal existence
+            return jsonify({"error": f"DEBUG: Email '{email}' not found."}), 404
 
         # Generate Token
         token = uuid.uuid4().hex
@@ -42,26 +41,17 @@ def forgot_password():
         db.session.commit()
 
         # Send Email
-        # In a real app, this should be the frontend URL
-        # For now, let's assume it points to the admin panel reset page
-        reset_link = f"https://your-domain.com/admin/reset_password.html?token={token}"
-        # Adjust domain based on your config or request host if needed, 
-        # but hardcoding placeholder for now or using request.host_url
-        
-        # Determine Reset Link (Trying to be smart about host)
-        # If running locally, maybe: http://127.0.0.1:5000/...
-        # But frontend is static HTML usually? 
-        # Let's use relative or assume served from same origin
         origin = request.headers.get("Origin") or "https://call-manager-pro.onrender.com"
         reset_link = f"{origin}/admin/reset_password.html?token={token}"
 
-        NotificationService.send_password_reset_email(email, reset_link)
-
-        return jsonify({"message": "If this email is registered, you will receive a reset link."}), 200
+        if NotificationService.send_password_reset_email(email, reset_link):
+             return jsonify({"message": f"Reset link sent to {email}"}), 200
+        else:
+             return jsonify({"error": "DEBUG: Failed to send email (Check server logs)"}), 500
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"Exception: {str(e)}"}), 500
 
 
 # =========================================================
