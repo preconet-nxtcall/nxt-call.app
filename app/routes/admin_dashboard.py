@@ -136,42 +136,33 @@ def recent_sync():
         return jsonify({"error": str(e)}), 400
 
 def check_online_status(dt):
+    """Check if user is online based on sync date matching today (IST)"""
     if not dt:
         return False
     try:
-        # 1. Setup Timezones (UTC and IST)
-        utc_now = datetime.utcnow()
-        ist_now = utc_now + timedelta(hours=5, minutes=30)
+        # Get today's date in IST
+        ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
+        today_ist = ist_now.date()
         
-        target = dt
+        # Handle the sync datetime
+        sync_dt = dt
         if isinstance(dt, str):
-             target = datetime.fromisoformat(str(dt).replace('Z', '+00:00'))
-
-        # Ensure target is comparable
-        if not hasattr(target, 'year'): # Basic check if it's a datetime/date
-            return False
-
-        # 2. Check Strict Date Match (IST)
-        # Shift target to IST assuming it was stored as UTC (or naive UTC)
-        target_ist = target + timedelta(hours=5, minutes=30)
+            sync_dt = datetime.fromisoformat(str(dt).replace('Z', '+00:00'))
         
-        # Comparison 1: IST Dates match?
-        if target_ist.date() == ist_now.date():
-            return True
-
-        # 3. Fallback: Recency Check (12 hours)
-        # If the date flipped (e.g. midnight) but synced recently, still show online?
-        # User said "today date syncronize... online". 
-        # But let's add a 6-hour buffer to prevent "Just synced 1 min ago" showing Offline at 12:01 AM.
-        # Actually user was very strict about "Today". 
-        # But if the server thinks it's yesterday, we need this safety.
-        delta = utc_now - target 
-        if delta.total_seconds() < (12 * 3600):
-            return True
-
-        return False
+        # Get the date from sync_dt
+        if hasattr(sync_dt, 'date'):
+            sync_date = sync_dt.date()
+        else:
+            sync_date = sync_dt
+        
+        # Simple comparison: does the sync date match today?
+        is_online = (sync_date == today_ist)
+        
+        print(f"DEBUG Sync: {sync_date} vs Today: {today_ist} = {is_online}")
+        return is_online
+        
     except Exception as e:
-        print(f"DEBUG ERROR in check_online_status: {e}")
+        print(f"ERROR in check_online_status: {e}, dt={dt}, type={type(dt)}")
         return False
 
 # ... inside route ...
