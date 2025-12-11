@@ -269,7 +269,7 @@ class PerformanceManager {
             </div>
 
             <!-- Table -->
-            <div class="overflow-hidden overflow-y-auto max-h-[55vh] border border-gray-200 rounded-lg">
+            <div class="overflow-hidden overflow-y-auto max-h-[40vh] border border-gray-200 rounded-lg">
                 <table class="min-w-full divide-y divide-gray-200">
                   <thead class="bg-gray-50 sticky top-0 z-10">
                     <tr>
