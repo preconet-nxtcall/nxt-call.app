@@ -105,13 +105,13 @@ def dashboard_stats():
 
     return jsonify({
         "stats": {
-            "total_users": total,
+            "total_users": len(raw_calls), # DEBUG: Show count of raw calls found
             "active_users": active,
             "expired_users": 0,
             "user_limit": admin.user_limit,
             "remaining_slots": admin.user_limit - total,
-            "users_with_sync": synced,
-            "sync_rate": round((synced / total) * 100, 2) if total else 0,
+            "users_with_sync": daily_counts[-1], # DEBUG: Show calculated count for Today
+            "sync_rate": len(trend_map), # DEBUG: Show number of unique days found (0-7)
             "avg_performance": avg_perf,
             "performance_trend": daily_counts,
             "admin_name": admin.name,
