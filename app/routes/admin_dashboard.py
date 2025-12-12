@@ -64,15 +64,25 @@ def dashboard_stats():
         )
         
         # Group by date string (YYYY-MM-DD)
+        # Group by date string (YYYY-MM-DD)
         trend_map = {}
+        # Fixed offset for IST (UTC+5:30) since most users are in India per previous context
+        # Ideally this should be dynamic based on admin settings, but for now hardcoded fix as requested
+        ist_delta = timedelta(hours=5, minutes=30)
+        
         for c in raw_calls:
             if c.timestamp:
-                d_str = str(c.timestamp.date())
+                # Convert UTC to IST
+                local_dt = c.timestamp + ist_delta
+                d_str = str(local_dt.date())
                 trend_map[d_str] = trend_map.get(d_str, 0) + 1
         
         # Build the result list ensuring last 7 days are covered
+        # We also need to align the "last 7 days" generation to IST
+        now_ist = datetime.utcnow() + ist_delta
+        
         for i in range(6, -1, -1):
-            d = (datetime.utcnow() - timedelta(days=i)).date()
+            d = (now_ist - timedelta(days=i)).date()
             d_str = str(d)
             daily_counts.append(trend_map.get(d_str, 0))
     else:
