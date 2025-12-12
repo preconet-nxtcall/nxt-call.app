@@ -69,22 +69,35 @@ def dashboard_stats():
         # Group by date string (YYYY-MM-DD)
         trend_map = {}
         # Fixed offset for IST (UTC+5:30) since most users are in India per previous context
-        # Ideally this should be dynamic based on admin settings, but for now hardcoded fix as requested
-        ist_delta = timedelta(hours=5, minutes=30)
+        # Get offset from request (in minutes), default to 0
+        try:
+            offset_min = int(request.args.get("timezone_offset", 0))
+        except:
+            offset_min = 0
+            
+        # Invert offset because JS getTimezoneOffset() returns +ve for West, -ve for East (e.g., IST is -330)
+        # But commonly we want to ADD minutes to get local time.
+        # Actually standard JS: local + offset = UTC. So UTC - offset = local.
+        # Let's verify: IST is UTC+5:30. JS `new Date().getTimezoneOffset()` is -330.
+        # UTC - (-330 minutes) = UTC + 330 minutes = UTC + 5.5 hours = IST. Correct.
+        # So we subtract the offset.
+        
+        local_delta = timedelta(minutes=-offset_min)
+        
+        trend_map = {}
         
         for c in raw_calls:
             if c.timestamp:
-                # Convert UTC to IST
-                local_dt = c.timestamp + ist_delta
+                # Convert UTC to Local
+                local_dt = c.timestamp + local_delta
                 d_str = str(local_dt.date())
                 trend_map[d_str] = trend_map.get(d_str, 0) + 1
         
         # Build the result list ensuring last 7 days are covered
-        # We also need to align the "last 7 days" generation to IST
-        now_ist = datetime.utcnow() + ist_delta
+        now_local = datetime.utcnow() + local_delta
         
         for i in range(6, -1, -1):
-            d = (now_ist - timedelta(days=i)).date()
+            d = (now_local - timedelta(days=i)).date()
             d_str = str(d)
             daily_counts.append(trend_map.get(d_str, 0))
     else:

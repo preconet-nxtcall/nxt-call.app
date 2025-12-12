@@ -7,7 +7,9 @@ class DashboardManager {
 
   async loadStats() {
     try {
-      const resp = await auth.makeAuthenticatedRequest('/api/admin/dashboard-stats');
+      let url = `/api/admin/dashboard-stats?timezone_offset=${new Date().getTimezoneOffset()}`;
+
+      const resp = await auth.makeAuthenticatedRequest(url);
       if (!resp) return;
 
       const data = await resp.json();
