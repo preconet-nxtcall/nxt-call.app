@@ -289,7 +289,7 @@ class AttendanceManager {
       if (month) url += `&month=${month}`;
       if (user_id) url += `&user_id=${user_id}`;
 
-      auth.showNotification("Generating PDF...", "info");
+      // auth.showNotification("Generating PDF...", "info");
 
       const resp = await auth.makeAuthenticatedRequest(url);
       if (!resp || !resp.ok) {
