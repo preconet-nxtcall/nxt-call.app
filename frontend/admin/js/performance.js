@@ -346,11 +346,15 @@ class PerformanceManager {
         statsContainer.innerHTML = `
                 <div>
                     <p class="text-[10px] text-gray-500 uppercase mb-0.5">Check In</p>
-                    <p class="font-bold text-sm text-gray-900">${d.check_in || '-'}</p>
+                    <p class="font-bold text-sm text-gray-900">
+                      ${d.check_in ? new Date(d.check_in).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
+                    </p>
                 </div>
                 <div>
                     <p class="text-[10px] text-gray-500 uppercase mb-0.5">Check Out</p>
-                    <p class="font-bold text-sm text-gray-900">${d.check_out || '-'}</p>
+                    <p class="font-bold text-sm text-gray-900">
+                      ${d.check_out ? new Date(d.check_out).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
+                    </p>
                 </div>
                  <div>
                     <p class="text-[10px] text-gray-500 uppercase mb-0.5">Work Time</p>

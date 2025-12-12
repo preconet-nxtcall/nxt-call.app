@@ -317,8 +317,8 @@ def all_call_history():
                 
                 stats_response = {
                     "details": {
-                        "check_in": c_in.strftime("%I:%M %p") if c_in else "-",
-                        "check_out": c_out.strftime("%I:%M %p") if c_out else "-",
+                        "check_in": c_in.isoformat() + 'Z' if c_in else None,
+                        "check_out": c_out.isoformat() + 'Z' if c_out else None,
                         "work_time": fmt_hms_local(w_time),
                         "active_time": fmt_hms_local(active_sec),
                         "inactive_time": fmt_hms_local(inactive_sec)
