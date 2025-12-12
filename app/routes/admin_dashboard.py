@@ -84,6 +84,11 @@ def dashboard_stats():
         
         local_delta = timedelta(minutes=-offset_min)
         
+        # DEBUG: Print what we're working with
+        print(f"DEBUG: Received timezone_offset: {offset_min}")
+        print(f"DEBUG: Local delta: {local_delta}")
+        print(f"DEBUG: Found {len(raw_calls)} raw calls")
+        
         trend_map = {}
         
         for c in raw_calls:
@@ -92,8 +97,13 @@ def dashboard_stats():
                 local_dt = c.timestamp + local_delta
                 d_str = str(local_dt.date())
                 trend_map[d_str] = trend_map.get(d_str, 0) + 1
+                # DEBUG: Print first 5 conversions
+                if len(trend_map) <= 5:
+                    print(f"DEBUG: Call {c.id} - UTC: {c.timestamp} -> Local: {local_dt} -> Date: {d_str}")
         
         now_local = datetime.utcnow() + local_delta
+        print(f"DEBUG: Now local: {now_local}, Date: {now_local.date()}")
+        print(f"DEBUG: Trend map: {trend_map}")
         
         # Build arrays for counts AND day labels based on local timezone
         daily_counts = []
@@ -102,8 +112,10 @@ def dashboard_stats():
         for i in range(6, -1, -1):
             d = (now_local - timedelta(days=i)).date()
             d_str = str(d)
-            daily_counts.append(trend_map.get(d_str, 0))
+            count = trend_map.get(d_str, 0)
+            daily_counts.append(count)
             day_labels.append(d.strftime("%a"))  # Mon, Tue, Wed, etc.
+            print(f"DEBUG: Day {d.strftime('%a')} ({d_str}): {count} calls")
 
     else:
         # Empty state - still need correct day labels based on timezone
