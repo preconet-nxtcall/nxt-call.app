@@ -177,13 +177,8 @@ class DashboardManager {
       this.performanceChart.destroy();
     }
 
-    // Generate last 7 days labels
-    const labels = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      labels.push(d.toLocaleDateString('en-US', { weekday: 'short' }));
-    }
+    // Use day labels from API (calculated with correct timezone on backend)
+    const labels = this.stats.day_labels || ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
     this.performanceChart = new Chart(canvas, {
       type: 'line',

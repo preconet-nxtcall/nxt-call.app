@@ -95,16 +95,30 @@ def dashboard_stats():
         
         now_local = datetime.utcnow() + local_delta
         
-        # Revert to simple array of counts for last 7 days
+        # Build arrays for counts AND day labels based on local timezone
         daily_counts = []
+        day_labels = []
         
         for i in range(6, -1, -1):
             d = (now_local - timedelta(days=i)).date()
             d_str = str(d)
             daily_counts.append(trend_map.get(d_str, 0))
+            day_labels.append(d.strftime("%a"))  # Mon, Tue, Wed, etc.
 
     else:
+        # Empty state - still need correct day labels based on timezone
+        try:
+            offset_min = int(request.args.get("timezone_offset", 0))
+        except:
+            offset_min = 0
+        local_delta = timedelta(minutes=-offset_min)
+        now_local = datetime.utcnow() + local_delta
+        
         daily_counts = [0] * 7
+        day_labels = []
+        for i in range(6, -1, -1):
+            d = (now_local - timedelta(days=i)).date()
+            day_labels.append(d.strftime("%a"))
 
     return jsonify({
         "stats": {
@@ -116,7 +130,8 @@ def dashboard_stats():
             "users_with_sync": synced,
             "sync_rate": round((synced / total) * 100, 2) if total else 0,
             "avg_performance": avg_perf,
-            "performance_trend": daily_counts, # Reverted to simple array
+            "performance_trend": daily_counts,
+            "day_labels": day_labels,  # Day names based on local timezone
             "admin_name": admin.name,
             "admin_email": admin.email
         }
