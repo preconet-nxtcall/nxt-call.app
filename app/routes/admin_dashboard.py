@@ -55,11 +55,13 @@ def dashboard_stats():
     
     daily_counts = []
     if user_ids:
-        # Fetch raw calls for Python-side aggregation to avoid SQL dialect issues with dates
+        # Fetch raw calls (full objects) to avoid potential tuple access issues
+        # Extend lookback to 8 days to ensure we cover the full IST window
+        query_start = week_ago - timedelta(days=1)
         raw_calls = (
-            db.session.query(CallHistory.timestamp)
+            db.session.query(CallHistory)
             .filter(CallHistory.user_id.in_(user_ids))
-            .filter(CallHistory.timestamp >= week_ago)
+            .filter(CallHistory.timestamp >= query_start)
             .all()
         )
         
