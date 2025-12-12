@@ -50,75 +50,60 @@ def dashboard_stats():
     avg_perf = round(total_score / total, 2) if total else 0
 
     # Calculate daily call trend (last 7 days)
-    week_ago = datetime.utcnow() - timedelta(days=7)
     user_ids = [u.id for u in users]
     
     daily_counts = []
+    day_labels = []
+    
     if user_ids:
-        # Fetch raw calls (full objects) to avoid potential tuple access issues
-        # Extend lookback to 8 days to ensure we cover the full IST window
-        query_start = week_ago - timedelta(days=1)
-        raw_calls = (
-            db.session.query(CallHistory)
-            .filter(CallHistory.user_id.in_(user_ids))
-            .filter(CallHistory.timestamp >= query_start)
-            .all()
-        )
-        
-        # Group by date string (YYYY-MM-DD)
-        # Group by date string (YYYY-MM-DD)
-        trend_map = {}
-        # Fixed offset for IST (UTC+5:30) since most users are in India per previous context
-        # Get offset from request (in minutes), default to 0
+        # Get timezone offset from frontend
         try:
             offset_min = int(request.args.get("timezone_offset", 0))
         except:
             offset_min = 0
-            
-        # Invert offset because JS getTimezoneOffset() returns +ve for West, -ve for East (e.g., IST is -330)
-        # But commonly we want to ADD minutes to get local time.
-        # Actually standard JS: local + offset = UTC. So UTC - offset = local.
-        # Let's verify: IST is UTC+5:30. JS `new Date().getTimezoneOffset()` is -330.
-        # UTC - (-330 minutes) = UTC + 330 minutes = UTC + 5.5 hours = IST. Correct.
-        # So we subtract the offset.
         
+        # Calculate local time delta
+        # JS getTimezoneOffset() returns -330 for IST (UTC+5:30)
+        # We need to subtract this to convert UTC to local: UTC - (-330) = UTC + 330 minutes
         local_delta = timedelta(minutes=-offset_min)
-        
-        # DEBUG: Print what we're working with
-        print(f"DEBUG: Received timezone_offset: {offset_min}")
-        print(f"DEBUG: Local delta: {local_delta}")
-        print(f"DEBUG: Found {len(raw_calls)} raw calls")
-        
-        trend_map = {}
-        
-        for c in raw_calls:
-            if c.timestamp:
-                # Convert UTC to Local
-                local_dt = c.timestamp + local_delta
-                d_str = str(local_dt.date())
-                trend_map[d_str] = trend_map.get(d_str, 0) + 1
-                # DEBUG: Print first 5 conversions
-                if len(trend_map) <= 5:
-                    print(f"DEBUG: Call {c.id} - UTC: {c.timestamp} -> Local: {local_dt} -> Date: {d_str}")
-        
         now_local = datetime.utcnow() + local_delta
-        print(f"DEBUG: Now local: {now_local}, Date: {now_local.date()}")
-        print(f"DEBUG: Trend map: {trend_map}")
         
-        # Build arrays for counts AND day labels based on local timezone
-        daily_counts = []
-        day_labels = []
+        # Fetch ALL calls for this admin's users (no date filter)
+        # This ensures we don't miss any calls due to timezone edge cases
+        all_calls = (
+            db.session.query(CallHistory)
+            .filter(CallHistory.user_id.in_(user_ids))
+            .all()
+        )
         
+        print(f"DEBUG: Found {len(all_calls)} total calls for admin's users")
+        print(f"DEBUG: Timezone offset: {offset_min}, Local delta: {local_delta}")
+        print(f"DEBUG: Now local: {now_local}")
+        
+        # Group calls by local date
+        trend_map = {}
+        for c in all_calls:
+            if c.timestamp:
+                # Convert UTC timestamp to local time
+                local_dt = c.timestamp + local_delta
+                date_key = str(local_dt.date())
+                trend_map[date_key] = trend_map.get(date_key, 0) + 1
+        
+        print(f"DEBUG: Trend map (all dates): {trend_map}")
+        
+        # Build last 7 days arrays
         for i in range(6, -1, -1):
             d = (now_local - timedelta(days=i)).date()
-            d_str = str(d)
-            count = trend_map.get(d_str, 0)
+            date_key = str(d)
+            count = trend_map.get(date_key, 0)
+            
             daily_counts.append(count)
-            day_labels.append(d.strftime("%a"))  # Mon, Tue, Wed, etc.
-            print(f"DEBUG: Day {d.strftime('%a')} ({d_str}): {count} calls")
+            day_labels.append(d.strftime("%a"))
+            
+            print(f"DEBUG: {d.strftime('%a')} {date_key}: {count} calls")
 
     else:
-        # Empty state - still need correct day labels based on timezone
+        # No users - return empty data with correct day labels
         try:
             offset_min = int(request.args.get("timezone_offset", 0))
         except:
