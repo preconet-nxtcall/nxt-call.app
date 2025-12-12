@@ -2,6 +2,13 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime, timedelta
 from sqlalchemy import func
+from io import BytesIO
+from flask import send_file
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
 
 from ..models import db, Admin, Attendance, User
 
@@ -134,3 +141,123 @@ def get_admin_attendance():
     except Exception as e:
         current_app.logger.exception("Admin attendance query failed")
         return jsonify({"error": "Internal server error"}), 500
+
+
+@bp.route("/export_pdf", methods=["GET"])
+@jwt_required()
+def export_attendance_pdf():
+    """Export attendance data as PDF."""
+    
+    if not admin_required():
+        return jsonify({"error": "Admin access only"}), 403
+
+    try:
+        admin_id = int(get_jwt_identity())
+        
+        # Build Query (Reuse logic)
+        base_query = db.session.query(Attendance).join(User, Attendance.user_id == User.id).filter(User.admin_id == admin_id)
+
+        # Filters
+        date_str = request.args.get("date")
+        month_param = request.args.get("month")
+        user_id = request.args.get("user_id")
+
+        start_time = None
+        end_time = None
+
+        if date_str:
+            try:
+                start_time = f"{date_str} 00:00:00"
+                end_time = f"{date_str} 23:59:59"
+            except Exception:
+                pass
+        
+        if month_param:
+            try:
+                part_year, part_month = map(int, month_param.split('-'))
+                start_time = datetime(part_year, part_month, 1)
+                if part_month == 12:
+                    end_time = datetime(part_year + 1, 1, 1)
+                else:
+                    end_time = datetime(part_year, part_month + 1, 1)
+            except ValueError:
+                pass
+
+        if user_id and user_id != "all":
+            try:
+                base_query = base_query.filter(Attendance.user_id == int(user_id))
+            except ValueError:
+                pass
+
+        if start_time and end_time:
+            if month_param:
+                 base_query = base_query.filter(Attendance.check_in >= start_time, Attendance.check_in < end_time)
+            else:
+                 base_query = base_query.filter(Attendance.check_in >= start_time, Attendance.check_in <= end_time)
+
+        # Get all records for export
+        records = base_query.order_by(Attendance.check_in.desc()).all()
+
+        # PDF GENERATION
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        elements = []
+        styles = getSampleStyleSheet()
+
+        elements.append(Paragraph("Nxt Call.app", styles['Title']))
+        elements.append(Spacer(1, 12))
+        
+        if date_str:
+            elements.append(Paragraph(f"Date: {date_str}", styles['Normal']))
+        elif month_param:
+            elements.append(Paragraph(f"Month: {month_param}", styles['Normal']))
+        elements.append(Spacer(1, 12))
+
+        # Table Data
+        data = [["User", "Check In", "Address", "Check Out", "Status"]]
+        
+        for r in records:
+            c_in = r.check_in.strftime("%Y-%m-%d %H:%M") if r.check_in else "-"
+            c_out = r.check_out.strftime("%Y-%m-%d %H:%M") if r.check_out else "-"
+            user_name = r.user.name if r.user else "Unknown"
+            
+            # Truncate address to fit
+            addr = r.address or "-"
+            if len(addr) > 30:
+                addr = addr[:27] + "..."
+                
+            data.append([
+                user_name,
+                c_in,
+                addr,
+                c_out,
+                r.status
+            ])
+
+        # Table Style
+        table = Table(data)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.gray),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ]))
+        
+        elements.append(table)
+        doc.build(elements)
+        
+        buffer.seek(0)
+        return send_file(
+            buffer, 
+            as_attachment=True, 
+            download_name=f"attendance_report_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf", 
+            mimetype='application/pdf'
+        )
+
+    except Exception as e:
+        current_app.logger.exception("PDF Export failed")
+        return jsonify({"error": "Export failed"}), 500

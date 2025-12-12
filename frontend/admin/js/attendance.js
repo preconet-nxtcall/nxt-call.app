@@ -284,51 +284,34 @@ class AttendanceManager {
     const user_id = userFilter?.value === 'all' ? null : userFilter?.value;
 
     try {
-      let url = `/api/admin/attendance?per_page=10000`; // Fetch large number for export
+      let url = `/api/admin/attendance/export_pdf?ignore=0`;
       if (date) url += `&date=${date}`;
       if (month) url += `&month=${month}`;
       if (user_id) url += `&user_id=${user_id}`;
 
+      auth.showNotification("Generating PDF...", "info");
+
       const resp = await auth.makeAuthenticatedRequest(url);
       if (!resp || !resp.ok) {
-        auth.showNotification("Failed to fetch data for export", "error");
+        auth.showNotification("Failed to fetch PDF", "error");
         return;
       }
 
-      const data = await resp.json();
-      const items = data.attendance || [];
-
-      if (items.length === 0) {
-        auth.showNotification("No records to export", "info");
-        return;
-      }
-
-      // Convert to CSV
-      const headers = ["User", "Check In", "Check In Location", "Check Out", "Check Out Location", "Status"];
-      const rows = items.map(a => [
-        this.escapeCsv(a.user_name || "Unknown"),
-        this.escapeCsv(window.formatDateTime(a.check_in)),
-        this.escapeCsv(a.address || ""),
-        this.escapeCsv(window.formatDateTime(a.check_out)),
-        this.escapeCsv(a.check_out_address || ""),
-        this.escapeCsv(a.status)
-      ]);
-
-      let csvContent = "data:text/csv;charset=utf-8,"
-        + headers.join(",") + "\n"
-        + rows.map(e => e.join(",")).join("\n");
-
-      const encodedUri = encodeURI(csvContent);
+      const blob = await resp.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `attendance_export_${date || month || "all"}.csv`);
+      link.href = downloadUrl;
+      link.download = `Attendance_Report_${date || month || "all"}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+
+      auth.showNotification("Download started", "success");
 
     } catch (e) {
       console.error("Export failed", e);
-      auth.showNotification("Export failed", "error");
+      auth.showNotification("Export failed: " + e.message, "error");
     }
   }
 }
