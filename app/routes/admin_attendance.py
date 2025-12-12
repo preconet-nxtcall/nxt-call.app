@@ -207,31 +207,31 @@ def export_attendance_pdf():
         elements.append(Paragraph("Nxt Call.app", styles['Title']))
         elements.append(Spacer(1, 12))
         
-        if date_str:
-            elements.append(Paragraph(f"Date: {date_str}", styles['Normal']))
-        elif month_param:
-            elements.append(Paragraph(f"Month: {month_param}", styles['Normal']))
-        elements.append(Spacer(1, 12))
-
         # Table Data
-        data = [["User", "Check In", "Address", "Check Out", "Status"]]
+        # User Name, Check In Time, Check In Address, Check Out Time, Status, Check Out Address
+        data = [["User Name", "Check In Time", "Check In Address", "Check Out Time", "Status", "Check Out Address"]]
         
         for r in records:
             c_in = r.check_in.strftime("%Y-%m-%d %H:%M") if r.check_in else "-"
             c_out = r.check_out.strftime("%Y-%m-%d %H:%M") if r.check_out else "-"
             user_name = r.user.name if r.user else "Unknown"
             
-            # Truncate address to fit
-            addr = r.address or "-"
-            if len(addr) > 30:
-                addr = addr[:27] + "..."
+            # Truncate addresses to fit
+            addr_in = r.address or "-"
+            if len(addr_in) > 20:
+                addr_in = addr_in[:17] + "..."
+
+            addr_out = r.check_out_address or "-"
+            if len(addr_out) > 20:
+                addr_out = addr_out[:17] + "..."
                 
             data.append([
                 user_name,
                 c_in,
-                addr,
+                addr_in,
                 c_out,
-                r.status
+                r.status,
+                addr_out
             ])
 
         # Table Style
