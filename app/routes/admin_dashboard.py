@@ -93,45 +93,18 @@ def dashboard_stats():
                 d_str = str(local_dt.date())
                 trend_map[d_str] = trend_map.get(d_str, 0) + 1
         
-        # Build the result list ensuring last 7 days are covered
         now_local = datetime.utcnow() + local_delta
         
-        # User requested specific format: [{"day": "Mon", "total": 12}, ...]
-        # We will generate this for the last 7 days ending Today
-        call_volume_trend = []
+        # Revert to simple array of counts for last 7 days
+        daily_counts = []
         
-        # We want 7 days: Today, Yesterday, ... -6 days
-        # But charts usually read Left-to-Right (Oldest to Newest)
-        # So we iterate from -6 to 0
         for i in range(6, -1, -1):
             d = (now_local - timedelta(days=i)).date()
             d_str = str(d)
-            day_label = d.strftime("%a") # Mon, Tue, Wed...
-            count = trend_map.get(d_str, 0)
-            
-            call_volume_trend.append({
-                "day": day_label,
-                "total": count
-            })
+            daily_counts.append(trend_map.get(d_str, 0))
 
     else:
-        # Empty state with correct day labels for last 7 days
-        # Need to re-calculate local time even if no calls to get correct labels
-        try:
-            offset_min = int(request.args.get("timezone_offset", 0))
-        except:
-            offset_min = 0
-        local_delta = timedelta(minutes=-offset_min)
-        now_local = datetime.utcnow() + local_delta
-        
-        call_volume_trend = []
-        for i in range(6, -1, -1):
-             d = (now_local - timedelta(days=i)).date()
-             day_label = d.strftime("%a")
-             call_volume_trend.append({
-                "day": day_label,
-                "total": 0
-            })
+        daily_counts = [0] * 7
 
     return jsonify({
         "stats": {
@@ -143,7 +116,7 @@ def dashboard_stats():
             "users_with_sync": synced,
             "sync_rate": round((synced / total) * 100, 2) if total else 0,
             "avg_performance": avg_perf,
-            "call_volume_trend": call_volume_trend, # New structure
+            "performance_trend": daily_counts, # Reverted to simple array
             "admin_name": admin.name,
             "admin_email": admin.email
         }

@@ -177,12 +177,13 @@ class DashboardManager {
       this.performanceChart.destroy();
     }
 
-    // Use data directly from API (already formatted with correct Local Day)
-    const trendData = this.stats.call_volume_trend || [];
-
-    // Map API data to Chart.js format
-    const labels = trendData.map(item => item.day);
-    const values = trendData.map(item => item.total);
+    // Generate last 7 days labels
+    const labels = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      labels.push(d.toLocaleDateString('en-US', { weekday: 'short' }));
+    }
 
     this.performanceChart = new Chart(canvas, {
       type: 'line',
@@ -190,15 +191,10 @@ class DashboardManager {
         labels: labels,
         datasets: [{
           label: 'Total Calls',
-          data: values,
+          data: this.stats.performance_trend || [0, 0, 0, 0, 0, 0, 0],
           borderColor: '#2563EB',
           backgroundColor: 'rgba(37, 99, 235, 0.1)',
           borderWidth: 2,
-          pointBackgroundColor: '#FFFFFF',
-          pointBorderColor: '#2563EB',
-          pointBorderWidth: 2,
-          pointRadius: 4,
-          pointHoverRadius: 6,
           fill: true,
           tension: 0.3
         }]
@@ -208,36 +204,14 @@ class DashboardManager {
         maintainAspectRatio: false,
         plugins: {
           legend: {
-            display: false // Title handles context
-          },
-          title: {
-            display: false, // HTML has title, or enable if strictly requested? User said "Title: Call Volume Trend". 
-            // Usually better to keep HTML title if existing. Screenshot shows HTML h3.
-            // I will leave display: false to avoid double titles, but adding subtitle support if needed.
-          },
-          tooltip: {
-            callbacks: {
-              label: function (context) {
-                return `Total Calls: ${context.parsed.y}`;
-              }
-            }
+            display: true
           }
         },
         scales: {
           y: {
             beginAtZero: true,
             ticks: {
-              stepSize: 1,
               precision: 0
-            },
-            grid: {
-              borderDash: [2, 4],
-              color: '#E5E7EB'
-            }
-          },
-          x: {
-            grid: {
-              display: false
             }
           }
         }
