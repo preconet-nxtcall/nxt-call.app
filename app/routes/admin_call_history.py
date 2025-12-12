@@ -218,21 +218,14 @@ def all_call_history():
                 c_in = att_record.check_in
                 c_out = att_record.check_out
                 
+                # Determine "effective end time" for calculation
+                # If active (no checkout), use NOW
+                calc_end_time = c_out if c_out else datetime.utcnow()
+
                 # Work Time
                 w_time = 0
-                if c_in and c_out:
-                    w_time = (c_out - c_in).total_seconds()
-                    # We might need lunch deduction? 
-                    # For simplicity in this "quick view", raw diff is OK, OR apply 1h deduction if > 5h?
-                    # The main performance logic has complex lunch logic.
-                    # Let's apply simple lunch logic: if > 5 hours, deduct 1 hr? 
-                    # Or just return raw for now to avoid mismatch if user didn't take lunch?
-                    # User complained about "80h" vs "9h". The fix was strictly using check_out.
-                    # Here we have c_out, so it should be fine.
-                    # Let's NOT apply arbitrary lunch deduction here to avoid confusion, 
-                    # unless we verify against admin_performance logic. 
-                    # Replicating admin_performance logic precisely is hard here without importing.
-                    # Let's show (c_out - c_in).
+                if c_in:
+                    w_time = (calc_end_time - c_in).total_seconds()
                 
                 # Calculate Active/Inactive times by analyzing call gaps
                 # Get calls for this specific day/filter
@@ -252,16 +245,26 @@ def all_call_history():
                     calls_query = calls_query.filter(CallHistory.timestamp >= start_time)
                 
                 # Get calls within work session
-                day_calls = calls_query.filter(
-                    CallHistory.timestamp >= c_in,
-                    CallHistory.timestamp <= c_out
-                ).order_by(CallHistory.timestamp.asc()).all()
+                # If no c_out, we limit only by c_in
+                if c_out:
+                    day_calls = calls_query.filter(
+                        CallHistory.timestamp >= c_in,
+                        CallHistory.timestamp <= c_out
+                    ).order_by(CallHistory.timestamp.asc()).all()
+                else:
+                    day_calls = calls_query.filter(
+                        CallHistory.timestamp >= c_in
+                    ).order_by(CallHistory.timestamp.asc()).all()
                 
                 # Calculate active/inactive time
                 active_sec = 0
                 inactive_sec = 0
                 last_sync = c_in
                 
+                if not last_sync:
+                     # Safety fallback if c_in misses
+                     last_sync = datetime.utcnow()
+
                 def is_lunch_hour(dt):
                     return dt.hour == 13
                 
@@ -294,15 +297,15 @@ def all_call_history():
                     
                     last_sync = curr_time
                 
-                # Final gap from last call to checkout
+                # Final gap from last call to checkout/now
                 if day_calls or c_in:
-                    final_gap = (c_out - last_sync).total_seconds()
+                    final_gap = (calc_end_time - last_sync).total_seconds()
                     
                     lunch_start = c_in.replace(hour=13, minute=0, second=0, microsecond=0)
                     lunch_end = c_in.replace(hour=14, minute=0, second=0, microsecond=0)
                     
                     overlap_start = max(last_sync, lunch_start)
-                    overlap_end = min(c_out, lunch_end)
+                    overlap_end = min(calc_end_time, lunch_end)
                     overlap = max(0, (overlap_end - overlap_start).total_seconds())
                     
                     effective_gap = max(0, final_gap - overlap)
