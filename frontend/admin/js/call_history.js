@@ -159,13 +159,14 @@ class CallHistoryManager {
 
       container.innerHTML = `
         <table class="w-full bg-white rounded shadow overflow-hidden">
-          <thead class="bg-gray-200">
+              <thead class="bg-gray-200">
             <tr>
               <th class="p-3">User</th>
               <th class="p-3">Number</th>
               <th class="p-3">Contact Name</th>
               <th class="p-3">Type</th>
               <th class="p-3">Duration</th>
+              <th class="p-3">Recording</th>
               <th class="p-3">Timestamp</th>
             </tr>
           </thead>
@@ -186,6 +187,18 @@ class CallHistoryManager {
                 typeBadge = `<span class="px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-700">${r.call_type}</span>`;
               }
 
+              // Recording Player
+              let recordingPlayer = '<span class="text-gray-400 text-xs">-</span>';
+              if (r.recording_path) {
+                // Assuming static files are served at /static/
+                recordingPlayer = `
+                    <audio controls controlsList="nodownload" class="h-8 w-32">
+                        <source src="/static/${r.recording_path}" type="audio/mpeg">
+                        Your browser does not support the audio element.
+                    </audio>
+                  `;
+              }
+
               return `
                 <tr class="border-t hover:bg-gray-50">
                   <td class="p-3">${r.user_name || r.user_id || '-'}</td>
@@ -193,6 +206,7 @@ class CallHistoryManager {
                   <td class="p-3">${r.contact_name || '-'}</td>
                   <td class="p-3">${typeBadge}</td>
                   <td class="p-3">${r.duration ? r.duration + "s" : "-"}</td>
+                  <td class="p-3">${recordingPlayer}</td>
                   <td class="p-3 text-sm text-gray-600">
                     ${window.formatDateTime(r.timestamp)}
                   </td>

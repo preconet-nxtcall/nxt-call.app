@@ -273,3 +273,106 @@ def admin_user_call_history(user_id):
     except Exception as e:
         current_app.logger.exception("ADMIN CALL HISTORY ERROR")
         return jsonify({"error": str(e)}), 400
+
+
+# -------------------------------------------------
+# 4️⃣ UPLOAD CALL RECORDING
+# -------------------------------------------------
+import os
+from werkzeug.utils import secure_filename
+
+ALLOWED_EXTENSIONS = {'mp3', 'wav', 'aac', 'm4a', 'amr', 'opus', 'ogg'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@bp.route("/upload-recording", methods=["POST"])
+@jwt_required()
+def upload_recording():
+    try:
+        user, err_resp = get_authorized_user()
+        if err_resp:
+            return err_resp
+        user_id = user.id
+
+        # Check if file is present
+        if 'file' not in request.files:
+            return jsonify({"error": "No file part"}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "No selected file"}), 400
+
+        if not allowed_file(file.filename):
+            return jsonify({"error": "File type not allowed"}), 400
+
+        # Metadata to match record
+        phone_number = request.form.get("phone_number")
+        timestamp_raw = request.form.get("timestamp")
+        call_type = request.form.get("call_type")
+        duration = request.form.get("duration", type=int) or 0
+        contact_name = request.form.get("contact_name") or ""
+        
+        if not phone_number or not timestamp_raw:
+            return jsonify({"error": "Missing metadata (phone_number, timestamp)"}), 400
+
+        # Parse timestamp
+        dt = parse_timestamp(timestamp_raw)
+        if not dt:
+             return jsonify({"error": "Invalid timestamp"}), 400
+        
+        # Ensure UTC and strip microseconds for matching
+        if dt.tzinfo:
+            dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+        dt = dt.replace(microsecond=0)
+
+        # 🔍 Try to find existing record
+        # We match broadly on timestamp (within seconds tolerance?) 
+        # For now, exact match on normalized timestamp as per sync logic
+        record = CallHistory.query.filter(
+            CallHistory.user_id == user_id,
+            CallHistory.phone_number == phone_number,
+            CallHistory.timestamp == dt
+        ).first()
+
+        # If not found exactly, maybe allow small drift? (Optional, skipping for now)
+
+        if not record:
+            # Create new record if one doesn't exist (Recording arrived before sync or missed sync)
+            record = CallHistory(
+                user_id=user_id,
+                phone_number=phone_number,
+                formatted_number="", # Can be added if sent
+                call_type=call_type.lower() if call_type else "unknown",
+                duration=duration,
+                timestamp=dt,
+                contact_name=contact_name
+            )
+            db.session.add(record)
+            db.session.flush() # Get ID
+        
+        # 📂 Save File
+        # Structure: uploads/recordings/user_{id}/filename
+        upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'recordings', f'user_{user_id}')
+        os.makedirs(upload_folder, exist_ok=True)
+        
+        filename = secure_filename(f"{dt.strftime('%Y%m%d_%H%M%S')}_{phone_number}_{file.filename}")
+        file_path = os.path.join(upload_folder, filename)
+        file.save(file_path)
+        
+        # Store relative path for frontend access
+        # Assuming typical static setup: /static/uploads/...
+        relative_path = f"uploads/recordings/user_{user_id}/{filename}"
+        record.recording_path = relative_path
+        
+        db.session.commit()
+
+        return jsonify({
+            "message": "Recording uploaded successfully",
+            "id": record.id,
+            "path": relative_path
+        }), 200
+
+    except Exception as e:
+        current_app.logger.exception("UPLOAD RECORDING ERROR")
+        return jsonify({"error": "Upload failed", "detail": str(e)}), 500

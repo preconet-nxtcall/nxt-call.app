@@ -238,6 +238,7 @@ class CallHistory(db.Model):
     timestamp = db.Column(db.DateTime)
     duration = db.Column(db.Integer)
     contact_name = db.Column(db.String(150))
+    recording_path = db.Column(db.String(1024), nullable=True)
 
     created_at = db.Column(db.DateTime, default=now)
 
@@ -253,6 +254,7 @@ class CallHistory(db.Model):
             "timestamp": self.timestamp.isoformat() if self.timestamp else None,
             "duration": self.duration,
             "contact_name": self.contact_name,
+            "recording_path": self.recording_path,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
 
