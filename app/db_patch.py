@@ -37,6 +37,7 @@ def run_schema_patch():
                     except Exception as e:
                         print(f"❌ Failed to add {col_name}: {e}")
             
+
             # Message for attendances
             # Now check USERS table for session_id
             if 'users' in inspector.get_table_names():
@@ -48,6 +49,17 @@ def run_schema_patch():
                          print("✅ Added current_session_id to users")
                     except Exception as e:
                          print(f"❌ Failed to add current_session_id: {e}")
+
+            # CALL HISTORY - recording_path
+            if 'call_history' in inspector.get_table_names():
+                ch_cols = [c['name'] for c in inspector.get_columns('call_history')]
+                if 'recording_path' not in ch_cols:
+                    print("Adding recording_path to call_history table...")
+                    try:
+                         conn.execute(text('ALTER TABLE call_history ADD COLUMN recording_path VARCHAR(1024)'))
+                         print("✅ Added recording_path to call_history")
+                    except Exception as e:
+                         print(f"❌ Failed to add recording_path: {e}")
 
             conn.commit()
             
