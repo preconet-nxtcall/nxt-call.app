@@ -51,7 +51,7 @@ class DashboardManager {
     const cards = [
       { title: "Total Users", value: s.total_users ?? 0, icon: "users", color: "blue" },
       { title: "Active Users", value: s.active_users ?? 0, icon: "user-check", color: "green" },
-      { title: "Users With Sync", value: s.users_with_sync ?? 0, icon: "sync", color: "purple" },
+      { title: "Users With Sync", value: s.synced_users ?? 0, icon: "sync", color: "purple" },
       { title: "Remaining Slots", value: s.remaining_slots ?? 0, icon: "user-plus", color: "orange" }
     ];
 
@@ -177,8 +177,10 @@ class DashboardManager {
       this.performanceChart.destroy();
     }
 
-    // Use day labels from API (calculated with correct timezone on backend)
-    const labels = this.stats.day_labels || ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+    // Use call_trend from API
+    const trend = this.stats.call_trend || {};
+    const labels = trend.labels || ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+    const dataPoints = trend.data || [0, 0, 0, 0, 0, 0, 0];
 
     this.performanceChart = new Chart(canvas, {
       type: 'line',
@@ -186,7 +188,7 @@ class DashboardManager {
         labels: labels,
         datasets: [{
           label: 'Total Calls',
-          data: this.stats.performance_trend || [0, 0, 0, 0, 0, 0, 0],
+          data: dataPoints,
           borderColor: '#2563EB',
           backgroundColor: 'rgba(37, 99, 235, 0.1)',
           borderWidth: 2,
