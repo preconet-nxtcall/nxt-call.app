@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 0. INITIALIZATION (Moved top for Nav)
     // ---------------------------------
     window.dashboard = new DashboardManager();
-    window.usersManager = new UsersManager();
+    // window.usersManager is already initialized in users.js
     window.attendanceManager = new AttendanceManager();
     window.callHistoryManager = new CallHistoryManager();
     window.callAnalyticsManager = new CallAnalyticsManager();
