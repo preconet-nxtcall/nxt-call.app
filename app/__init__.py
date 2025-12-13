@@ -181,14 +181,7 @@ def create_app(config_class=Config):
     # -------- UPLOADS (IMAGES) --------
     @app.route("/uploads/<path:filename>")
     def uploaded_files(filename):
-        # Fix: Helper to serve from valid locations
-        # Try 'static/uploads' first (where recordings are)
-        static_uploads = os.path.join(app.root_path, "static", "uploads")
-        if os.path.exists(os.path.join(static_uploads, filename)):
-             return send_from_directory(static_uploads, filename)
-        
-        # Fallback to root 'uploads' (legacy)
-        root_uploads = os.path.join(os.getcwd(), "uploads")
-        return send_from_directory(root_uploads, filename)
+        uploads_dir = os.path.join(os.getcwd(), "uploads")
+        return send_from_directory(uploads_dir, filename)
 
     return app
