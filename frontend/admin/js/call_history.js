@@ -193,7 +193,7 @@ class CallHistoryManager {
                 // Assuming static files are served at /static/
                 recordingPlayer = `
                     <audio controls controlsList="nodownload" class="h-8 w-32">
-                        <source src="/static/${r.recording_path}" type="audio/mpeg">
+                        <source src="/${r.recording_path}" type="audio/mpeg">
                         Your browser does not support the audio element.
                     </audio>
                   `;
