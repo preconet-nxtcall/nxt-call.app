@@ -813,7 +813,7 @@ def update_user(user_id):
         # Update Email
         if "email" in data and data["email"].strip():
             new_email = data["email"].strip().lower()
-            if new_email != user.email:
+            if new_email != user.email.lower():
                 # Check uniqueness under this admin
                 existing = User.query.filter(User.admin_id == admin.id, func.lower(User.email) == new_email).first()
                 if existing:
