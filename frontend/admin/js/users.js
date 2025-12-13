@@ -116,7 +116,10 @@ class UsersManager {
 
         <td class="px-6 py-4 text-right">
           <div class="flex items-center justify-end gap-2">
-            <button onclick="usersManager.view(${u.id})" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors" title="View User">
+            <button onclick="usersManager.edit(${u.id})" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Edit User">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button onclick="usersManager.view(${u.id})" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors" title="View Analytics">
               <i class="fas fa-eye"></i>
             </button>
             <button onclick="usersManager.toggleStatus(${u.id}, ${u.is_active})" 
@@ -240,6 +243,60 @@ class UsersManager {
     } catch (e) {
       console.error(e);
       auth.showNotification('Delete error', 'error');
+    }
+  }
+
+  // EDIT USER -----------------------------------
+  edit(id) {
+    const user = this.users.find(u => u.id === id);
+    if (!user) return;
+
+    document.getElementById('editUserId').value = user.id;
+    document.getElementById('editUserName').value = user.name;
+    document.getElementById('editUserEmail').value = user.email;
+    document.getElementById('editUserPhone').value = user.phone || '';
+    document.getElementById('editUserPassword').value = ''; // Reset password field
+
+    document.getElementById('editUserModal').classList.remove('hidden');
+  }
+
+  async saveEdit() {
+    const id = document.getElementById('editUserId').value;
+    const name = document.getElementById('editUserName').value.trim();
+    const email = document.getElementById('editUserEmail').value.trim();
+    const phone = document.getElementById('editUserPhone').value.trim();
+    const password = document.getElementById('editUserPassword').value.trim();
+
+    if (!name || !email) {
+      auth.showNotification('Name and Email are required', 'error');
+      return;
+    }
+
+    try {
+      const resp = await auth.makeAuthenticatedRequest(`/api/admin/user/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: name,
+          email: email,
+          phone: phone,
+          password: password // Only sent if not empty
+        })
+      });
+
+      if (!resp) throw new Error("Network error");
+      const data = await resp.json();
+
+      if (resp.ok) {
+        auth.showNotification('User updated successfully', 'success');
+        document.getElementById('editUserModal').classList.add('hidden');
+        this.loadUsers();
+      } else {
+        auth.showNotification(data.error || 'Update failed', 'error');
+      }
+
+    } catch (e) {
+      console.error(e);
+      auth.showNotification('Update error', 'error');
     }
   }
 

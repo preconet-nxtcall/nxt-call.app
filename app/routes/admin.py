@@ -810,6 +810,19 @@ def update_user(user_id):
         if "name" in data and data["name"].strip():
             user.name = data["name"].strip()
 
+        # Update Email
+        if "email" in data and data["email"].strip():
+            new_email = data["email"].strip().lower()
+            if new_email != user.email:
+                # Check uniqueness under this admin
+                existing = User.query.filter(User.admin_id == admin.id, func.lower(User.email) == new_email).first()
+                if existing:
+                     return jsonify({"error": "Email already exists"}), 409
+                user.email = new_email
+                # Force logout/block old session on email change
+                from app.models import gen_uuid
+                user.current_session_id = gen_uuid()
+
         # Update Phone
         if "phone" in data:
             user.phone = data["phone"].strip() or None
@@ -817,15 +830,30 @@ def update_user(user_id):
         # Update Password (if provided)
         if "password" in data and data["password"].strip():
             user.set_password(data["password"].strip())
+            # Force logout/block old session on password change
+            from app.models import gen_uuid
+            user.current_session_id = gen_uuid()
+            
             # Log password reset
             log = ActivityLog(
                 actor_role=UserRole.ADMIN,
                 actor_id=admin.id,
-                action=f"Reset password for user {user.email}",
+                action=f"Updated password for user {user.email}",
                 target_type="user",
                 target_id=user.id
             )
             db.session.add(log)
+        
+        # Log profile update if not just password
+        if "name" in data or "email" in data or "phone" in data:
+             log_upd = ActivityLog(
+                actor_role=UserRole.ADMIN,
+                actor_id=admin.id,
+                action=f"Updated profile for user {user.email}",
+                target_type="user",
+                target_id=user.id
+            )
+             db.session.add(log_upd)
 
         db.session.commit()
 
