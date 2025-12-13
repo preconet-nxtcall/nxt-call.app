@@ -262,13 +262,10 @@ class UsersManager {
 
   async saveEdit() {
     const id = document.getElementById('editUserId').value;
-    const name = document.getElementById('editUserName').value.trim();
-    const email = document.getElementById('editUserEmail').value.trim();
-    const phone = document.getElementById('editUserPhone').value.trim();
     const password = document.getElementById('editUserPassword').value.trim();
 
-    if (!name || !email) {
-      auth.showNotification('Name and Email are required', 'error');
+    if (!password) {
+      auth.showNotification('Password is required', 'error');
       return;
     }
 
@@ -276,10 +273,7 @@ class UsersManager {
       const resp = await auth.makeAuthenticatedRequest(`/api/admin/user/${id}`, {
         method: 'PUT',
         body: JSON.stringify({
-          name: name,
-          email: email,
-          phone: phone,
-          password: password // Only sent if not empty
+          password: password
         })
       });
 
@@ -287,8 +281,9 @@ class UsersManager {
       const data = await resp.json();
 
       if (resp.ok) {
-        auth.showNotification('User updated successfully', 'success');
+        auth.showNotification('Password updated successfully', 'success');
         document.getElementById('editUserModal').classList.add('hidden');
+        document.getElementById('editUserPassword').value = ''; // Clear password field
         this.loadUsers();
       } else {
         auth.showNotification(data.error || 'Update failed', 'error');
