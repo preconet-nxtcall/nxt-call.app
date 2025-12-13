@@ -153,6 +153,12 @@ def all_call_history():
 
         data = []
         for rec, user_obj in paginated.items:
+            # Safely get recording_path (may not exist in DB yet)
+            try:
+                recording_path = rec.recording_path
+            except AttributeError:
+                recording_path = None
+            
             data.append({
                 "id": rec.id,
                 "user_id": rec.user_id,
@@ -162,6 +168,7 @@ def all_call_history():
                 "contact_name": rec.contact_name,
                 "call_type": rec.call_type,
                 "duration": rec.duration,
+                "recording_path": recording_path,
                 "timestamp": rec.timestamp.isoformat() + 'Z' if rec.timestamp else None,
                 "created_at": rec.created_at.isoformat() + 'Z' if rec.created_at else None,
             })
