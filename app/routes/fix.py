@@ -236,6 +236,54 @@ def fix_activity_logs_table():
 
 
 # ----------------------------------------
+# FIX CALL HISTORY TABLE
+# ----------------------------------------
+@bp.route('/call-history-table', methods=['POST'])
+@jwt_required()
+def fix_call_history_table():
+    """
+    Fix missing columns in 'call_history' table.
+    Main fix: recording_path column for audio recordings.
+    """
+    if not admin_required():
+        return jsonify({"error": "Admin access only"}), 403
+
+    body = request.get_json() or {}
+    if body.get("super_admin_key") != SUPER_ADMIN_SECRET:
+        return jsonify({"error": "Invalid super admin key"}), 403
+
+    try:
+        inspector = inspect(db.engine)
+        columns = [col['name'] for col in inspector.get_columns('call_history')]
+        results = []
+
+        def add_column_if_missing(col_name, ddl):
+            if col_name not in columns:
+                db.session.execute(text(ddl))
+                results.append(f"Added column: {col_name}")
+            else:
+                results.append(f"Column already exists: {col_name}")
+
+        # Add recording_path
+        add_column_if_missing(
+            "recording_path",
+            "ALTER TABLE call_history ADD COLUMN recording_path VARCHAR(1024);"
+        )
+
+        db.session.commit()
+
+        return jsonify({
+            "message": "Call History table check complete",
+            "changes": results
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("Call History table fix error")
+        return jsonify({"error": str(e)}), 500
+
+
+# ----------------------------------------
 # FIX ALL TABLES (OPTIONAL)
 # ----------------------------------------
 @bp.route('/all', methods=['POST'])
@@ -283,6 +331,12 @@ def fix_all_tables():
         if "extra_data" not in act_cols:
             db.session.execute(text("ALTER TABLE activity_logs ADD COLUMN extra_data TEXT;"))
             results.append("Added extra_data to activity_logs")
+
+        # Call History
+        ch_cols = [col['name'] for col in inspector.get_columns('call_history')]
+        if "recording_path" not in ch_cols:
+            db.session.execute(text("ALTER TABLE call_history ADD COLUMN recording_path VARCHAR(1024);"))
+            results.append("Added recording_path to call_history")
 
         db.session.commit()
 
