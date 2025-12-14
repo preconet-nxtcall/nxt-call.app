@@ -154,7 +154,7 @@ def create_app(config_class=Config):
 
     @app.route("/")
     def home():
-        return jsonify({"status": "running"})
+        return redirect(url_for("admin_dashboard_index"))
 
     @app.route("/api/health")
     def health():
