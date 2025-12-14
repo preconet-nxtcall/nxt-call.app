@@ -13,7 +13,6 @@ def admin_required():
     claims = get_jwt()
     return claims.get("role") == "admin"
 
-
 # ==========================================================
 #  🔥 ADMIN — PERFORMANCE ANALYTICS
 # ==========================================================
@@ -48,3 +47,7 @@ def admin_performance():
         "user_ids": ids,
         "count": len(users)
     }), 200
+
+
+
+

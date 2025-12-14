@@ -90,7 +90,7 @@ class UsersManager {
 
     body.innerHTML = this.users.map(u => `
       <tr class="hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-b-0">
-        <td class="px-6 py-4">
+        <td class="px-6 py-4 whitespace-nowrap">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold shadow-sm shrink-0">
               ${(u.name || 'U')[0].toUpperCase()}
@@ -102,19 +102,19 @@ class UsersManager {
           </div>
         </td>
 
-        <td class="px-6 py-4 text-sm text-gray-600 font-medium">${u.phone || 'N/A'}</td>
+        <td class="px-6 py-4 text-sm text-gray-600 font-medium whitespace-nowrap">${u.phone || 'N/A'}</td>
 
-        <td class="px-6 py-4 font-bold text-sm ${u.performance_score >= 70 ? 'text-green-600' : u.performance_score >= 40 ? 'text-yellow-600' : 'text-red-500'}">
+        <td class="px-6 py-4 font-bold text-sm whitespace-nowrap ${u.performance_score >= 70 ? 'text-green-600' : u.performance_score >= 40 ? 'text-yellow-600' : 'text-red-500'}">
           ${u.performance_score ?? 0}%
         </td>
 
-        <td class="px-6 py-4">
+        <td class="px-6 py-4 whitespace-nowrap">
           <span class="${u.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} px-2.5 py-1 rounded-full text-xs font-medium">
             ${u.is_active ? 'Active' : 'Inactive'}
           </span>
         </td>
 
-        <td class="px-6 py-4 text-right">
+        <td class="px-6 py-4 text-right whitespace-nowrap">
           <div class="flex items-center justify-end gap-2">
             <button onclick="usersManager.edit(${u.id})" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Edit User">
               <i class="fas fa-edit"></i>

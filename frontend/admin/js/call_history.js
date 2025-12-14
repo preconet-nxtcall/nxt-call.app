@@ -201,13 +201,13 @@ class CallHistoryManager {
 
               return `
                 <tr class="border-t hover:bg-gray-50">
-                  <td class="p-3">${r.user_name || r.user_id || '-'}</td>
-                  <td class="p-3">${r.phone_number || '-'}</td>
-                  <td class="p-3">${r.contact_name || '-'}</td>
-                  <td class="p-3">${typeBadge}</td>
-                  <td class="p-3">${r.duration ? r.duration + "s" : "-"}</td>
+                  <td class="p-3 whitespace-nowrap">${r.user_name || r.user_id || '-'}</td>
+                  <td class="p-3 whitespace-nowrap">${r.phone_number || '-'}</td>
+                  <td class="p-3 whitespace-nowrap">${r.contact_name || '-'}</td>
+                  <td class="p-3 whitespace-nowrap">${typeBadge}</td>
+                  <td class="p-3 whitespace-nowrap">${r.duration ? r.duration + "s" : "-"}</td>
                   <td class="p-3">${recordingPlayer}</td>
-                  <td class="p-3 text-sm text-gray-600">
+                  <td class="p-3 text-sm text-gray-600 whitespace-nowrap">
                     ${window.formatDateTime(r.timestamp)}
                   </td>
                 </tr>
