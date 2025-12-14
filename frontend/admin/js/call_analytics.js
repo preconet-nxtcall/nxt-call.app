@@ -135,31 +135,31 @@ class CallAnalyticsManager {
               ${rows.length
         ? rows.map(row => `
                     <tr class="hover:bg-gray-50 transition-colors">
-                      <td class="p-3 px-6 text-sm font-medium text-gray-900 whitespace-nowrap">${row.name || row.user_name || "-"}</td>
-                      <td class="p-3 text-sm text-center">
+                      <td class="p-3 px-6 text-sm font-medium text-gray-900 whitespace-nowrap" data-label="User">${row.name || row.user_name || "-"}</td>
+                      <td class="p-3 text-sm text-center" data-label="Incoming">
                         <span class="inline-block px-2 py-1 rounded bg-green-100 text-green-800 font-medium min-w-[30px]">
                           ${row.incoming || 0}
                         </span>
                       </td>
-                      <td class="p-3 text-sm text-center">
+                      <td class="p-3 text-sm text-center" data-label="Outgoing">
                         <span class="inline-block px-2 py-1 rounded bg-purple-100 text-purple-800 font-medium min-w-[30px]">
                           ${row.outgoing || 0}
                         </span>
                       </td>
-                      <td class="p-3 text-sm text-center">
+                      <td class="p-3 text-sm text-center" data-label="Missed">
                         <span class="inline-block px-2 py-1 rounded bg-red-100 text-red-800 font-medium min-w-[30px]">
                           ${row.missed || 0}
                         </span>
                       </td>
-                      <td class="p-3 text-sm text-center">
+                      <td class="p-3 text-sm text-center" data-label="Rejected">
                         <span class="inline-block px-2 py-1 rounded bg-orange-100 text-orange-800 font-medium min-w-[30px]">
                           ${row.rejected || 0}
                         </span>
                       </td>
-                      <td class="p-3 px-6 text-sm text-gray-600 whitespace-nowrap">
+                      <td class="p-3 px-6 text-sm text-gray-600 whitespace-nowrap" data-label="Total Duration">
                         ${this.formatDuration(row.total_duration_seconds || 0)}
                       </td>
-                      <td class="p-3 px-6 text-sm text-gray-500 whitespace-nowrap">
+                      <td class="p-3 px-6 text-sm text-gray-500 whitespace-nowrap" data-label="Last Sync">
                         ${row.last_sync ? new Date(row.last_sync).toLocaleDateString() : 'Never'}
                       </td>
                     </tr>

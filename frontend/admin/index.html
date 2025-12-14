@@ -945,6 +945,33 @@
     </main>
   </div>
 
+  <!-- Mobile Bottom Navigation -->
+  <nav
+    class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-between px-6 py-3 lg:hidden z-50 pb-safe">
+    <button onclick="router.navigate('dashboard')"
+      class="flex flex-col items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors"
+      id="mob-nav-dashboard">
+      <i class="fas fa-home text-lg"></i>
+      <span class="text-[10px] font-medium">Home</span>
+    </button>
+    <button onclick="router.navigate('calls')"
+      class="flex flex-col items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors" id="mob-nav-calls">
+      <i class="fas fa-phone text-lg"></i>
+      <span class="text-[10px] font-medium">Calls</span>
+    </button>
+    <button onclick="router.navigate('users')"
+      class="flex flex-col items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors" id="mob-nav-users">
+      <i class="fas fa-users text-lg"></i>
+      <span class="text-[10px] font-medium">Users</span>
+    </button>
+    <button onclick="router.navigate('performance')"
+      class="flex flex-col items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors"
+      id="mob-nav-performance">
+      <i class="fas fa-chart-line text-lg"></i>
+      <span class="text-[10px] font-medium">Stats</span>
+    </button>
+  </nav>
+
   <div id="userManagementModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
     aria-modal="true">
     <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">

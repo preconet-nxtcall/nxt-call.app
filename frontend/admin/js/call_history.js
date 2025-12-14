@@ -202,13 +202,13 @@ class CallHistoryManager {
 
               return `
                 <tr class="border-t hover:bg-gray-50">
-                  <td class="p-3 whitespace-nowrap text-sm font-medium text-gray-900">${r.user_name || r.user_id || '-'}</td>
-                  <td class="p-3 whitespace-nowrap text-sm text-gray-600">${r.phone_number || '-'}</td>
-                  <td class="p-3 whitespace-nowrap text-sm text-gray-600">${r.contact_name || '-'}</td>
-                  <td class="p-3 whitespace-nowrap">${typeBadge}</td>
-                  <td class="p-3 whitespace-nowrap text-sm text-gray-600">${r.duration ? r.duration + "s" : "-"}</td>
-                  <td class="p-3 min-w-[150px]">${recordingPlayer}</td>
-                  <td class="p-3 text-sm text-gray-600 whitespace-nowrap">
+                  <td class="p-3 whitespace-nowrap text-sm font-medium text-gray-900" data-label="User">${r.user_name || r.user_id || '-'}</td>
+                  <td class="p-3 whitespace-nowrap text-sm text-gray-600" data-label="Number">${r.phone_number || '-'}</td>
+                  <td class="p-3 whitespace-nowrap text-sm text-gray-600" data-label="Contact">${r.contact_name || '-'}</td>
+                  <td class="p-3 whitespace-nowrap" data-label="Type">${typeBadge}</td>
+                  <td class="p-3 whitespace-nowrap text-sm text-gray-600" data-label="Duration">${r.duration ? r.duration + "s" : "-"}</td>
+                  <td class="p-3 min-w-[150px]" data-label="Recording">${recordingPlayer}</td>
+                  <td class="p-3 text-sm text-gray-600 whitespace-nowrap" data-label="Time">
                     ${window.formatDateTime(r.timestamp)}
                   </td>
                 </tr>

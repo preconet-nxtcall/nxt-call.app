@@ -115,24 +115,24 @@ class AttendanceManager {
         <tr class="table-row-hover">
 
           <!-- USER (Only Name) -->
-          <td class="p-3 font-medium text-gray-900 whitespace-nowrap">
+          <td class="p-3 font-medium text-gray-900 whitespace-nowrap" data-label="User">
             ${a.user_name || "Unknown"}
           </td>
 
           <!-- CHECK IN -->
-          <td class="p-3 text-gray-700 whitespace-nowrap">
+          <td class="p-3 text-gray-700 whitespace-nowrap" data-label="Check In">
             ${window.formatDateTime(a.check_in)}
             <div class="text-xs text-gray-500">${a.address || ""}</div>
           </td>
 
           <!-- CHECK OUT -->
-          <td class="p-3 text-gray-700 whitespace-nowrap">
+          <td class="p-3 text-gray-700 whitespace-nowrap" data-label="Check Out">
             ${window.formatDateTime(a.check_out)}
             ${a.check_out_address ? `<div class="text-xs text-gray-500">${a.check_out_address}</div>` : ''}
           </td>
 
           <!-- STATUS -->
-          <td class="p-3 whitespace-nowrap">
+          <td class="p-3 whitespace-nowrap" data-label="Status">
             <span class="px-3 py-1 rounded-full text-white text-sm
               ${a.status === "present" ? "bg-green-500" : "bg-red-500"}">
               ${a.status}
@@ -140,7 +140,7 @@ class AttendanceManager {
           </td>
 
           <!-- ACTIONS -->
-          <td class="p-3 flex gap-4 whitespace-nowrap">
+          <td class="p-3 flex gap-4 whitespace-nowrap" data-label="Actions">
 
             <!-- VIEW CHECK-IN IMAGE (if exists) -->
             ${a.image_path ? `

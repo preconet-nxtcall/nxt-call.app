@@ -551,6 +551,27 @@
         });
 
     </script>
+    <!-- Mobile Bottom Navigation -->
+    <nav
+        class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-between px-6 py-3 lg:hidden z-50 pb-safe">
+        <button onclick="superAdminRouter.navigate('admins')"
+            class="flex flex-col items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors"
+            id="mob-nav-admins">
+            <i class="fas fa-users-cog text-lg"></i>
+            <span class="text-[10px] font-medium">Admins</span>
+        </button>
+        <button onclick="superAdminRouter.navigate('settings')"
+            class="flex flex-col items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors"
+            id="mob-nav-settings">
+            <i class="fas fa-cog text-lg"></i>
+            <span class="text-[10px] font-medium">Settings</span>
+        </button>
+        <button onclick="auth.logout()"
+            class="flex flex-col items-center gap-1 text-gray-500 hover:text-red-600 transition-colors">
+            <i class="fas fa-sign-out-alt text-lg"></i>
+            <span class="text-[10px] font-medium">Logout</span>
+        </button>
+    </nav>
 </body>
 
 </html>
