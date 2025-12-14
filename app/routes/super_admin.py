@@ -420,3 +420,28 @@ def delete_admin(admin_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+@bp.route("/admin/<int:admin_id>/users", methods=["GET"])
+@jwt_required()
+def get_admin_users(admin_id):
+    try:
+        super_admin_id = get_jwt_identity()
+        if not SuperAdmin.query.get(super_admin_id):
+            return jsonify({"error": "Unauthorized"}), 401
+        
+        users = User.query.filter_by(admin_id=admin_id).all()
+        result = []
+        for u in users:
+            result.append({
+                "id": u.id,
+                "name": u.name,
+                "email": u.email,
+                "phone": u.phone,
+                "is_active": u.is_active,
+                "created_at": u.created_at.isoformat() if u.created_at else None,
+                "last_login": u.last_login.isoformat() if u.last_login else None
+            })
+            
+        return jsonify({"users": result}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
