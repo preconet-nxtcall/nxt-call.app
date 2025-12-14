@@ -180,8 +180,14 @@ def create_app(config_class=Config):
     def super_admin_login_page():
         return send_from_directory(os.path.join(FRONTEND, "super_admin"), "login.html")
 
+    @app.route("/super_admin/")
+    def super_admin_dashboard_index():
+         return send_from_directory(os.path.join(FRONTEND, "super_admin"), "index.html")
+
     @app.route("/super_admin/<path:filename>")
     def super_admin_static(filename):
+        if filename == "index.html":
+            return redirect(url_for("super_admin_dashboard_index"))
         return send_from_directory(os.path.join(FRONTEND, "super_admin"), filename)
 
     # -------- UPLOADS (IMAGES) --------
