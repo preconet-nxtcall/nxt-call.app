@@ -30,18 +30,22 @@ body {
 }
 
 /* Override Tailwind bg-white and border-gray colors for specific components when in dark mode */
+.dark-mode.bg-white,
 .dark-mode .bg-white {
     background-color: var(--card) !important;
 }
 
+.dark-mode.bg-gray-50,
 .dark-mode .bg-gray-50 {
     background-color: var(--bg) !important;
 }
 
+.dark-mode.text-gray-900,
 .dark-mode .text-gray-900 {
     color: var(--text) !important;
 }
 
+.dark-mode.text-gray-800,
 .dark-mode .text-gray-800 {
     color: var(--text) !important;
 }
