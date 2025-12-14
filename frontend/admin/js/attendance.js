@@ -122,13 +122,13 @@ class AttendanceManager {
           <!-- CHECK IN -->
           <td class="p-3 text-gray-700 whitespace-nowrap" data-label="Check In">
             ${window.formatDateTime(a.check_in)}
-            <div class="text-xs text-gray-500">${a.address || ""}</div>
+            ${a.address ? `<div class="text-xs text-gray-500 max-w-[200px] truncate" title="${a.address}">${a.address}</div>` : ''}
           </td>
 
           <!-- CHECK OUT -->
           <td class="p-3 text-gray-700 whitespace-nowrap" data-label="Check Out">
             ${window.formatDateTime(a.check_out)}
-            ${a.check_out_address ? `<div class="text-xs text-gray-500">${a.check_out_address}</div>` : ''}
+            ${a.check_out_address ? `<div class="text-xs text-gray-500 max-w-[200px] truncate" title="${a.check_out_address}">${a.check_out_address}</div>` : ''}
           </td>
 
           <!-- STATUS -->
