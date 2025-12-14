@@ -135,9 +135,9 @@ def create_app(config_class=Config):
     # DATABASE INIT
     # =======================================================
     with app.app_context():
-        inspector = inspect(db.engine)
-        if not inspector.get_table_names():
-            db.create_all()
+        # Always create missing tables (safe - won't drop existing tables)
+        # This ensures new tables like activity_logs are created on deployment
+        db.create_all()
             
         # FORCE SCHEMA UPDATE (Fix for missing checkout fields)
         try:
