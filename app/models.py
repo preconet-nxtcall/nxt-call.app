@@ -201,7 +201,7 @@ class Attendance(db.Model):
 
     created_at = db.Column(db.DateTime, default=now)
 
-    user = db.relationship("User", backref=db.backref("attendance_records", lazy="dynamic"))
+    user = db.relationship("User", backref=db.backref("attendance_records", lazy="dynamic", cascade="all, delete-orphan", passive_deletes=True))
 
     def to_dict(self):
         return {
@@ -242,7 +242,7 @@ class CallHistory(db.Model):
 
     created_at = db.Column(db.DateTime, default=now)
 
-    user = db.relationship("User", backref=db.backref("call_history_records", lazy="dynamic"))
+    user = db.relationship("User", backref=db.backref("call_history_records", lazy="dynamic", cascade="all, delete-orphan"))
 
     def to_dict(self):
         return {
@@ -326,7 +326,7 @@ class Followup(db.Model):
     updated_at = db.Column(db.DateTime, default=now, onupdate=now)
     
     # Relationships
-    user = db.relationship("User", backref="followups")
+    user = db.relationship("User", backref=db.backref("followups", cascade="all, delete-orphan", passive_deletes=True))
 
     def to_dict(self):
         return {
