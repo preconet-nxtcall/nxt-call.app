@@ -120,15 +120,15 @@ class AttendanceManager {
           </td>
 
           <!-- CHECK IN -->
-          <td class="p-3 text-gray-700 whitespace-nowrap" data-label="Check In">
-            ${window.formatDateTime(a.check_in)}
-            ${a.address ? `<div class="text-xs text-gray-500 max-w-[200px] truncate" title="${a.address}">${a.address}</div>` : ''}
+          <td class="p-3 text-gray-700" data-label="Check In">
+            <div class="whitespace-nowrap">${window.formatDateTime(a.check_in)}</div>
+            ${a.address ? `<div class="text-xs text-gray-500 max-w-[250px]">${a.address}</div>` : ''}
           </td>
 
           <!-- CHECK OUT -->
-          <td class="p-3 text-gray-700 whitespace-nowrap" data-label="Check Out">
-            ${window.formatDateTime(a.check_out)}
-            ${a.check_out_address ? `<div class="text-xs text-gray-500 max-w-[200px] truncate" title="${a.check_out_address}">${a.check_out_address}</div>` : ''}
+          <td class="p-3 text-gray-700" data-label="Check Out">
+            <div class="whitespace-nowrap">${window.formatDateTime(a.check_out)}</div>
+            ${a.check_out_address ? `<div class="text-xs text-gray-500 max-w-[250px]">${a.check_out_address}</div>` : ''}
           </td>
 
           <!-- STATUS -->
@@ -140,33 +140,35 @@ class AttendanceManager {
           </td>
 
           <!-- ACTIONS -->
-          <td class="p-3 flex gap-4 whitespace-nowrap" data-label="Actions">
+          <td class="p-3 whitespace-nowrap" data-label="Actions">
+            <div class="flex flex-col gap-1 text-xs">
 
-            <!-- VIEW CHECK-IN IMAGE (if exists) -->
-            ${a.image_path ? `
-              <button onclick="attendanceManager.showImage('${a.image_path}')"
-                class="text-blue-600 hover:underline">
-                View Image
-              </button>
-            ` : "-"}
-            
-            <!-- VIEW CHECK-OUT IMAGE (if exists) -->
-            ${a.check_out_image ? `
-              <button onclick="attendanceManager.showImage('${a.check_out_image}')"
-                class="text-purple-600 hover:underline">
-                Checkout Image
-              </button>
-            ` : ""}
+              <!-- VIEW CHECK-IN IMAGE (if exists) -->
+              ${a.image_path ? `
+                <button onclick="attendanceManager.showImage('${a.image_path}')"
+                  class="text-blue-600 hover:underline text-left">
+                  View Image
+                </button>
+              ` : "-"}
+              
+              <!-- VIEW CHECK-OUT IMAGE (if exists) -->
+              ${a.check_out_image ? `
+                <button onclick="attendanceManager.showImage('${a.check_out_image}')"
+                  class="text-purple-600 hover:underline text-left">
+                  Checkout Image
+                </button>
+              ` : ""}
 
-            <!-- OPEN MAP -->
-            ${a.latitude && a.longitude ? `
-              <a href="https://www.google.com/maps?q=${a.latitude},${a.longitude}"
-                target="_blank"
-                class="text-green-600 hover:underline">
-                Map
-              </a>
-            ` : "-"}
+              <!-- OPEN MAP -->
+              ${a.latitude && a.longitude ? `
+                <a href="https://www.google.com/maps?q=${a.latitude},${a.longitude}"
+                  target="_blank"
+                  class="text-green-600 hover:underline">
+                  Map
+                </a>
+              ` : ""}
 
+            </div>
           </td>
 
         </tr>
