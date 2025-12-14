@@ -381,7 +381,9 @@
 
         // Initialize Managers
         window.dashboard = window.dashboard || new DashboardManager();
+        window.dashboard = window.dashboard || new DashboardManager();
         window.adminsManager = window.adminsManager || new AdminsManager();
+        window.activityLogsManager = window.activityLogsManager || new ActivityLogsManager();
 
         // DOM Elements
         const menuItems = {
@@ -441,6 +443,7 @@
         menuItems.dashboard.onclick = () => {
             activateMenu('dashboard', 'Dashboard', 'System overview & statistics');
             if (dashboard?.loadStats) dashboard.loadStats();
+            if (activityLogsManager?.loadLogs) activityLogsManager.loadLogs();
         };
 
         menuItems.admins.onclick = () => {

@@ -295,3 +295,83 @@ class AdminsManager {
             .join("");
     }
 }
+
+/************************************************************
+ *  ACTIVITY LOGS MANAGER
+ ************************************************************/
+class ActivityLogsManager {
+    constructor() {
+        this.logs = [];
+    }
+
+    async loadLogs() {
+        try {
+            const response = await auth.makeAuthenticatedRequest("/api/superadmin/logs");
+            const data = await response.json();
+
+            if (response.ok) {
+                this.logs = data.logs || [];
+                this.renderLogs();
+            } else {
+                console.error("Failed to load logs:", data.error);
+            }
+        } catch (error) {
+            console.error("LOAD LOGS ERROR:", error);
+        }
+    }
+
+    renderLogs() {
+        const container = document.getElementById("activity-logs-container");
+        if (!container) return;
+
+        if (this.logs.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-clipboard-list text-3xl mb-2 text-gray-300"></i>
+                    <p>No recent activity</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold text-xs border-b border-gray-100">
+                        <tr>
+                            <th class="px-6 py-3">Actor</th>
+                            <th class="px-6 py-3">Action</th>
+                            <th class="px-6 py-3">Role</th>
+                            <th class="px-6 py-3">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 bg-white">
+                        ${this.logs.map(log => this.createRow(log)).join("")}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    createRow(log) {
+        const date = new Date(log.timestamp).toLocaleString();
+
+        let roleBadge = "";
+        if (log.role === "super_admin") {
+            roleBadge = `<span class="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full text-xs font-medium">Super Admin</span>`;
+        } else if (log.role === "admin") {
+            roleBadge = `<span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">Admin</span>`;
+        } else {
+            roleBadge = `<span class="bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full text-xs font-medium">User</span>`;
+        }
+
+        return `
+            <tr class="hover:bg-gray-50 transition">
+                <td class="px-6 py-3 font-medium text-gray-900">${log.admin_name}</td>
+                <td class="px-6 py-3 text-gray-600">${log.action_type}</td>
+                <td class="px-6 py-3">${roleBadge}</td>
+                <td class="px-6 py-3 text-gray-500 text-xs">${date}</td>
+            </tr>
+        `;
+    }
+}
