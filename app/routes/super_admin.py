@@ -216,43 +216,41 @@ def activity_logs():
         if not SuperAdmin.query.get(super_admin_id):
             return jsonify({"error": "Unauthorized"}), 401
             
-        # Optimize: Join with Admin table to get names directly
-        # We want to show WHO did WHAT.
-        # If actor_role is ADMIN, we join with Admin table.
-        # If actor_role is SUPER_ADMIN, we just say "Super Admin".
-        
-        logs_query = (
-            db.session.query(ActivityLog, Admin.name)
-            .outerjoin(Admin, (ActivityLog.actor_id == Admin.id) & (ActivityLog.actor_role == UserRole.ADMIN))
-            .order_by(ActivityLog.timestamp.desc())
-            .limit(50)
-            .all()
-        )
+        # Fetch logs directly (simpler query)
+        logs = ActivityLog.query.order_by(ActivityLog.timestamp.desc()).limit(50).all()
 
         formatted = []
-        for log, admin_name in logs_query:
-            
+        for log in logs:
             display_name = "Unknown"
             
-            if log.actor_role == UserRole.SUPER_ADMIN:
-                display_name = "Super Admin"
-            elif log.actor_role == UserRole.ADMIN:
-                display_name = admin_name if admin_name else f"Admin #{log.actor_id} (Deleted)"
-            elif log.actor_role == UserRole.USER:
-                display_name = f"User #{log.actor_id}"
+            try:
+                if log.actor_role == UserRole.SUPER_ADMIN:
+                    display_name = "Super Admin"
+                elif log.actor_role == UserRole.ADMIN:
+                    admin = Admin.query.get(log.actor_id)
+                    display_name = admin.name if admin else f"Admin #{log.actor_id} (Deleted)"
+                elif log.actor_role == UserRole.USER:
+                    user = User.query.get(log.actor_id)
+                    display_name = f"User #{log.actor_id}" # Simplify as user name might not be needed or User model issue
+                    if user:
+                         display_name = user.name
+            except Exception as inner_e:
+                print(f"Error processing log {log.id}: {inner_e}")
+                display_name = "Error Resolving Name"
 
             formatted.append({
                 "id": log.id,
-                "admin_name": display_name, # Frontend expects this key
-                "action_type": log.action,  # We send the full action string
+                "admin_name": display_name, 
+                "action_type": log.action,
                 "timestamp": log.timestamp.isoformat(),
-                "role": log.actor_role.value
+                "role": log.actor_role.value if hasattr(log.actor_role, 'value') else str(log.actor_role)
             })
 
         return jsonify({"logs": formatted}), 200
 
     except Exception as e:
-        print(f"Error fetching logs: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 
