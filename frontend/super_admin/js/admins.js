@@ -266,6 +266,12 @@ class AdminsManager {
                     <!-- ACTIONS -->
                     <td class="px-6 py-4">
                         <div class="flex items-center space-x-2">
+                            <!-- View Users Button -->
+                            <button onclick="adminsManager.viewUsers(${admin.id}, '${admin.name}')"
+                                class="p-2 rounded hover:bg-purple-50 text-purple-600 transition"
+                                title="View Admin Users">
+                                <i class="fas fa-users"></i>
+                            </button>
                             <!-- Toggle Status Button -->
                             <button onclick="adminsManager.toggleAdminStatus(${admin.id}, ${admin.is_active})"
                                 class="p-2 rounded hover:bg-gray-100 text-gray-600 transition"
@@ -293,6 +299,53 @@ class AdminsManager {
                 `;
             })
             .join("");
+    }
+
+    /************************************************************
+     * VIEW ADMIN USERS
+     ************************************************************/
+    async viewUsers(adminId, adminName) {
+        document.getElementById("viewUsersAdminName").textContent = `Viewing users for ${adminName}`;
+        const tableBody = document.getElementById("viewUsersTableBody");
+        tableBody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i> Loading users...</td></tr>`;
+
+        document.getElementById("viewUsersModal").classList.remove("hidden");
+
+        try {
+            const response = await auth.makeAuthenticatedRequest(`/api/superadmin/admin/${adminId}/users`);
+            const data = await response.json();
+
+            if (response.ok) {
+                if (data.users.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">No users found for this admin</td></tr>`;
+                    return;
+                }
+
+                tableBody.innerHTML = data.users.map(u => {
+                    return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-3 font-medium text-gray-900">${u.name}</td>
+                         <td class="px-6 py-3 text-gray-500">${u.email}</td>
+                        <td class="px-6 py-3 text-gray-500">${u.phone || '-'}</td>
+                        <td class="px-6 py-3 text-gray-500">${new Date(u.created_at).toLocaleDateString()}</td>
+                         <td class="px-6 py-3 text-gray-500">${u.last_login ? new Date(u.last_login).toLocaleString() : 'Never'}</td>
+                        <td class="px-6 py-3">
+                             ${u.is_active
+                            ? '<span class="px-2 py-0.5 rounded-full bg-green-100 text-green-800 text-xs font-medium">Active</span>'
+                            : '<span class="px-2 py-0.5 rounded-full bg-red-100 text-red-800 text-xs font-medium">Inactive</span>'}
+                        </td>
+                    </tr>
+                    `
+                }).join("");
+
+            } else {
+                tableBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Failed to load users</td></tr>`;
+                auth.showNotification(data.error || "Failed to load users", "error");
+            }
+        } catch (error) {
+            console.error("VIEW USERS ERROR:", error);
+            tableBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Server error</td></tr>`;
+        }
     }
 }
 
