@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, redirect, url_for
 from flask_jwt_extended import (
     JWTManager,
     verify_jwt_in_request,
@@ -165,8 +165,14 @@ def create_app(config_class=Config):
     def admin_login_page():
         return send_from_directory(os.path.join(FRONTEND, "admin"), "login.html")
 
+    @app.route("/admin/")
+    def admin_dashboard_index():
+        return send_from_directory(os.path.join(FRONTEND, "admin"), "index.html")
+
     @app.route("/admin/<path:filename>")
     def admin_static(filename):
+        if filename == "index.html":
+             return redirect(url_for("admin_dashboard_index"))
         return send_from_directory(os.path.join(FRONTEND, "admin"), filename)
 
     # -------- SUPER ADMIN FRONTEND --------
