@@ -122,20 +122,20 @@ class CallAnalyticsManager {
           <table class="w-full">
             <thead class="bg-gray-50">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">User</th>
-                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Incoming</th>
-                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Outgoing</th>
-                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Missed</th>
-                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Rejected</th>
-                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Total Duration</th>
-                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Last Sync</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">User</th>
+                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Incoming</th>
+                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Outgoing</th>
+                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Missed</th>
+                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Rejected</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Total Duration</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Last Sync</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
               ${rows.length
         ? rows.map(row => `
                     <tr class="hover:bg-gray-50 transition-colors">
-                      <td class="p-3 px-6 text-sm font-medium text-gray-900">${row.name || row.user_name || "-"}</td>
+                      <td class="p-3 px-6 text-sm font-medium text-gray-900 whitespace-nowrap">${row.name || row.user_name || "-"}</td>
                       <td class="p-3 text-sm text-center">
                         <span class="inline-block px-2 py-1 rounded bg-green-100 text-green-800 font-medium min-w-[30px]">
                           ${row.incoming || 0}
@@ -156,10 +156,10 @@ class CallAnalyticsManager {
                           ${row.rejected || 0}
                         </span>
                       </td>
-                      <td class="p-3 px-6 text-sm text-gray-600">
+                      <td class="p-3 px-6 text-sm text-gray-600 whitespace-nowrap">
                         ${this.formatDuration(row.total_duration_seconds || 0)}
                       </td>
-                      <td class="p-3 px-6 text-sm text-gray-500">
+                      <td class="p-3 px-6 text-sm text-gray-500 whitespace-nowrap">
                         ${row.last_sync ? new Date(row.last_sync).toLocaleDateString() : 'Never'}
                       </td>
                     </tr>

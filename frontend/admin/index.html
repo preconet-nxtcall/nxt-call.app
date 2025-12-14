@@ -923,19 +923,21 @@
           </div>
 
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <table class="w-full text-left text-sm">
-              <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold">
-                <tr>
-                  <th class="px-6 py-4">Rank</th>
-                  <th class="px-6 py-4">Team Member</th>
-                  <th class="px-6 py-4">Efficiency Score</th>
-                  <th class="px-6 py-4">Details</th>
-                </tr>
-              </thead>
-              <tbody id="performanceTableBody" class="divide-y divide-gray-100 bg-white">
-                <!-- Content injected by JS -->
-              </tbody>
-            </table>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold">
+                  <tr>
+                    <th class="px-6 py-4 whitespace-nowrap">Rank</th>
+                    <th class="px-6 py-4 whitespace-nowrap">Team Member</th>
+                    <th class="px-6 py-4 whitespace-nowrap">Efficiency Score</th>
+                    <th class="px-6 py-4 whitespace-nowrap">Details</th>
+                  </tr>
+                </thead>
+                <tbody id="performanceTableBody" class="divide-y divide-gray-100 bg-white">
+                  <!-- Content injected by JS -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
 

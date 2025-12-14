@@ -158,16 +158,17 @@ class CallHistoryManager {
       }
 
       container.innerHTML = `
-        <table class="w-full bg-white rounded shadow overflow-hidden">
+        <div class="overflow-x-auto bg-white rounded shadow">
+          <table class="w-full">
               <thead class="bg-gray-200">
             <tr>
-              <th class="p-3">User</th>
-              <th class="p-3">Number</th>
-              <th class="p-3">Contact Name</th>
-              <th class="p-3">Type</th>
-              <th class="p-3">Duration</th>
-              <th class="p-3">Recording</th>
-              <th class="p-3">Timestamp</th>
+              <th class="p-3 text-left whitespace-nowrap">User</th>
+              <th class="p-3 text-left whitespace-nowrap">Number</th>
+              <th class="p-3 text-left whitespace-nowrap">Contact Name</th>
+              <th class="p-3 text-left whitespace-nowrap">Type</th>
+              <th class="p-3 text-left whitespace-nowrap">Duration</th>
+              <th class="p-3 text-left whitespace-nowrap">Recording</th>
+              <th class="p-3 text-left whitespace-nowrap">Timestamp</th>
             </tr>
           </thead>
           <tbody>
@@ -201,12 +202,12 @@ class CallHistoryManager {
 
               return `
                 <tr class="border-t hover:bg-gray-50">
-                  <td class="p-3 whitespace-nowrap">${r.user_name || r.user_id || '-'}</td>
-                  <td class="p-3 whitespace-nowrap">${r.phone_number || '-'}</td>
-                  <td class="p-3 whitespace-nowrap">${r.contact_name || '-'}</td>
+                  <td class="p-3 whitespace-nowrap text-sm font-medium text-gray-900">${r.user_name || r.user_id || '-'}</td>
+                  <td class="p-3 whitespace-nowrap text-sm text-gray-600">${r.phone_number || '-'}</td>
+                  <td class="p-3 whitespace-nowrap text-sm text-gray-600">${r.contact_name || '-'}</td>
                   <td class="p-3 whitespace-nowrap">${typeBadge}</td>
-                  <td class="p-3 whitespace-nowrap">${r.duration ? r.duration + "s" : "-"}</td>
-                  <td class="p-3">${recordingPlayer}</td>
+                  <td class="p-3 whitespace-nowrap text-sm text-gray-600">${r.duration ? r.duration + "s" : "-"}</td>
+                  <td class="p-3 min-w-[150px]">${recordingPlayer}</td>
                   <td class="p-3 text-sm text-gray-600 whitespace-nowrap">
                     ${window.formatDateTime(r.timestamp)}
                   </td>
@@ -218,6 +219,7 @@ class CallHistoryManager {
         }
           </tbody>
         </table>
+      </div>
       `;
 
       // ================================
