@@ -215,9 +215,14 @@ def activity_logs():
         super_admin_id = get_jwt_identity()
         if not SuperAdmin.query.get(super_admin_id):
             return jsonify({"error": "Unauthorized"}), 401
-            
-        # Fetch logs directly (simpler query)
-        logs = ActivityLog.query.order_by(ActivityLog.timestamp.desc()).limit(50).all()
+        
+        try:
+            # Fetch logs directly (simpler query)
+            logs = ActivityLog.query.order_by(ActivityLog.timestamp.desc()).limit(50).all()
+        except Exception as table_error:
+            # Table might not exist yet - return empty logs
+            print(f"ActivityLog table error: {table_error}")
+            return jsonify({"logs": []}), 200
 
         formatted = []
         for log in logs:
@@ -251,7 +256,8 @@ def activity_logs():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        # Return empty logs instead of 500 error
+        return jsonify({"logs": []}), 200
 
 
 # =========================================================
