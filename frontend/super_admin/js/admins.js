@@ -374,7 +374,7 @@ class ActivityLogsManager {
     }
 
     renderLogs() {
-        const container = document.getElementById("activity-logs-container");
+        const container = document.getElementById("recent-activity");
         if (!container) return;
 
         if (this.logs.length === 0) {
