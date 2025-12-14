@@ -305,8 +305,6 @@ class AdminsManager {
      * VIEW ADMIN USERS
      ************************************************************/
     async viewUsers(adminId, adminName) {
-        console.log("View Users Clicked:", adminId, adminName);
-        alert("View Users Clicked for: " + adminName);
         document.getElementById("viewUsersAdminName").textContent = `Viewing users for ${adminName}`;
         const tableBody = document.getElementById("viewUsersTableBody");
         tableBody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i> Loading users...</td></tr>`;
