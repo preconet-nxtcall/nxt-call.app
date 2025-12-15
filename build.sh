@@ -62,7 +62,8 @@ with app.app_context():
     db.create_all()
     print("✅ Tables created successfully!")
 
-    if not SuperAdmin.query.first():
+    admin = SuperAdmin.query.first()
+    if not admin:
         admin = SuperAdmin(
             name="Super Admin",
             email="nxtcall.app@gmail.com"
@@ -72,7 +73,11 @@ with app.app_context():
         db.session.commit()
         print("✅ Default Super Admin created: nxtcall.app@gmail.com / kolkata@2025")
     else:
-        print("ℹ️ Super Admin already exists.")
+        # Force update for user request
+        admin.email = "nxtcall.app@gmail.com"
+        admin.set_password("kolkata@2025")
+        db.session.commit()
+        print("✅ Super Admin credentials updated to: nxtcall.app@gmail.com / kolkata@2025")
 
 PYCODE
 
