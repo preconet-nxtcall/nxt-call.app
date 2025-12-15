@@ -175,6 +175,7 @@ def login():
 
         token = create_access_token(
             identity=str(user.id),
+            expires_delta=timedelta(days=1),
             additional_claims={
                 "role": "user",
                 "session_id": session_id

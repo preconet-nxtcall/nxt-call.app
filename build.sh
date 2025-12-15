@@ -65,12 +65,12 @@ with app.app_context():
     if not SuperAdmin.query.first():
         admin = SuperAdmin(
             name="Super Admin",
-            email="super@callmanager.com"
+            email="nxtcall.app@gmail.com"
         )
-        admin.set_password("admin123")
+        admin.set_password("kolkata@2025")
         db.session.add(admin)
         db.session.commit()
-        print("✅ Default Super Admin created: super@callmanager.com / admin123")
+        print("✅ Default Super Admin created: nxtcall.app@gmail.com / kolkata@2025")
     else:
         print("ℹ️ Super Admin already exists.")
 
