@@ -90,36 +90,30 @@
                 </button>
             </form>
 
-            <!-- DEMO LOGIN -->
-            <div class="mt-6 p-4 bg-blue-50 rounded-lg text-blue-800 text-center text-sm">
-                <b>Demo Login:</b><br>
-                Email: super@callmanager.com<br>
-                Password: admin123
+            <!-- DEMO LOGIN REMOVED -->
+
+            <div class="text-center mt-6">
+                <p class="text-white text-sm">
+                    &copy; 2025 Call Manager Pro. All rights reserved.
+                </p>
             </div>
         </div>
 
-        <div class="text-center mt-6">
-            <p class="text-white text-sm">
-                &copy; 2025 Call Manager Pro. All rights reserved.
-            </p>
-        </div>
-    </div>
+        <!-- AUTH SCRIPT -->
+        <script src="/super_admin/js/auth.js"></script>
 
-    <!-- AUTH SCRIPT -->
-    <script src="/super_admin/js/auth.js"></script>
+        <!-- LOGIN HANDLER -->
+        <script>
+            document.getElementById("loginForm").addEventListener("submit", async (e) => {
+                e.preventDefault();
 
-    <!-- LOGIN HANDLER -->
-    <script>
-        document.getElementById("loginForm").addEventListener("submit", async (e) => {
-            e.preventDefault();
+                const email = document.getElementById("email").value.trim();
+                const password = document.getElementById("password").value.trim();
 
-            const email = document.getElementById("email").value.trim();
-            const password = document.getElementById("password").value.trim();
-
-            // Call login from auth.js
-            auth.loginSuperAdmin(email, password);
-        });
-    </script>
+                // Call login from auth.js
+                auth.loginSuperAdmin(email, password);
+            });
+        </script>
 
 </body>
 
