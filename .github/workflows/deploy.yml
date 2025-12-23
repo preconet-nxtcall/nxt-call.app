@@ -1,0 +1,50 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Copy files via SCP
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          # key: ${{ secrets.KEY }} # Use this if using SSH Key instead of Password
+          source: "."
+          target: "/root/call-manager-pro"
+          rm: false # Don't delete everything, just overwrite
+          # Exclude files we don't need on production
+          strip_components: 0
+          exclude: ".git,venv,__pycache__,node_modules"
+
+      - name: Execute remote commands via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          # key: ${{ secrets.KEY }} # Use this if using SSH Key instead of Password
+          script: |
+            cd /root/call-manager-pro
+            
+            # Fix line endings just in case
+            sed -i 's/\r$//' build.sh
+            chmod +x build.sh
+            
+            # Execute build script
+            ./build.sh
+            
+            # Restart the service
+            # Using '|| true' to prevent failure if service doesn't exist yet, 
+            # though ideally it should fail if it's supposed to be there.
+            systemctl restart call-manager || echo "⚠️ Service call-manager failed to restart or not found."
